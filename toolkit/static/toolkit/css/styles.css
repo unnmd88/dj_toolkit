@@ -1,0 +1,27 @@
+h1 {
+    text-align: center;
+    color: red;
+    font-size: 30px;
+    margin: 0 0 14px 0;
+    padding: auto;
+    border-bottom: 1px solid;
+}
+
+body {
+    background-color: aquamarine;
+}
+
+h2{
+    text-align: left;
+    color: red;
+}
+
+#main_menu{
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 20px 40px;
+  border: 1px dotted gray;
+}

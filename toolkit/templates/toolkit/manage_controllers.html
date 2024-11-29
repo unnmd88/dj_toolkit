@@ -1,0 +1,151 @@
+
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<h1 class="manage_snmp">{{ title }}</h1>
+
+<table>
+        <caption>Обновить БД по контроллерам</caption>
+        <tr>
+                <td><input type="file" id="file_trafficlihgtdata_update" name="upload_trafficlihgtdata" ></td>
+                <td><button id="update_trafficlihgtdata" name="upd_trafficlihgtdata"> Обновить </button> </td>
+        </tr>   
+               
+</table>
+
+<br>
+
+<table border="3">
+        <tr>
+            <td>
+                <label for="visible_hosts"> Количетво хостов </label>
+                        <select id="visible_hosts">
+                                {% for num_host in num_hosts %}
+                                <option value="{{ num_host }}">{{ num_host }}</option>
+                                {% endfor %}
+                        </select>
+                     <button id="display_hosts_snmp"> Отобразить </button>
+                </td>
+        </tr>
+        <tr>
+            <td>
+                <label for="polling_get_interval"> Интервал запроса на получение данных, сек </label>
+                <input type="text" id="polling_get_interval" value="4">
+            </td>
+        </tr>
+</table>
+
+<br>
+
+<!-- <div>
+    {% csrf_token %}
+        
+</div> -->
+{% csrf_token %}
+
+<table>
+        <tr>
+        <td><button id="get_data_from_db"> Загрузить конфигурацию из базы </button></td>
+        <td><select name="conf_from_db" id="configuration_from_db"> </select></td>
+        </tr>
+
+        <tr>
+        <td><button id="send_data_to_db"> Добавить текущую конфигурацию в базу </button> </td>
+        <td> <input type="text" id="name_configuration_datahosts" maxlength="20" placeholder="Введите название"> </td>
+        </tr>
+</table>
+<br>
+<div>   
+        <label for="get_data_for_all_hosts">Отметить/снять "Получать данные с ДК" для всех хостов</label>
+        <input type="checkbox" id="get_data_for_all_hosts"></input>
+
+</div>
+
+<br> <br>
+
+{% for num_host in num_hosts %}
+
+<table class="host_table" id="table_{{num_host}}" border="1" bgcolor="pink" cellpadding="8" cellspacing="4" align="center">
+        <caption align="right"> Хост {{ num_host }} </caption>
+        <tr>
+                <td>
+                        {{ first_row_settings.label_settings }}
+                </td>
+                
+                <td>    <label class="manage_snmp" for="ip_{{ num_host }}">IP-адресс</label>
+                        <input type="text" name="ip" class="immutable_data_snmp" id="ip_{{ num_host }}" maxlength="15">
+                </td> 
+                
+                <td>    
+                        <label class="manage_snmp" for="scn_{{ num_host }}">SCN</label>
+                        <input type="text" name="scn" class="immutable_data_snmp" id="scn_{{ num_host }}" maxlength="15">
+                </td>
+                <td>
+                        <label for="protocol_{{ num_host }}"> Тип ДК </label>
+                        <select name='select_protocols' class="immutable_data_snmp" id="protocol_{{ num_host }}">
+                                <option>-</option>
+                                {% for type_controller in types_controllers %}
+                                <option value="{{ type_controller }}">{{ type_controller }}</option>
+                                {% endfor %}
+                        </select>
+                </td>
+                <td rowspan="3">     
+                        <label class="manage_snmp" for="search_options">Поиск</label> <br>      
+                        <select name='search_options' class="search" id="searchoptions_{{ num_host }}">
+                        <option>По номеру СО</option>
+                        <!-- <option>Названию СО</option> -->
+                        </select>
+                        <input type="text" name="search_host" class="search_host" id="searchhost_{{ num_host }}" maxlength="20">
+                        <br>
+                        <!-- <button class="test_button" id="test_button"> TEST </button> -->
+                </td>        
+
+        </tr>
+        <tr>    
+                <td>
+                        Информация с ДК 
+                </td>
+                <td>
+                        <input class="receive_data" type="checkbox" value="host_{{ num_host }}" id="getdatahost_{{ num_host }}">
+                        <label for="getdatahost_{{ num_host }}">Получать данные с ДК</label>
+                        
+                </td>
+                <td colspan="2"><textarea class="userDisplay" class="label_datahost" id="displayGetData_{{ num_host }}"> Данные с ДК </textarea></td>
+                
+        </tr>
+        <tr>
+                <td> Управление ДК </td>
+                <td>    <select type="" value="host_{{ num_host }}" id="setCommand_{{ num_host }}">
+                        <option> Выберите тип ДК </option>
+                        </select>
+                        <input placeholder="Значение фазы/команды" type="text" name="setval" class="" id="setval_{{ num_host }}" >
+                </td>
+
+                <td>
+                        
+                        <input type="checkbox" name="checkbox_hold" class="hold_request" id="hold_{{ num_host }}" maxlength="15" disabled> Удерживать
+                        <!-- {% csrf_token %} -->
+                        <button class="set_request" id="SetToHost_{{ num_host }}"> Отправить </button>
+                        <label class="set_timers_val" id="setTimerVal_{{ num_host }}"> 0  </label>
+                </td>
+                <td> <textarea  class="userDisplay"  id="displaySendCommand_{{num_host}}"> Результат отправки команды </textarea></td>
+        </tr>
+
+</table>
+
+{% endfor %}
+
+
+
+
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<script src="{% static 'toolkit/js/controller_management_v2.js'%}"></script>
+{% endblock %}

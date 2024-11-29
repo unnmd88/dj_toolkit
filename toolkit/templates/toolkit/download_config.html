@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+<br><br>
+<div id="main_data">     
+      <input type="radio" value="use_ip" name="search_option" id="by_ipAddr">
+      <label for="by_ipAddr">Задать параметры вручную</label>
+      <input placeholder="ip-адресс ДК" type="text" id="ip_controller">
+      <select id="type_controller_from_user">
+        <option value="-"> - </option>
+          <option value="Swarco"> Swarco </option>
+      </select>
+
+<!--            <labelfor="search_controller">Поиск по номеру СО</label>-->
+      <br>
+      {% csrf_token %}
+      <input type="radio" value="use_search_in_db" name="search_option" checked id="by_search_in_db">
+      <label for="by_search_in_db">Поиск в базе данных</label>
+      <input placeholder="Поиск по номеру СО" type="text" id="search_controller"> <br> <br>
+      Результат поиска: <br>
+      <label id="ip_addr">IP-адресс ДК :<label id="ip_addr_val"></label></label> <br>
+      <label id="type_controller">Тип ДК: <label id="type_controller_val"></label></label> <br> 
+      <label id="address">Адресс: <label id="address_val"></label></label> <br>
+      <label id="descripton">Описание: <label id="description_val"></label></label> <br>
+      <button id="get_config" disabled> Отправить запрос </button><br>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="{% static 'toolkit/js/download_config.js'%}"></script>
+{% endblock %}
