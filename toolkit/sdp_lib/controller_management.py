@@ -2970,7 +2970,6 @@ class SwarcoGetModeWeb(SwarcoWebContent):
             self.put_to_get_entity('get_mode')
             self.put_to_req_data({'protocol': 'http', 'type': 'get', 'request_time': self.set_curr_datetime()})
 
-        # errorIndication, content = await self.get_content_from_web(route_type=self.ROUTE_DISPLAY, timeout=timeout)
         errorIndication, content = await self.get_content_from_web(route_type=self.ROUTE_DISPLAY, timeout=timeout)
         self.errorIndication, self.varBinds = errorIndication, content
         # logger.debug(errorIndication)
