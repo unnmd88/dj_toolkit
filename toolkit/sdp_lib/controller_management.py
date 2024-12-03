@@ -934,7 +934,7 @@ class BaseSTCIP(BaseSNMP):
     convert_val_to_num_stage_set_req: Callable
     converted_values_all_red: dict
     community_write = os.getenv('communitySTCIP_w')
-    community_read = os.getenv('communitySTCIP_w')
+    community_read = os.getenv('communitySTCIP_r')
 
     converted_values_flash_dark = {
         '1': '2', 'true': '2', 'on': '2', 'вкл': '2', '2': '2',
