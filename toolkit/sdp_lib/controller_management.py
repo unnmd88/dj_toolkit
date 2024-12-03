@@ -691,7 +691,7 @@ class BaseSNMP(BaseCommon):
             self,
             ip_adress: str,
             community: str,
-            oids: list[tuple[str, str]] | dict[str, str],
+            oids: list[tuple[str, Any]] | dict[str, Any],
             timeout: float = 0,
             retries: int = 0
     ) -> tuple:
@@ -983,12 +983,9 @@ class BaseSTCIP(BaseSNMP):
             oid = Oids.swarcoUTCTrafftechPlanCommand.value
         else:
             oid = Oids.potokS_UTCCommandAllRed.value
-
         value = self.converted_values_all_red.get(value.lower())
+        oids = [(oid, Unsigned32(value))]
 
-        oids = (
-            (oid, Unsigned32(value)),
-        )
         return await self.set_request_base(self.ip_adress, self.community_write, oids, timeout=timeout, retries=retries)
 
     async def set_flash(self, value='0', timeout=1, retries=2) -> tuple:
@@ -1001,10 +998,8 @@ class BaseSTCIP(BaseSNMP):
 
         self.set_entity[inspect.stack()[0][3]] = value
         value = self.converted_values_flash_dark.get(value.lower())
+        oids = [(Oids.swarcoUTCCommandFlash.value, Integer32(value))]
 
-        oids = (
-            (Oids.swarcoUTCCommandFlash.value, Integer32(value)),
-        )
         return await self.set_request_base(self.ip_adress, self.community_write, oids, timeout=timeout, retries=retries)
 
     async def set_dark(self, value='0', timeout=1, retries=2) -> tuple:
@@ -1016,9 +1011,8 @@ class BaseSTCIP(BaseSNMP):
 
         self.set_entity[inspect.stack()[0][3]] = value
         value = self.converted_values_flash_dark.get(value.lower())
-        oids = (
-            (Oids.swarcoUTCCommandDark.value, Integer32(value)),
-        )
+        oids = [(Oids.swarcoUTCCommandDark.value, Integer32(value))]
+
         return await self.set_request_base(self.ip_adress, self.community_write, oids, timeout=timeout, retries=retries)
 
 
