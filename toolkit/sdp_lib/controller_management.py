@@ -612,20 +612,33 @@ class BaseSNMP(BaseCommon):
             community: str,
             oids: list[str],
             json_responce: bool = False,
-            timeout: int = 0,
+            timeout: float = 0,
             retries: int = 1
-    ):
+    ) -> tuple:
         """
-        Возвращает list значений оидов при успешном запросе, инчае возвращает str с текстом ошибки.
-        :param type_controller:
-        :param json_responce:
+        Метод get запросов по snmp
         :arg ip_adress: ip хоста
         :arg community: коммьюнити хоста
-        :arg oids: List или Tuple оидов
+        :arg oids: список oids, которые будут отправлены в get запросе
         :arg timeout: таймаут запроса, в секундах
         :arg retries: количество попыток запроса
-        :return: list при успешном запросе, иначе errorIndication
+        :return: tuple вида:
+                 index[0] -> если есть ошибка в snmp запросе, то текст ошибки, иначе None
+                 index[1] -> ответные данные. список вида [(oid, payload), (oid, payload)...]
+                 index[2] -> self, ссылка на объект
+
+        Examples
+        --------
+        ip_adress = '192.168.0.1'\n
+        community = 'community'\n
+        oids = [Oids.swarcoUTCTrafftechPhaseStatus.value,
+               Oids.swarcoUTCTrafftechPlanStatus.value]
+
+
+        asyncio.run(set_request(ip_adress, community, oids))
+        ******************************
         """
+
         if self.get_entity:
             self.put_to_req_data({
                 EntityJsonResponce.PROTOCOL.value: EntityJsonResponce.SNMP.value,
@@ -661,7 +674,7 @@ class BaseSNMP(BaseCommon):
             ip_adress: str,
             community: str,
             oids: list[str],
-            timeout: int = 0,
+            timeout: float = 0,
             retries: int = 0
     ):
 
@@ -678,17 +691,44 @@ class BaseSNMP(BaseCommon):
             self,
             ip_adress: str,
             community: str,
-            oids: list[str] | tuple[str] | dict[str, str],
-            timeout: int = 0, retries: int = 0
+            oids: list[tuple[str, str]] | dict[str, str],
+            timeout: float = 0,
+            retries: int = 0
     ) -> tuple:
         """
-        Возвращает list значений оидов при успешном запросе, инчае возвращает str с текстом ошибки
+        Метод set запросов по snmp
         :param ip_adress: ip хоста
         :param community: коммьюнити хоста
-        :param oids: list, tuple или dict из оидов
+        :param oids: list или dict из оидов и значений, которые будут установлены
         :param timeout: таймаут запроса, в секундах
         :param retries: количество попыток запроса
-        :return: list при успешном запросе, иначе str с текстом ошибки
+        :return: tuple вида:
+                 index[0] -> если есть ошибка в snmp запросе, то текст ошибки, иначе None
+                 index[1] -> ответные данные. список вида [(oid, payload), (oid, payload)...]
+                 index[2] -> self, ссылка на объект
+
+        Examples
+        --------
+        Если переданные oids -> list[tuple]:
+
+        ip_adress = '192.168.0.1'\n
+        community = 'community'\n
+        oids = [(Oids.swarcoUTCTrafftechPhaseCommand.value, Unsigned32('2')),
+               (Oids.swarcoUTCTrafftechPlanCommand.value, Unsigned32('2')) ]
+
+        asyncio.run(set_request(ip_adress, community, oids))
+        ******************************
+
+        Если переданные oids -> dict:
+
+        ip_adress = '192.168.0.1'\n
+        community = 'community'\n
+        oids = {Oids.swarcoUTCTrafftechPhaseCommand.value: Unsigned32('2'),
+                Oids.swarcoUTCTrafftechPlanCommand.value: Unsigned32('2')}
+
+
+        asyncio.run(set_request(ip_adress, community, oids))
+        ******************************
         """
 
         self.put_to_req_data({
@@ -714,10 +754,10 @@ class BaseSNMP(BaseCommon):
         self.responce_time = self.set_curr_datetime()
         return errorIndication, varBinds, self
 
-    def create_data_for_get_req(self, oids: list[str], get_mode: bool) -> list:
+    def _create_data_for_get_req(self, oids: list[str], get_mode: bool) -> list:
         """
         Метод формирует коллекцию оидов для отправки в соответствии с переданными параметрами
-        :arg oids: коллекция оидов для запроса от пользователя
+        :arg oids: коллекция оидов для  get запроса от пользователя
         :arg get_mode: флаг, говорящий о необходимости получения базового состояния ДК:
                        режим, фаза, план
         :return processed_oids: финальная коллекция оидов, которые будут отправлены хосту в get запросе(snmp)
@@ -736,8 +776,8 @@ class BaseSNMP(BaseCommon):
                 processed_oids = [self.check_type_oid(oid) for oid in oids]
         return processed_oids
 
-    def create_data_for_set_req(
-            self, oids: tuple[str, str] | list[str, str] | dict[str, str], unique_oids: bool = False
+    def _create_data_for_set_req(
+            self, oids: list[str, str] | dict[str, str], unique_oids: bool = False
     ) -> list | set:
         """
         Метод формирует оиды необходимые для запроса.
@@ -760,11 +800,21 @@ class BaseSNMP(BaseCommon):
 
     async def get_request(self, oids: list[str] = None, get_mode: bool = False) -> tuple:
         """
-        Тип запроса get для получения состояния дк(get_mode) и значений различных oid
-        :param oids: оиды, значение которых необходимо получить
+        Отправляет get запрос по протоколу snmp
+        :param oids: список из oid`s, которые будут отправлены хосту
         :param get_mode: требуется ли запрос на получения состояния дк(фаза, план, режим управления и т.д.)
         :return: кортеж вида (Ошибки, контент запроса, self)
+
+        Examples
+        --------
+        oids = [Oids.swarcoUTCTrafftechPhaseStatus.value,
+               Oids.swarcoUTCTrafftechPlanStatus.value]
+
+        asyncio.run(set_request(oids))
+        ******************************
+
         """
+
         logger.debug(oids)
         if get_mode:
             self.put_to_get_entity(EntityJsonResponce.GET_MODE.value)
@@ -781,7 +831,7 @@ class BaseSNMP(BaseCommon):
             if not self.scn:
                 self.scn = await self.get_scn()
 
-        processed_oids = self.create_data_for_get_req(oids, get_mode)
+        processed_oids = self._create_data_for_get_req(oids, get_mode)
         logger.debug(processed_oids)
 
         return await self.get_request_base(
@@ -790,24 +840,33 @@ class BaseSNMP(BaseCommon):
             oids=processed_oids
         )
 
-    async def set_request(self, oids: tuple[str, Any] | list[str, Any] | dict[str, Any]) -> tuple:
+    async def set_request(self, oids: list[tuple[str, Any]] | dict[str, Any]) -> tuple:
         """"
-        :arg oids: данные для отправки
+        Отправляет set запрос по протоколу snmp
+        :arg oids: oid`s и значения, которые будут отправлены хосту. Могут быть списком кортежей либо словарём:
+                   Пример, если list: [(oid, val), (oid, val)...]
+                   Пример, если dict: {oid: val, oid: val...}
+        :return: кортеж вида (Ошибки, контент запроса, self)
+
+        Examples
+        --------
+        Если переданные oids -> list[tuple]:
+
+        oids = [(Oids.swarcoUTCTrafftechPhaseCommand.value, Unsigned32('2')),
+               (Oids.swarcoUTCTrafftechPlanCommand.value, Unsigned32('2')) ]
 
 
+        asyncio.run(set_request(oids))
+        ******************************
 
-        Примеры oids:
-                        [(Oids.swarcoUTCTrafftechPhaseCommand.value, Unsigned32('2')),
-                        (Oids.swarcoUTCTrafftechPlanCommand.value,
-                        self.matching_types_set_req.get(Oids.swarcoUTCTrafftechPlanCommand.value)(val)('2')),
-                        ('1.3.6.1.4.1.1618.3.7.2.2.1.0', Unsigned32('2'))
-                        ]
-                        ----------------------------------------------------------------------------------------
-                        {
-                        Oids.swarcoUTCTrafftechPhaseCommand.value: Unsigned32('2'),
-                        '1.3.6.1.4.1.1618.3.7.2.2.1.0': Unsigned32('2')
-                        }
+        Если переданные oids -> dict:
 
+        oids = {Oids.swarcoUTCTrafftechPhaseCommand.value: Unsigned32('2'),
+                Oids.swarcoUTCTrafftechPlanCommand.value: Unsigned32('2')}
+
+
+        asyncio.run(set_request(oids))
+        ******************************
         """
 
         if not oids:
@@ -819,7 +878,7 @@ class BaseSNMP(BaseCommon):
                 self.scn = await self.get_scn()
         all_oids = {o.value for o in Oids}
         self.set_entity += [Oids(oid).name if oid in all_oids else oid for oid in oids]
-        processed_oids = self.create_data_for_set_req(oids)
+        processed_oids = self._create_data_for_set_req(oids)
 
         return await self.set_request_base(
             ip_adress=self.ip_adress,
@@ -2801,7 +2860,7 @@ class SwarcoWebLogin(SwarcoWebBase):
 
     async def login(self, session: aiohttp.ClientSession):
         """
-        Метод логиниться в веб сесиию
+        Метод логинится в веб сесиию
         :param session: session aiohttp.ClientSession
         :param timeout: таймаут на сессию
         :return: обьект сессии для дальнейших запросов
