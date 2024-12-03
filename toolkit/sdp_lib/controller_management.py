@@ -931,6 +931,10 @@ class BaseSNMP(BaseCommon):
 
 
 class BaseSTCIP(BaseSNMP):
+    """
+    Базовый класс для SNMP запросов по протоколу STCIP
+    """
+
     convert_val_to_num_stage_set_req: Callable
     converted_values_all_red: dict
     community_write = os.getenv('communitySTCIP_w')
@@ -951,14 +955,13 @@ class BaseSTCIP(BaseSNMP):
 
     async def set_stage(self, value='0', timeout=1, retries=2) -> tuple:
         """"
-        Устанавливает  фазу.
+        Устанавливает  фазу по протоколу STCIP.
         :param value:  Номер фазы в десятичном виде
         :param retries:
         :param timeout:
         :return: ErrorIndication, varBinds
         """
 
-        # self.set_entity['set_stage'] = value
         self.set_entity[inspect.stack()[0][3]] = value
         converted_val = self.convert_val_to_num_stage_set_req(value.lower())
         oids = [
@@ -968,12 +971,13 @@ class BaseSTCIP(BaseSNMP):
 
     async def set_allred(self, value='0', timeout=1, retries=2) -> tuple:
         """"
-        Устанавливает или сбрасывает режим КК
+        Устанавливает или сбрасывает режим КК по протоколу STCIP.
         :param retries:
         :param timeout:
         :param value: значение. см ассоциации в self.converted_values_all_red
         :return: ErrorIndication, varBinds
         """
+
         self.set_entity[inspect.stack()[0][3]] = value
         if isinstance(self, SwarcoSTCIP):
             oid = Oids.swarcoUTCTrafftechPlanCommand.value
@@ -989,11 +993,12 @@ class BaseSTCIP(BaseSNMP):
 
     async def set_flash(self, value='0', timeout=1, retries=2) -> tuple:
         """"
-        Устанавливает ЖМ(или сбрасывает ранее установленный в swarcoUTCCommandFlash)
+        Устанавливает ЖМ(или сбрасывает ранее установленный в swarcoUTCCommandFlash) по протоколу STCIP.
         :param retries:
         :param timeout:
         :param value: 2 -> устанавливает ОС, 0 -> сбрасывает ранее установленный ЖМ
         """
+
         self.set_entity[inspect.stack()[0][3]] = value
         value = self.converted_values_flash_dark.get(value.lower())
 
@@ -1004,10 +1009,11 @@ class BaseSTCIP(BaseSNMP):
 
     async def set_dark(self, value='0', timeout=1, retries=2) -> tuple:
         """"
-        Устанавливает ОС(или сбрасывает ранее установленный в swarcoUTCCommandDark)
+        Устанавливает ОС(или сбрасывает ранее установленный в swarcoUTCCommandDark) по протоколу STCIP.
         :param value: 2 -> устанавливает ОС, 0 -> сбрасывает ранее установленный ОС
         :return: Возвращает значение установленного swarcoUTCCommandDark
         """
+
         self.set_entity[inspect.stack()[0][3]] = value
         value = self.converted_values_flash_dark.get(value.lower())
         oids = (
@@ -1018,23 +1024,7 @@ class BaseSTCIP(BaseSNMP):
 
 class BaseUG405(BaseSNMP):
     """
-        utcControlLO = 'Включить/Выключить ОС'
-        utcControlFF = 'Включить/Выключить ЖМ'
-        utcControlFn = 'Установка фазы'
-        utcControlTO = 'Разрешающий бит(TO)'
-        utcType2OperationMode = 'Получение режимов работы ДК(OperationMode)'
-        utcType2OperationModeTimeout = 'Таймаут на ожидание команды(OperationModeTimeout)'
-        utcControlGn = 'Получение значения фазы(hex)'
-        potok_utcReplyPlanStatus = 'Возвращает номер плана'
-        potok_utcControRestartProgramm = 'Перезапуск программы'
-        potok_utcReplyDarkStatus = Получение состояния ОС(0 - ВЫКЛ выключен, 1 - ВЫКЛ включен)
-        utcReplyFR = Получение состояния ЖМ:
-                                            |----   0 ЖМ выключен
-                                            |----   1 -> по рассписанию
-                                            |----   2 -> удаленно
-                                            |----   3 -> в ручную
-                                            |----   4 -> аварийный
-
+    Базовый класс для SNMP запросов по протоколу UG405
     """
 
     community_read = os.getenv('communityUG405_r')
