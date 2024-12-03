@@ -275,7 +275,6 @@ $("#send_data_to_db").click( function() {
 )
 
 $("#get_data_from_db").click( function() {
-    alert('sdfsfdsb');
     get_data_from_db_ax();
     } 
 )
@@ -480,7 +479,7 @@ function collect_data_from_all_hosts () {
         const res = response.data;
         console.log('res');
         console.log(res);
-        
+
         if (res['name'] === name_configuration) {
             alert('Конфигурация успешно сохранена');
             get_name_configs(name_configuration);
