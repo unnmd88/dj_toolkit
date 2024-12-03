@@ -1005,6 +1005,8 @@ class BaseSTCIP(BaseSNMP):
     async def set_dark(self, value='0', timeout=1, retries=2) -> tuple:
         """"
         Устанавливает ОС(или сбрасывает ранее установленный в swarcoUTCCommandDark) по протоколу STCIP.
+        :param retries: количество попыток отправки запроса
+        :param timeout: таймаут оправки snmp запроса
         :param value: 2 -> устанавливает ОС, 0 -> сбрасывает ранее установленный ОС
         :return: Возвращает значение установленного swarcoUTCCommandDark
         """
