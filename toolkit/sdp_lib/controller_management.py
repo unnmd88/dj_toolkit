@@ -765,13 +765,13 @@ class BaseSNMP(BaseCommon):
 
         if get_mode:
             if isinstance(self, (PotokP, PeekUG405)):
-                processed_oids = [self.add_scn_to_oids(self.check_type_oid(oid))
+                processed_oids = [self.add_scn_to_oid(self.check_type_oid(oid))
                                   for oid in itertools.chain(self.get_state_oids, oids)]
             else:
                 processed_oids = [self.check_type_oid(oid) for oid in itertools.chain(self.get_state_oids, oids)]
         else:
             if isinstance(self, (PotokP, PeekUG405)):
-                processed_oids = [self.add_scn_to_oids(self.check_type_oid(oid)) for oid in oids]
+                processed_oids = [self.add_scn_to_oid(self.check_type_oid(oid)) for oid in oids]
             else:
                 processed_oids = [self.check_type_oid(oid) for oid in oids]
         return processed_oids
@@ -793,7 +793,7 @@ class BaseSNMP(BaseCommon):
         for oid, val in oids:
             oid = self.check_type_oid(oid)
             if isinstance(self, (PotokP, PeekUG405)):
-                oid = self.add_scn_to_oids(oid)
+                oid = self.add_scn_to_oid(oid)
             processed_oids.append((oid, self.matching_types_set_req.get(oid)(val)))
 
         return processed_oids if not unique_oids else set(processed_oids)
@@ -893,6 +893,7 @@ class BaseSNMP(BaseCommon):
         :param oid: Проверяемый оид
         :return: оид типа str
         """
+
         if type(oid) is not str:
             if isinstance(oid, Oids):
                 oid = Oids(oid).value
@@ -1043,22 +1044,25 @@ class BaseUG405(BaseSNMP):
 
     @staticmethod
     def convert_scn(scn: str) -> str:
-        """ Функция получает на вход строку, которую необходимо конвертировать в SCN
-            для управления и мониторинга по протоколу UG405.
-            Например: convert_scn(CO1111)
         """
+        Генерирует SCN
+        :param scn -> символы строки, которые необходимо конвертировать в scn
+        :return -> возвращет scn
+        """
+
         return f'.1.{str(len(scn))}.{".".join([str(ord(c)) for c in scn])}'
 
-    def add_scn_to_oids(self, oids: set | tuple | list | str, scn: str = None) -> str | list:
+    def add_scn_to_oid(self, oids: set[str] | tuple[str] | list[str] | str, scn: str = None) -> str | list:
         """
-        Метод добавляет scn к оиду, если он необходим.
+        Метод добавляет scn к оиду.
         :param oids: один оид в виде строки или коллекция оидов, где каждый элемент коллекции - оид типа str
-        :param scn: если None, то берём scn из self
+        :param scn: если None, то взять scn из self
         :return: если на вход дан один оид(str) то возвращаем также один оид + scn в виде строки.
                  если на вход дана коллекция, возвращаем коллекцию оидов с scn
         """
+
         scn = self.scn if scn is None else scn
-        if type(oids) == str:
+        if isinstance(oids, str):
             if oids in self.scn_required_oids:
                 return oids + scn
             return oids
@@ -1074,21 +1078,33 @@ class BaseUG405(BaseSNMP):
 
     def remove_scn_from_oid(self, oid: str) -> str:
         """
-        Метод удаляет scn у оида если scn присутсвтует в нём.
+        Метод удаляет scn у оида.
         :arg oid: оид, который необходимо проверить на наличие в нём scn
         :return oid: возвращает оид без scn
         """
+
         return oid.replace(self.scn, '') if self.scn in oid else oid
 
     @staticmethod
     def convert_val_to_num_stage_set_req(val: str) -> int | None:
+        """
+        Конвертирует десятичное значение фазы в отображение hex, для snmp set request
+        :param val: значение фазы в десятичном виде
+        :return: значение в виде hex отображения для отправки в oid фазы
+        """
 
         stg_mask = ['01', '02', '04', '08', '10', '20', '40', '80']
         values = {str(k): v for k, v in enumerate((f'{i}{j * "00"}' for j in range(8) for i in stg_mask), 1)}
         return values.get(val)
 
     @staticmethod
-    def convert_val_to_num_stage_get_req(val: str):
+    def convert_val_to_num_stage_get_req(val: str) -> int:
+        """
+        Конвертирует значение, полученное из oid фазы в номер фазы десятичного представления
+        :param val: значение, необходимое отобразить в десятичном виде
+        :return: значение(номер) фазы в десятичном виде
+        """
+
         try:
             if val not in (' ', '@'):
                 return int(math.log2(int(val, 16))) + 1
@@ -1096,20 +1112,21 @@ class BaseUG405(BaseSNMP):
                 return 6
             elif val == '@':
                 return 7
-            else:
-                return None
         except ValueError:
-            return None
+            logger.warning(f'Значение val: {val}')
 
     """ GET REQUEST """
 
-    async def get_scn(self):
+    async def get_scn(self) -> str:
+        """
+        Получает scn из snmp запроса
+        :return: scn хоста
+        """
 
         if isinstance(self, PeekUG405):
-
-            errorIndication, varBinds, _ = await self.getNext_request_base(self.ip_adress,
-                                                                           self.community_read,
-                                                                           [Oids.utcType2Reply.value])
+            errorIndication, varBinds, _ = await self.getNext_request_base(
+                self.ip_adress, self.community_read,  [Oids.utcType2Reply.value]
+            )
             if errorIndication is None and varBinds:
                 oid = varBinds[0][0][0].__str__()
                 replace_fragment = Oids.utcReplyGn.value
@@ -1119,9 +1136,9 @@ class BaseUG405(BaseSNMP):
 
         elif isinstance(self, PotokP):
             logging.debug(f'get_scn: {self}')
-            errorIndication, varBinds, _ = await self.get_request_base(self.ip_adress,
-                                                                       self.community_read,
-                                                                       [Oids.utcReplySiteID.value])
+            errorIndication, varBinds, _ = await self.get_request_base(
+                self.ip_adress, self.community_read, [Oids.utcReplySiteID.value]
+            )
             if errorIndication is None and varBinds:
                 return self.convert_scn(varBinds[0][1].prettyPrint())
             return ''
@@ -1129,11 +1146,20 @@ class BaseUG405(BaseSNMP):
             return ''
 
     async def get_operation_mode(self, timeout=0, retries=0) -> str:
-        err, varBinds, _ = await self.get_request_base(self.ip_adress, self.community_write,
-                                                       oids=[Oids.utcType2OperationMode.value],
-                                                       timeout=timeout, retries=retries)
+        """
+        Получает значение oid utcType2OperationMode
+        :param timeout: таймаут snmp запроса
+        :param retries: количество попыток запроса
+        :return: значение в oid utcType2OperationMode
+        """
 
+        err, varBinds, _ = await self.get_request_base(
+            self.ip_adress, self.community_write,
+            oids=[Oids.utcType2OperationMode.value],
+            timeout=timeout, retries=retries
+        )
         _, curr_operation_mode = varBinds[0]
+
         return curr_operation_mode.prettyPrint()
 
     """ archive methods(not usage) """
@@ -1141,9 +1167,19 @@ class BaseUG405(BaseSNMP):
     """ SET REQUEST """
 
     async def set_operation_mode(self, val: str | int, timeout=0, retries=0):
-        return await self.set_request_base(self.ip_adress, self.community_write,
-                                           oids=[(Oids.utcType2OperationMode.value, Integer32(val),)],
-                                           timeout=timeout, retries=retries)
+        """
+        Устанавливает значение в oid utcType2OperationMode
+        :param val: Значение, которое будет установлено в utcType2OperationMode
+        :param timeout: таймаут запроса snmp
+        :param retries: количество попыток запроса
+        :return: кортеж вида (Ошибки, контент запроса, self)
+        """
+
+        return await self.set_request_base(
+            self.ip_adress, self.community_write,
+            oids=[(Oids.utcType2OperationMode.value, Integer32(val),)],
+            timeout=timeout, retries=retries
+        )
 
 
 class SwarcoSTCIP(BaseSTCIP):
