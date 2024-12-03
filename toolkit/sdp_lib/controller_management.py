@@ -903,6 +903,11 @@ class BaseSNMP(BaseCommon):
         return oid
 
     def parse_varBinds(self, varBinds: list) -> dict | tuple:
+        """
+        Обрабатывает и формирует данные, полученные после get/set запроса
+        :param varBinds: данные, после get/set запроса
+        :return: обработанные данные, необходимые для функции create_json класса BaseCommon
+        """
 
         oids = []
         for oid, val in varBinds:
