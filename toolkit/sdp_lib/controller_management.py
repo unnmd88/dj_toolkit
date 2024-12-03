@@ -1183,6 +1183,10 @@ class BaseUG405(BaseSNMP):
 
 
 class SwarcoSTCIP(BaseSTCIP):
+    """
+    Класс интерфейс взаимодействия с ДК Swarco
+    """
+
     converted_values_all_red = {
         '1': '119', 'true': '119', 'on': '119', 'вкл': '119', '2': '119', '119': '119',
         '0': '100', 'false': '100', 'off': '100', 'выкл': '100',
@@ -1203,11 +1207,23 @@ class SwarcoSTCIP(BaseSTCIP):
 
     @staticmethod
     def convert_val_to_num_stage_get_req(val: str) -> int | None:
+        """
+        Конвертирует значение из oid фазы в номер фазы из get заспроа
+        :param val: значение, которое будет сконвертировано в десятичный номер фазы.
+        :return: номер фазы в десятичном представлении
+        """
+
         values = {'2': 1, '3': 2, '4': 3, '5': 4, '6': 5, '7': 6, '8': 7, '1': 8, '0': 0}
         return values.get(val)
 
     @staticmethod
     def convert_val_to_num_stage_set_req(val: str) -> int | None:
+        """
+        Конвертирует номер фазы в значение для установки в oid фазы
+        :param val: номер фазы, который будет сконвертирован в соответствующее значение
+        :return: Значение фазы, которое будет установлено.
+        """
+
         values = {'1': 2, '2': 3, '3': 4, '4': 5, '5': 6, '6': 7, '7': 8, '8': 1, 'ЛОКАЛ': 0, '0': 0}
         return values.get(val)
 
@@ -1246,6 +1262,12 @@ class SwarcoSTCIP(BaseSTCIP):
         return self.statusMode.get(val_mode)
 
     def get_current_mode(self, varBinds: list) -> tuple:
+        """
+        Получает текующий режим на основе varBinds
+        :param varBinds: varBinds[oid, val] после snmp запроса
+        :return: new_varBins: оставшиеся необработанные значения oids после определения текущего режима ДК
+                 текущий режим (словарь json-responce)
+        """
 
         equipment_status = plan = softstat180_181 = num_logics = stage = None
         new_varBins = []
@@ -1283,6 +1305,10 @@ class SwarcoSTCIP(BaseSTCIP):
 
 
 class PotokS(BaseSTCIP):
+    """
+    Класс интерфейс взаимодействия с ДК Swarco
+    """
+
     converted_values_all_red = {
         '1': '2', 'true': '2', 'on': '2', 'вкл': '2',
         '0': '0', 'false': '0', 'off': '0', 'выкл': '0',
@@ -1303,6 +1329,11 @@ class PotokS(BaseSTCIP):
 
     @staticmethod
     def convert_val_to_num_stage_get_req(val: str) -> int | None:
+        """
+        Конвертирует значение из oid фазы в номер фазы из get заспроа
+        :param val: значение, которое будет сконвертировано в десятичный номер фазы.
+        :return: номер фазы в десятичном представлении
+        """
 
         values = {
             str(k) if k < 66 else str(0): v if v < 65 else 0 for k, v in zip(range(2, 67), range(1, 66))
@@ -1311,11 +1342,18 @@ class PotokS(BaseSTCIP):
 
     @staticmethod
     def convert_val_to_num_stage_set_req(val: str) -> int | None:
+        """
+        Конвертирует номер фазы в значение для установки в oid фазы
+        :param val: номер фазы, который будет сконвертирован в соответствующее значение
+        :return: Значение фазы, которое будет установлено.
+        """
+
         values = {str(k): str(v) if k > 0 else '0' for k, v in zip(range(65), range(1, 66))}
         return values.get(val)
 
     def _mode_define(self, equipment_status: str, plan: str, status_mode: str) -> str:
-        """ Определяет текщий ружим ДК.
+        """
+        Определяет текщий ружим ДК.
         :arg equipment_status (str): Текущий режим работы контроллера:
                                      workingProperly(1),
                                      powerUp(2),
@@ -1342,6 +1380,13 @@ class PotokS(BaseSTCIP):
         return self.statusMode.get(val_mode)
 
     def get_current_mode(self, varBinds: list) -> tuple:
+        """
+        Получает текующий режим на основе varBinds
+        :param varBinds: varBinds[oid, val] после snmp запроса
+        :return: new_varBins: оставшиеся необработанные значения oids после определения текущего режима ДК
+                 текущий режим (словарь json-responce)
+        """
+
         equipment_status = plan = status_mode = stage = None
         user_oids = self.req_data.get(EntityJsonResponce.REQUEST_ENTITY.value)
         new_varBins = []
@@ -1375,15 +1420,15 @@ class PotokS(BaseSTCIP):
     async def set_restart_program(self, value='1', timeout=1, retries=2) -> tuple:
         """"
         Перезапускает рабочую программу
-        :param retries:
-        :param timeout:
         :param value: 1 -> команда на перезапуск рабочей программы
+        :param retries: количество попыток запроса
+        :param timeout: таймаут snmp запроса
         """
 
-        oids = (
-            (Oids.potokS_UTCCommandRestartProgramm.value, Unsigned32(value)),
+        oids = [(Oids.potokS_UTCCommandRestartProgramm.value, Unsigned32(value))]
+        return await self.set_request_base(
+            self.ip_adress, self.community_write, oids, timeout=timeout, retries=retries
         )
-        return await self.set_request_base(self.ip_adress, self.community_write, oids, timeout=timeout, retries=retries)
 
     async def set_potokUTCSetGetLocal(self, value='1', timeout=1, retries=2) -> tuple:
         """"
@@ -1393,9 +1438,7 @@ class PotokS(BaseSTCIP):
         :param value: 1 -> команда на перезапуск рабочей программы
         """
 
-        oids = (
-            (Oids.potokS_UTCSetGetLocal.value, Unsigned32(value)),
-        )
+        oids = [(Oids.potokS_UTCSetGetLocal.value, Unsigned32(value))]
         return await self.set_request_base(self.ip_adress, self.community_write, oids, timeout=timeout, retries=retries)
 
     async def set_potokUTCprohibitionManualPanel(self, value='1', timeout=1, retries=2) -> tuple:
@@ -1406,9 +1449,7 @@ class PotokS(BaseSTCIP):
         :param value: 1 -> команда на перезапуск рабочей программы
         """
 
-        oids = (
-            (Oids.potokS_UTCprohibitionManualPanel.value, Unsigned32(value)),
-        )
+        oids = [(Oids.potokS_UTCprohibitionManualPanel.value, Unsigned32(value))]
         return await self.set_request_base(self.ip_adress, self.community_write, oids, timeout=timeout, retries=retries)
 
 
