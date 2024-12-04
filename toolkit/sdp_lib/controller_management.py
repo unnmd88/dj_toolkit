@@ -2905,6 +2905,7 @@ class SwarcoWebBase(BaseCommon):
     ROUTE_LOGOUT = os.getenv('ROUTE_LOGOUT')
     ROUTE_DISPLAY = os.getenv('ROUTE_DISPLAY')
     ROUTE_DATA = os.getenv('ROUTE_DATA')
+    ROUTE_RESET_SESSIONS = os.getenv('ROUTE_RESET_SESSIONS')
 
     ENCODING_WEB = os.getenv('ENCODING_WEB')
 
@@ -2944,13 +2945,14 @@ class SwarcoWebLogin(SwarcoWebBase):
 
 class SwarcoWebContent(SwarcoWebLogin):
 
-    async def get_content_from_web(self, route_type: str, timeout=1) -> tuple:
+    async def get_content_from_web(self, route_type: str, timeout=2) -> tuple:
         """
         Метод забирает контент с веб страницы
         :param route_type: маршрут к необходимой странице
         :param timeout: таймаут сессии
         :return: errorIndication, content
         """
+
         errorIndication = content = None
         try:
             timeout = aiohttp.ClientTimeout(timeout)
@@ -2980,6 +2982,7 @@ class SwarcoWebContent(SwarcoWebLogin):
             errorIndication, content = EntityJsonResponce.TYPE_CONTROLLER_ERROR_MSG.value, []
         finally:
             return errorIndication, content
+
 
     def parse_current_mode(self, content: str) -> tuple:
         """
