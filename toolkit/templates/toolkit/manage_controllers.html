@@ -91,7 +91,7 @@
                                 {% endfor %}
                         </select>
                 </td>
-                <td rowspan="3">     
+                <td rowspan="3">
                         <label class="manage_snmp" for="search_options">Поиск</label> <br>      
                         <select name='search_options' class="search" id="searchoptions_{{ num_host }}">
                         <option>По номеру СО</option>
@@ -112,7 +112,7 @@
                         <label for="getdatahost_{{ num_host }}">Получать данные с ДК</label>
                         
                 </td>
-                <td colspan="2"><textarea class="userDisplay" class="label_datahost" id="displayGetData_{{ num_host }}"> Данные с ДК </textarea></td>
+                <td colspan="2"><textarea class="userDisplay" class="label_datahost" id="displayGetData_{{ num_host }}" readonly> Данные с ДК </textarea></td>
                 
         </tr>
         <tr>
@@ -130,7 +130,7 @@
                         <button class="set_request" id="SetToHost_{{ num_host }}"> Отправить </button>
                         <label class="set_timers_val" id="setTimerVal_{{ num_host }}"> 0  </label>
                 </td>
-                <td> <textarea  class="userDisplay"  id="displaySendCommand_{{num_host}}"> Результат отправки команды </textarea></td>
+                <td> <textarea  class="userDisplay"  id="displaySendCommand_{{num_host}}" readonly> Результат отправки команды </textarea></td>
         </tr>
 
 </table>

@@ -1851,6 +1851,7 @@ class SwarcoSSHBase(ConnectionSSH):
     proc_ssh_encoding = os.getenv('proc_ssh_encoding')
     user_itc = os.getenv('user_itc')
     inputs_curr_state = os.getenv('inputs_curr_state')
+    inps_ = os.getenv('hardw_inp')
 
     inp_stages = {
         str(stage): str(inp) for stage, inp in zip(range(1, 9), range(first_inp_stage, last_inp_stage))
@@ -1865,29 +1866,29 @@ class SwarcoSSHBase(ConnectionSSH):
 
     def commands_set_stage(self, num_stage):
         return (
-            f'{self.first_hardw_inp}{self.man_inp}=1\n', f'{self.first_hardw_inp}{self.inp_stages.get(num_stage)}=1\n'
+            f'{self.inps_}{self.man_inp}=1\n', f'{self.inps_}{self.inp_stages.get(num_stage)}=1\n'
         )
 
     def commands_open_level2(self) -> tuple:
         return f'{os.getenv("lang_to_uk")}\n', f'{os.getenv("level2_login")}\n', f'{os.getenv("level2_passwd")}\n'
 
     def commands_reset_man_stages_inputs(self) -> Generator:
-        return (f'{self.first_hardw_inp}{inp}=0\n' for inp in range(self.first_inp_stage, self.last_inp_stage))
+        return (f'{self.inps_}{inp}=0\n' for inp in range(self.first_inp_stage, self.last_inp_stage))
 
     def commands_set_flash(self) -> Generator:
         return (
-            f'{self.first_hardw_inp}{inp}=0\n' if inp > self.man_inp + 1 else f'{self.first_hardw_inp}{inp}=1\n'
+            f'{self.inps_}{inp}=0\n' if inp > self.man_inp + 1 else f'{self.inps_}{inp}=1\n'
             for inp in range(self.man_inp, self.last_inp_stage)
         )
 
     def commands_set_dark(self) -> Generator:
         return (
-            f'{self.first_hardw_inp}{inp}=0\n' if inp > self.man_inp else f'{self.first_hardw_inp}{inp}=1\n'
+            f'{self.inps_}{inp}=0\n' if inp > self.man_inp else f'{self.inps_}{inp}=1\n'
             for inp in range(self.first_man_inp, self.last_inp_stage)
         )
 
     def commands_reset_man_inputs(self) -> Generator:
-        return (f'{self.first_hardw_inp}{inp}=0\n' for inp in range(self.man_inp, self.last_inp_stage))
+        return (f'{self.inps_}{inp}=0\n' for inp in range(self.man_inp, self.last_inp_stage))
 
     def commands_button_flash_on(self) -> tuple:
         return f'{self.flash_enable}\n',
