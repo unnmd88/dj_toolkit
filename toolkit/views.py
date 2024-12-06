@@ -381,6 +381,13 @@ class DownloadConfig(TemplateView):
     }
 
 
+class CompareGroups(TemplateView):
+    template_name = 'toolkit/compare_groups.html'
+    extra_context = {
+        'title': 'Сравнить направления из папсорта'
+    }
+
+
 def index(request):
     print('ind')
 

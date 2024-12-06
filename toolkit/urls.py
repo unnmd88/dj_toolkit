@@ -33,6 +33,7 @@ urlpatterns = [
     path("calc_conflicts/", views.data_for_calc_conflicts, name='calc_conflicts'),
     path("manage_controllers/", views.ManageControllers.as_view(), name='manage_controllers'),
     path("download_config/", views.DownloadConfig.as_view(), name='download_config'),
+    path("compare_groups/", views.CompareGroups.as_view(), name='compare_groups'),
 
     path("api/v1/", include(router.urls)),
     path("api/v1/manage-controller/", ControllerManagementAPI.as_view()),
