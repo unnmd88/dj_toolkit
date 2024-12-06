@@ -261,38 +261,3 @@ class SwarcoParseConfigXML:
             raise FileNotFoundError('errors when creating .PTC2 file')
         return None, [filename, self.general_intersection_data]
 
-
-
-
-
-if __name__ == '__main__':
-    src = r"C:\Programms\py.projects\django\engineering_tools\media\2\tetst\itc-config.xml"
-
-    st_time = time.time()
-    obj = SwarcoParseConfigXML(src)
-    obj.create_PTC2()
-
-    # res = obj.parser([TagNamesSwarcoXML.INSTRUCTIONS.value])
-    # for defin in obj.create_definitions(res[0]):
-    #     print(defin)
-
-    # for defin in obj.create_instructions():
-    #     print(defin)
-
-
-    # for r in res:
-    #     print(r.tag, r.attrib, r.text)
-    #     for xx in r:
-    #         print(xx.tag, xx.attrib)
-    #         for yy in xx:
-    #             print(yy.tag, yy.attrib)
-
-    print(obj.general_intersection_data)
-
-    obj.create_matrix_F006()
-    # with open(r'C:\Programms\py.projects\django\engineering_tools\toolkit\tmp_py_files\test_confl', 'a') as f:
-    #     f.write('\n\n')
-    #     for matr in obj._matrixF006:
-    #         f.write(f"\n{''.join(obj._matrixF006.get(matr))}")
-    # obj.create_PTC2()
-    print(f'Время расчёта: {time.time() - st_time}')
