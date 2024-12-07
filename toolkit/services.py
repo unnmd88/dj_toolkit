@@ -8,7 +8,7 @@ import pathlib
 import shutil
 import zipfile
 import time
-from typing import Coroutine
+from typing import Coroutine, Dict, Tuple
 
 from dotenv import load_dotenv
 import logging
@@ -418,10 +418,10 @@ class ResponceMaker:
                 )
                 try:
                     (data_hosts[ip]
-                               [JsonResponceBody.RESP_ENTITY.value]
-                               [JsonResponceBody.RAW_DATA.value]) = (
+                    [JsonResponceBody.RESP_ENTITY.value]
+                    [JsonResponceBody.RAW_DATA.value]) = (
                         json_from_controller_management[JsonResponceBody.RESP_ENTITY.value]
-                                                       [JsonResponceBody.RAW_DATA.value]
+                        [JsonResponceBody.RAW_DATA.value]
                     )
                 except KeyError:
                     pass
@@ -1078,3 +1078,71 @@ class TelegrammBot:
         return data_hosts
 
 
+class Compares:
+    """
+    Интерфейс для сравнений различных данных
+    """
+
+    def create_group_table_from_stages(self, data: str) -> Dict:
+        """
+        Формирует словарь с привязкой направлений к фазам(отображение "Таблицы направлений из паспорта"
+        :param data: Строка с привязкой направлений к фазам, с разделителем перевода строки
+        :return: Словарь с отображением привязки направлений к фазам
+        """
+
+        table_groups = {num_group: set(map(int, sages.split(','))) for num_group, sages in
+                        enumerate(data.splitlines(), 1)}
+        logger.debug(table_groups)
+
+
+class GroupTable:
+    """
+    Интерфейс преобразования сырых данных из "Таблицы направлений"
+    в свойства направлений для сравнения с другими таблицами паспорта.
+    """
+
+    def __init__(self, raw_data_from_group_table: str):
+        self.raw_data = raw_data_from_group_table
+        self.group_table = None
+        self.stages_table = None
+        self.num_groups = None
+
+    def create_properties(self):
+        """
+        Формирует свойства таблицы, необходимые для сравнения с таблицей фаз
+        :return:
+        """
+        self.group_table = self._create_group_table(self.raw_data)
+        self.num_groups = max(self.group_table)
+        logger.debug(self.group_table)
+        logger.debug(self.num_groups)
+
+    def _create_group_table(self, data: str) -> Dict[int, Tuple[str, set]]:
+        """
+        Формирует словарь с отображением в каких фазах учатсвуют направления
+        :param data: строка с данными о работе направлений в фазах
+                     Пример data:
+                                '1\tТранспортное\t1,2\n2\tТранспортное\t1,2,7\n3\tТранспортное\t4':
+
+                                1	Транспортное	1,2
+                                2	Транспортное	1,2,7
+                                3	Транспортное	4
+
+        :return: Словарь с отображением в каких фазах участвуют направления:
+                {1: ('Транспортное', {1, 2}), 2: ('Транспортное', {1, 2, 7}), 3: ('Транспортное', {4})}
+
+
+        """
+
+        content_table_groups = (group.split('\t') for group in data.splitlines() if group)
+        table_groups = {int(group[0]): [group[1], group[2].split(',')] for group in content_table_groups}
+        for group in table_groups:
+            name_group, stages = table_groups[group]
+            try:
+                table_groups[group] = name_group, set(map(int, stages))
+            except ValueError:
+                table_groups[group] = name_group, set(stages)
+        return table_groups
+
+    def create_stages_table(self):
+        pass
