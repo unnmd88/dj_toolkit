@@ -2,6 +2,9 @@
 Модуль с т.н. "бизнес-логикой"
 Если брать модель Model-View-Controller , то данный модуль относится к Controller
 """
+import abc
+import functools
+import itertools
 import json
 import os
 import pathlib
@@ -1078,34 +1081,25 @@ class TelegrammBot:
         return data_hosts
 
 
-class Compares:
-    """
-    Интерфейс для сравнений различных данных
-    """
+class CommonTables(metaclass=abc.ABCMeta):
+    def __init__(self, raw_data_from_table: str, create_properties=False):
+        self.raw_data = raw_data_from_table
+        self.group_table = None
+        self.stages_table = None
+        self.num_groups = None
+        if create_properties:
+            self.create_properties()
 
-    def create_group_table_from_stages(self, data: str) -> Dict:
-        """
-        Формирует словарь с привязкой направлений к фазам(отображение "Таблицы направлений из паспорта"
-        :param data: Строка с привязкой направлений к фазам, с разделителем перевода строки
-        :return: Словарь с отображением привязки направлений к фазам
-        """
-
-        table_groups = {num_group: set(map(int, sages.split(','))) for num_group, sages in
-                        enumerate(data.splitlines(), 1)}
-        logger.debug(table_groups)
+    @abc.abstractmethod
+    def create_properties(self):
+        pass
 
 
-class GroupTable:
+class GroupTable(CommonTables):
     """
     Интерфейс преобразования сырых данных из "Таблицы направлений"
     в свойства направлений для сравнения с другими таблицами паспорта.
     """
-
-    def __init__(self, raw_data_from_group_table: str):
-        self.raw_data = raw_data_from_group_table
-        self.group_table = None
-        self.stages_table = None
-        self.num_groups = None
 
     def create_properties(self):
         """
@@ -1139,10 +1133,92 @@ class GroupTable:
         for group in table_groups:
             name_group, stages = table_groups[group]
             try:
-                table_groups[group] = name_group, set(map(int, stages))
+                table_groups[group] = name_group, set(stages)
             except ValueError:
                 table_groups[group] = name_group, set(stages)
         return table_groups
 
     def create_stages_table(self):
         pass
+
+
+class StagesTable(CommonTables):
+    """
+    Интерфейс преобразования сырых данных из "Программы(таблица фаз)"
+    в свойства направлений для сравнения с другими таблицами паспорта.
+    """
+
+    def create_properties(self):
+        """
+        Формирует свойства таблицы, необходимые для сравнения с таблицей фаз
+        :return:
+        """
+
+        self.stages_table = self._create_stage_table(self.raw_data)
+        self.num_groups = max(functools.reduce(set.union, self.stages_table.values()))
+        self.group_table = self._create_groups_table(self.stages_table, self.num_groups)
+
+        logger.debug(self.stages_table)
+        logger.debug(self.num_groups)
+        logger.debug(self.group_table)
+
+    def _create_stage_table(self, data: str) -> Dict[int, set]:
+
+        table_stages = {}
+        for stage_prop in data.splitlines():
+            if not stage_prop:
+                continue
+            num_stage, groups_in_stage = stage_prop.split('\t')
+            table_stages[num_stage] = set(map(int, groups_in_stage.split(',')))
+        return table_stages
+
+    def _create_groups_table(self, data: Dict[int, set], num_groups):
+
+        table_groups = {k: set() for k in range(1, num_groups + 1)}
+        for group in range(1, num_groups + 1):
+            for stage, groups_in_stage in data.items():
+                if group in groups_in_stage:
+                    table_groups[group].add(stage)
+        return table_groups
+
+
+class Compares:
+    """
+    Интерфейс для сравнений различных данных
+    """
+
+    @classmethod
+    def compare_groups_in_stages(cls, src_group_table: GroupTable, src_stages_table: StagesTable):
+        resp = {}
+
+        num_groups: int = max(set(src_group_table.group_table.keys()) | set(src_stages_table.group_table.keys()))
+        resp['compare_num_groups'] = {
+            'num_groups': num_groups,
+            'ok': src_group_table.num_groups == src_group_table.num_groups == num_groups
+        }
+        logger.debug(resp)
+        compare_groups_in_stages = {'ok': True}
+
+        check_groups = {}
+        for group in range(1, num_groups + 1):
+            # logger.debug(group)
+            # logger.debug(src_group_table.group_table[group][1])
+            # logger.debug(src_stages_table.group_table[group])
+            # logger.debug(src_group_table.group_table[group][1] ^ src_stages_table.group_table[group])
+
+            discrepancy = src_group_table.group_table[group][1] ^ src_stages_table.group_table[group]
+            if discrepancy:
+                check_groups[group] = (
+                    False if len(discrepancy) == 1 and any('красн' in w.lower() for w in discrepancy) else discrepancy
+                )
+            else:
+                check_groups[group] = False
+            if check_groups[group]:
+                compare_groups_in_stages['ok'] = False
+
+            logger.debug(check_groups)
+
+        resp['compare_groups_in_stages'] = compare_groups_in_stages
+        resp['compare_groups_in_stages']['groups_discrepancy'] = check_groups
+        logger.debug(resp)
+        return resp
