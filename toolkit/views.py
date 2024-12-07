@@ -274,6 +274,23 @@ class DownloadFileFromControllerAPI(APIView):
         return Response(data_hosts)
 
 
+class CompareGroupsAPI(APIView):
+    """
+    Управление/получение данных/загрузка конфига с контроллеров
+    """
+
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+
+        start_time = time.time()
+        data_body = request.data
+        logger.debug(data_body)
+
+        logger.debug(f'Время выполнения запроса: {time.time() - start_time}')
+        return Response({'time_exec': time.time() - start_time})
+
+
 """ CONFLICTS(UNSORTING...)  """
 
 

@@ -5,11 +5,14 @@
 <h1>{{ title }}</h1>
 <br><br>
 <div id="main_data">
-    <textarea> </textarea>  <textarea> </textarea>
+    {% csrf_token %}
+    <textarea id="table_groups"> </textarea>  <textarea id="table_stages"> </textarea>
+    <br>
+    <button id="calculate"> Рассчитать </button>
 </div>
 
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-<!--<script src="{% static 'toolkit/js/download_config.js'%}"></script>-->
+<script src="{% static 'toolkit/js/compare_groups.js'%}"></script>
 {% endblock %}

@@ -9,7 +9,7 @@ from .views import (
     ControllerManagementHostsConfigurationViewSetAPI,
     SearchByNumberTrafficLightsAPIView,
     ControllerManagementAPI,
-    TrafficLightsUpdate
+    TrafficLightsUpdate, CompareGroups, CompareGroupsAPI
 )
 
 
@@ -40,6 +40,8 @@ urlpatterns = [
 
     path("api/v1/download-config/", ControllerManagementAPI.as_view()),
     # path("api/v1/download-config-web/", DownloadFileFromControllerAPI.as_view()),
+
+    path("api/v1/compare-groups/", CompareGroupsAPI.as_view()),
 
     path('api/v1/trafficlight-objects/<str:number>', SearchByNumberTrafficLightsAPIView.as_view()),
     path('api/v1/update_trafficlihgtdata/', TrafficLightsUpdate.as_view()),

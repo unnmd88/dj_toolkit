@@ -1076,3 +1076,5 @@ class TelegrammBot:
         data_hosts = self.add_data_to_datahosts(data_hosts, res)
         logger.debug(data_hosts)
         return data_hosts
+
+
