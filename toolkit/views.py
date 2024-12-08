@@ -295,11 +295,12 @@ class CompareGroupsAPI(APIView):
             data_body.get('content_table_groups'), data_body.get('content_table_stages')
         )
         logger.debug(responce)
-
+        logger.debug(responce.group_table)
+        services.ResponceMaker.save_json_to_file(responce.group_table, 'table_groups_new.json')
 
 
         logger.debug(f'Время выполнения запроса: {time.time() - start_time}')
-        return Response(responce)
+        return Response(responce.group_table)
 
 
 """ CONFLICTS(UNSORTING...)  """
