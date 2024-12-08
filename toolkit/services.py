@@ -1184,29 +1184,99 @@ class StagesTable(CommonTables):
 
 class Compares:
     """
-    Интерфейс для сравнений различных данных
+    Интерфейс для сравнения различных данных из паспорта
     """
 
-    @classmethod
-    def compare_groups_in_stages(cls, src_group_table: GroupTable, src_stages_table: StagesTable):
-        resp = {}
-
-        num_groups: int = max(set(src_group_table.group_table.keys()) | set(src_stages_table.group_table.keys()))
-        resp['compare_num_groups'] = {
-            'num_groups': num_groups,
-            'ok': src_group_table.num_groups == src_group_table.num_groups == num_groups
+    def compare_groups_in_stages(self, src_group_table: str, src_stages_table: str) -> Dict:
+        """
+        Проверяет на эквивалентность принадлежности группы к фазами количества групп в двух таблицах паспорта:
+        таблицы направлений и таблицы временной программы
+        :param src_group_table: строка с данными из "Таблицы направлений".
+               Пример: '1\tТранспортное\t1,2\n2\tТранспортное\t1,2,7\n3\tТранспортное\t4\n4\tТранспортное\t4,
+                        5\n5\tПоворотное\t3,6,7\n6\tОбщест.трансп\t3,6\n7\tПешеходное\t3,6\n8\tПоворотное\t3,5,6,7\n
+                        9\tПоворотное\t5\n10\tПешеходное\t4\n11\tПоворотное\t1,5\n12\tТранспортное\tПост. красное\n13\
+                        tПешеходное\t2,4,7\n'
+        :param src_stages_table: строка с данными из "Временной программы"
+               Пример: '1\t1,2,11\n2\t1,2,13\n3\t5,6,7,8\n4\t3,4,10,13\n5\t4,8,9,11\n6\t5,6,7,8\n7\t2,5,8,13\n\n'
+        :return: Словарь для json-responce вида:
+        {
+            "compare_num_groups": {
+                "num_groups": 13,
+                "ok": true
+            },
+            "compare_groups_in_stages": {
+                "ok": true,
+                "groups_discrepancy": {
+                    "1": false,
+                    "2": false,
+                    "3": false,
+                    "4": false,
+                    "5": false,
+                    "6": false,
+                    "7": false,
+                    "8": false,
+                    "9": false,
+                    "10": false,
+                    "11": false,
+                    "12": false,
+                    "13": false
+                }
+            }
         }
-        logger.debug(resp)
-        compare_groups_in_stages = {'ok': True}
+        """
 
+        table_groups = GroupTable(src_group_table, create_properties=True)
+        table_stages = StagesTable(src_stages_table, create_properties=True)
+
+        responce = {}
+        result_compare_num_groups = self._compare_num_groups_in_tables(
+            table_groups, table_stages
+        )
+        responce['compare_num_groups'] = result_compare_num_groups
+        logger.debug(responce)
+
+        num_groups: int = result_compare_num_groups.get('num_groups')
+        if not isinstance(num_groups, int) or num_groups > 100:
+            raise ValueError('Количество групп должно быть числом и не превышать занчение 100')
+        result_compare_groups_in_stages = self._compare_tables_groups_in_stages(
+            table_groups, table_stages, num_groups
+        )
+        responce['compare_groups_in_stages'] = result_compare_groups_in_stages
+
+        logger.debug(responce)
+        return responce
+
+    def _compare_num_groups_in_tables(self, table_groups: GroupTable, table_stages: StagesTable) -> Dict:
+        """
+        Проверяет эквивалентность количества групп в двух таблицах:
+        таблице наравлений и таблицы фаз из временной программы
+        :param table_groups: экземляр класса GroupTable, в свойствах которого хранятся данные, необходимые для сравнения
+        :param table_stages: экземляр класса StagesTable, в свойствах которого хранятся данные, необходимые для сравнения
+        :return: Словарь, часть для json-responce
+        """
+
+        num_groups: int = max(set(table_groups.group_table.keys()) | set(table_stages.group_table.keys()))
+        responce = {
+            'num_groups': num_groups,
+            'ok': table_groups.num_groups == table_stages.num_groups == num_groups
+        }
+        return responce
+
+    def _compare_tables_groups_in_stages(
+            self, table_groups: GroupTable, table_stages: StagesTable, num_groups: int
+    ) -> Dict:
+        """
+        Проверяет эквивалентность принадлежности группа-фаза в двух таблицах:
+        таблице наравлений и таблицы фаз из временной программы
+        :param table_groups: экземляр класса GroupTable, в свойствах которого хранятся данные, необходимые для сравнения
+        :param table_stages: экземляр класса StagesTable, в свойствах которого хранятся данные, необходимые для сравнения
+        :return: Словарь, часть для json-responce
+        """
+
+        result_compare_groups_in_stages = True
         check_groups = {}
         for group in range(1, num_groups + 1):
-            # logger.debug(group)
-            # logger.debug(src_group_table.group_table[group][1])
-            # logger.debug(src_stages_table.group_table[group])
-            # logger.debug(src_group_table.group_table[group][1] ^ src_stages_table.group_table[group])
-
-            discrepancy = src_group_table.group_table[group][1] ^ src_stages_table.group_table[group]
+            discrepancy = table_groups.group_table[group][1] ^ table_stages.group_table[group]
             if discrepancy:
                 check_groups[group] = (
                     False if len(discrepancy) == 1 and any('красн' in w.lower() for w in discrepancy) else discrepancy
@@ -1214,11 +1284,47 @@ class Compares:
             else:
                 check_groups[group] = False
             if check_groups[group]:
-                compare_groups_in_stages['ok'] = False
+                result_compare_groups_in_stages = False
+        result = {
+            'ok': result_compare_groups_in_stages,
+            'groups_discrepancy': check_groups
+        }
+        return result
 
-            logger.debug(check_groups)
+    # @classmethod
+    # def compare_groups_in_stages(cls, src_group_table: GroupTable, src_stages_table: StagesTable):
+    #     resp = {}
+    #
+    #     num_groups: int = max(set(src_group_table.group_table.keys()) | set(src_stages_table.group_table.keys()))
+    #     resp['compare_num_groups'] = {
+    #         'num_groups': num_groups,
+    #         'ok': src_group_table.num_groups == src_group_table.num_groups == num_groups
+    #     }
+    #     logger.debug(resp)
+    #     compare_groups_in_stages = {'ok': True}
+    #
+    #     check_groups = {}
+    #     for group in range(1, num_groups + 1):
+    #         # logger.debug(group)
+    #         # logger.debug(src_group_table.group_table[group][1])
+    #         # logger.debug(src_stages_table.group_table[group])
+    #         # logger.debug(src_group_table.group_table[group][1] ^ src_stages_table.group_table[group])
+    #
+    #         discrepancy = src_group_table.group_table[group][1] ^ src_stages_table.group_table[group]
+    #         if discrepancy:
+    #             check_groups[group] = (
+    #                 False if len(discrepancy) == 1 and any('красн' in w.lower() for w in discrepancy) else discrepancy
+    #             )
+    #         else:
+    #             check_groups[group] = False
+    #         if check_groups[group]:
+    #             compare_groups_in_stages['ok'] = False
+    #
+    #         logger.debug(check_groups)
+    #
+    #     resp['compare_groups_in_stages'] = compare_groups_in_stages
+    #     resp['compare_groups_in_stages']['groups_discrepancy'] = check_groups
+    #     logger.debug(resp)
+    #     return resp
 
-        resp['compare_groups_in_stages'] = compare_groups_in_stages
-        resp['compare_groups_in_stages']['groups_discrepancy'] = check_groups
-        logger.debug(resp)
-        return resp
+

@@ -287,13 +287,15 @@ class CompareGroupsAPI(APIView):
         data_body = request.data
         logger.debug(data_body)
 
-        table_groups = services.GroupTable(data_body.get('content_table_groups'), create_properties=True)
-        table_stages = services.StagesTable(data_body.get('content_table_stages'), create_properties=True)
+        # table_groups = services.GroupTable(data_body.get('content_table_groups'), create_properties=True)
+        # table_stages = services.StagesTable(data_body.get('content_table_stages'), create_properties=True)
 
-        responce = services.Compares.compare_groups_in_stages(
-            table_groups, table_stages
+        compare_group_in_stages = services.Compares()
+        responce = compare_group_in_stages.compare_groups_in_stages(
+            data_body.get('content_table_groups'), data_body.get('content_table_stages')
         )
         logger.debug(responce)
+
 
 
         logger.debug(f'Время выполнения запроса: {time.time() - start_time}')
