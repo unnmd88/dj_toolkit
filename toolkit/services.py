@@ -1143,8 +1143,6 @@ class StagesTable(CommonTables):
 
         self.stages_table = self._create_stage_table(self.raw_data)
 
-        # self.group_table = self._create_groups_table(self.stages_table, self.num_groups)
-
         logger.debug(self.stages_table)
         logger.debug(self.num_groups)
         logger.debug(self.group_table)
@@ -1213,7 +1211,8 @@ class Compares:
                 curr_error = None
                 if num_stage == stage_ and name_group not in groups_in_stage:
                     curr_error = (
-                        f'Группа присутствует в таблице направлений, но отсутствует таблице фаз. '
+                        f'Группа присутствует в таблице направлений(<Фазы, в кот. участ. направ>), '
+                        f'но отсутствует таблице фаз. '
                         f'Группа={name_group}, Фаза={num_stage}'
                     )
                 elif num_stage != stage_ and name_group in groups_in_stage and stage_ not in table_groups_stages:
@@ -1223,7 +1222,8 @@ class Compares:
                     )
                 elif num_stage not in table_stages.stages_table:
                     curr_error = (
-                        f'Группа присутствует в таблице направлений, но отсутствует таблице фаз. '
+                        f'Группа присутствует в таблице направлений(<Фазы, в кот. участ. направ>), '
+                        f'но отсутствует таблице фаз. '
                         f'Группа={name_group}, Фаза={num_stage}'
                     )
                 if curr_error is not None and curr_error not in errors:
