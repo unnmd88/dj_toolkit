@@ -1156,7 +1156,7 @@ class StagesTable(CommonTables):
             if not stage_prop:
                 continue
             num_stage, groups_in_stage = stage_prop.split('\t')
-            table_stages[num_stage] = groups_in_stage.split(',')
+            table_stages[num_stage] = groups_in_stage.replace(' ', '').split(',')
         return table_stages
 
     def _create_groups_table(self, data: Dict[int, set], num_groups):
@@ -1193,7 +1193,7 @@ class Compares:
         for num_group, properties in table_groups.group_table.items():
             if properties.get('all_red'):
                 continue
-            error_groups_discrepancy = self.compare_groups_discrepancy(
+            error_groups_discrepancy = self._compare_groups_discrepancy(
                 properties.get('stages'), num_group, table_stages
             )
             if error_groups_discrepancy is not None:
@@ -1201,7 +1201,7 @@ class Compares:
                 table_groups.group_table[num_group]['ok'] = False
         return table_groups
 
-    def compare_groups_discrepancy(
+    def _compare_groups_discrepancy(
             self, table_groups_stages: List, name_group: str, table_stages: StagesTable
     ) -> None | str:
         #
@@ -1220,6 +1220,11 @@ class Compares:
                     curr_error = (
                         f'Группа присутствует в таблице фаз, но отсутствует в таблице направлений. '
                         f'Группа={name_group}, Фаза={stage_}'
+                    )
+                elif num_stage not in table_stages.stages_table:
+                    curr_error = (
+                        f'Группа присутствует в таблице направлений, но отсутствует таблице фаз. '
+                        f'Группа={name_group}, Фаза={num_stage}'
                     )
                 if curr_error is not None and curr_error not in errors:
                     errors.append(curr_error)
