@@ -5,8 +5,28 @@
 <h1>{{ title }}</h1>
 <br><br>
 <div id="main_data">
+    <Table id="table_compare_groups">
+        <tr>
+            <td>
+            <label for="">Таблица направлений</label>
+            
+            </td>
+            <td><label for="">Таблица фаз(Временная программа)</label>
+
+            </td>
+        </tr>
+        <td>
+            <textarea placeholder="Поместите данные таблицы направлений" class="compare_groups" id="table_groups"> </textarea> 
+        </td>
+        <td>
+            <textarea placeholder="Поместите данные таблицы временной программы(таблица фаз)" class="compare_groups" id="table_stages"> </textarea>
+        </td>
+        <tr>
+
+        </tr>
+    </Table>
     {% csrf_token %}
-    <textarea id="table_groups"> </textarea>  <textarea id="table_stages"> </textarea>
+    
     <br>
     <button id="calculate"> Рассчитать </button>
 </div>

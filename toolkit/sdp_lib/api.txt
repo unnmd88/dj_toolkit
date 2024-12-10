@@ -42,7 +42,8 @@ Postman:
         "num_hosts_in_request": 2, "search_in_db": true, "type_request": "get_state"
 }
 
-
+http://178.176.93.18:28080/
+http://178.176.93.18:27080/
 
 
 
