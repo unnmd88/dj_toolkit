@@ -1111,15 +1111,16 @@ class GroupTable(CommonTables):
         try:
             for line in (group.split('\t') for group in data.replace(' ', '').splitlines() if group):
                 num_group, name_group, stages = line
-                prop_group = {
+                determinant_always_red = {'красн', 'Пост.красное', 'красное', '-'}
+                group_properties = {
                     'type_group': name_group,
-                    'all_red': True if 'красн' in stages.lower() else False,
+                    'always_red': any(fragment in stages.lower() for fragment in determinant_always_red),
                     'stages': sorted(stages.split(',')),
                     'ok': True,
                     'errors': []
                 }
-                # logger.debug(prop_group)
-                table_groups[num_group] = prop_group
+                # logger.debug(group_properties)
+                table_groups[num_group] = group_properties
         except ValueError:
             return {}
 
@@ -1150,15 +1151,15 @@ class StagesTable(CommonTables):
         logger.debug(self.num_groups)
         logger.debug(self.group_table)
 
-    def _create_stage_table(self, data: str) -> Dict[str, list]:
+    def _create_stage_table(self, data: str) -> Dict[str, str]:
 
         table_stages = {}
         try:
-            for stage_prop in data.splitlines():
+            for stage_prop in (stage.split('\t') for stage in data.replace(' ', '').splitlines() if stage):
                 if not stage_prop:
                     continue
-                num_stage, groups_in_stage = stage_prop.split('\t')
-                table_stages[num_stage] = groups_in_stage.replace(' ', '').split(',')
+                num_stage, groups_in_stage = stage_prop
+                table_stages[num_stage] = groups_in_stage
                 logger.debug(table_stages[num_stage])
         except ValueError:
             return {}
@@ -1205,7 +1206,7 @@ class Compares:
             return table_groups, has_errors, err_in_user_data
 
         for num_group, properties in table_groups.group_table.items():
-            if properties.get('all_red'):
+            if properties.get('always_red'):
                 continue
             error_groups_discrepancy = self._compare_groups_discrepancy(
                 properties.get('stages'), num_group, table_stages
@@ -1226,14 +1227,15 @@ class Compares:
         for num_stage in table_groups_stages:
             for stage_, groups_in_stage in table_stages.stages_table.items():
                 curr_error = None
-                if num_stage == stage_ and name_group not in groups_in_stage:
+                groups_in_stage_ = groups_in_stage.split(',')
+                if num_stage == stage_ and name_group not in groups_in_stage_:
                     curr_error = (
                         f'Группа присутствует в таблице направлений(<Фазы, в кот. участ. направ>), '
                         f'но отсутствует таблице фаз. '
                         f'Группа={name_group}, Фаза={num_stage}'
                     )
-                elif num_stage != stage_ and name_group in groups_in_stage and stage_ not in table_groups_stages:
-                    curr_error = (
+                elif num_stage != stage_ and name_group in groups_in_stage_ and stage_ not in table_groups_stages:
+                     curr_error = (
                         f'Группа присутствует в таблице фаз, но отсутствует в таблице направлений. '
                         f'Группа={name_group}, Фаза={stage_}'
                     )
