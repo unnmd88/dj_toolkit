@@ -1107,17 +1107,22 @@ class GroupTable(CommonTables):
 
         data = data or self.raw_data
         table_groups = {}
-        for line in (group.split('\t') for group in data.replace(' ', '').splitlines() if group):
-            num_group, name_group, stages = line
-            prop_group = {
-                'type_group': name_group,
-                'all_red': True if 'красн' in stages.lower() else False,
-                'stages': sorted(stages.split(',')),
-                'ok': True,
-                'errors': []
-            }
-            # logger.debug(prop_group)
-            table_groups[num_group] = prop_group
+
+        try:
+            for line in (group.split('\t') for group in data.replace(' ', '').splitlines() if group):
+                num_group, name_group, stages = line
+                prop_group = {
+                    'type_group': name_group,
+                    'all_red': True if 'красн' in stages.lower() else False,
+                    'stages': sorted(stages.split(',')),
+                    'ok': True,
+                    'errors': []
+                }
+                # logger.debug(prop_group)
+                table_groups[num_group] = prop_group
+        except ValueError:
+            return {}
+
         ResponceMaker.save_json_to_file(table_groups, 'table_groups_new.json')
         self.group_table = table_groups
         logger.debug(self.group_table)
@@ -1148,11 +1153,15 @@ class StagesTable(CommonTables):
     def _create_stage_table(self, data: str) -> Dict[str, list]:
 
         table_stages = {}
-        for stage_prop in data.splitlines():
-            if not stage_prop:
-                continue
-            num_stage, groups_in_stage = stage_prop.split('\t')
-            table_stages[num_stage] = groups_in_stage.replace(' ', '').split(',')
+        try:
+            for stage_prop in data.splitlines():
+                if not stage_prop:
+                    continue
+                num_stage, groups_in_stage = stage_prop.split('\t')
+                table_stages[num_stage] = groups_in_stage.replace(' ', '').split(',')
+                logger.debug(table_stages[num_stage])
+        except ValueError:
+            return {}
         return table_stages
 
     def _create_groups_table(self, data: Dict[int, set], num_groups):
@@ -1170,7 +1179,9 @@ class Compares:
     Интерфейс для сравнения различных данных из паспорта
     """
 
-    def compare_groups_in_stages(self, src_group_table: str, src_stages_table: str) -> Tuple[GroupTable, bool]:
+    def compare_groups_in_stages(
+            self, src_group_table: str, src_stages_table: str
+    ) -> Tuple[GroupTable, bool, None | str]:
         """
         Проверяет на эквивалентность принадлежности группы к фазами количества групп в двух таблицах паспорта:
         таблицы направлений и таблицы временной программы
@@ -1186,7 +1197,12 @@ class Compares:
 
         table_groups = GroupTable(src_group_table, create_properties=True)
         table_stages = StagesTable(src_stages_table, create_properties=True)
+        err_in_user_data = self._check_valid_user_data(table_groups, table_stages)
         has_errors = False
+
+        if err_in_user_data is not None:
+            has_errors = True
+            return table_groups, has_errors, err_in_user_data
 
         for num_group, properties in table_groups.group_table.items():
             if properties.get('all_red'):
@@ -1198,7 +1214,7 @@ class Compares:
                 table_groups.group_table[num_group]['errors'] = error_groups_discrepancy
                 table_groups.group_table[num_group]['ok'] = False
                 has_errors = True
-        return table_groups, has_errors
+        return table_groups, has_errors, err_in_user_data
 
     def _compare_groups_discrepancy(
             self, table_groups_stages: List, name_group: str, table_stages: StagesTable
@@ -1230,6 +1246,18 @@ class Compares:
                 if curr_error is not None and curr_error not in errors:
                     errors.append(curr_error)
         return errors or None
+
+    def _check_valid_user_data(self, table_groups: GroupTable, table_stages: StagesTable):
+
+        err = None
+        if not table_groups.group_table and not table_stages.stages_table:
+            err = 'Предоставлены некоррекнтные данные таблицы направлений и таблицы фаз(временной программы)'
+        elif not table_groups.group_table:
+            err = 'Предоставлены некоррекнтные данные таблицы направлений'
+        elif not table_stages.stages_table:
+            logger.debug(table_stages)
+            err = 'Предоставлены некоррекнтные данные таблицы фаз(временной программы)'
+        return err
 
 
 
