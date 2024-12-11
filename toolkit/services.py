@@ -1080,6 +1080,11 @@ class TelegrammBot:
 
 
 class CommonTables(metaclass=abc.ABCMeta):
+    """
+    Абстрактный базовый класс для определения классов как представления той или иной
+    таблицы паспорта.
+    """
+
     def __init__(self, raw_data_from_table: str, create_properties=False):
         self.raw_data = raw_data_from_table
         self.group_table = None
@@ -1089,8 +1094,12 @@ class CommonTables(metaclass=abc.ABCMeta):
             self.create_properties()
 
     @abc.abstractmethod
-    def create_properties(self):
-        pass
+    def create_properties(self, *args, **kwargs):
+        """
+        Метод для создания свойств какой - либо таблицы из паспорта
+        :return:
+        """
+        ...
 
 
 class GroupTable(CommonTables):
@@ -1142,16 +1151,26 @@ class StagesTable(CommonTables):
     def create_properties(self):
         """
         Формирует свойства таблицы, необходимые для сравнения с таблицей фаз
-        :return:
+        :return: словарь вида {фаза: направления в фазе}
+            Пример: {'1': '1,2,3,4,5,6', '2': '1,2,3,4,5,6', '3': '2,3,4,6,10', '4': '4,7,8,9',
+                     '5': '7,8,9,11', '6': '1,2,3,4,6,10'}
         """
 
         self.stages_table = self._create_stage_table(self.raw_data)
-
+        self.group_table = self._create_groups_table(self.stages_table)
         logger.debug(self.stages_table)
-        logger.debug(self.num_groups)
         logger.debug(self.group_table)
 
     def _create_stage_table(self, data: str) -> Dict[str, str]:
+        """
+        Фомирует словарь с принадлежностью напралвений к фазе
+        :param data: строка сырых данных с разделителем r'\t' по умолчанию.
+                 Пример: '1\t1,2,3,4,5,6\n2\t1,2,3,4,5,6\n3\t2,3,4,6,10\n4\t4,7,8,9\n5\t7,8,9,11\n6\t1,2,3,4,6,10\n\n'
+        :return: словарь вида {Фаза: направления в фазе}.
+                 Пример:
+                 {'1': '1,2,3,4,5,6', '2': '1,2,3,4,5,6', '3': '2,3,4,6,10', '4': '4,7,8,9',
+                 '5': '7,8,9,11', '6': '1,2,3,4,6,10'}
+        """
 
         table_stages = {}
         try:
@@ -1160,19 +1179,26 @@ class StagesTable(CommonTables):
                     continue
                 num_stage, groups_in_stage = stage_prop
                 table_stages[num_stage] = groups_in_stage
-                logger.debug(table_stages[num_stage])
+            logger.debug(table_stages)
         except ValueError:
             return {}
         return table_stages
 
-    def _create_groups_table(self, data: Dict[int, set], num_groups):
+    def _create_groups_table(self, data: Dict[str, str]):
+        """
+        Формирует данные для колонки "Фазы в которых участвует направление" паспорта
+        :param data:
+        :param num_groups:
+        :return:
+        """
 
-        table_groups = {k: set() for k in range(1, num_groups + 1)}
-        for group in range(1, num_groups + 1):
-            for stage, groups_in_stage in data.items():
-                if group in groups_in_stage:
-                    table_groups[group].add(stage)
-        return table_groups
+        column_groups_in_stages = list(map(list.extend, (groups_in_stage for groups_in_stage in data.values())))
+        logger.debug(column_groups_in_stages)
+        for groups_in_stage in data.values():
+            groups_in_stage_ = groups_in_stage.split(',')
+
+
+
 
 
 class Compares:
