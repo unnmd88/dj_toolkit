@@ -287,20 +287,26 @@ class CompareGroupsAPI(APIView):
         data_body = request.data
         logger.debug(data_body)
 
-        # table_groups = services.GroupTable(data_body.get('content_table_groups'), create_properties=True)
-        # table_stages = services.StagesTable(data_body.get('content_table_stages'), create_properties=True)
-
         compare_group_in_stages = services.Compares()
-        responce = compare_group_in_stages.compare_groups_in_stages(
+        # responce = compare_group_in_stages.compare_groups_in_stages(
+        #     data_body.get('content_table_groups'), data_body.get('content_table_stages')
+        # )
+        table_groups, has_errors = compare_group_in_stages.compare_groups_in_stages(
             data_body.get('content_table_groups'), data_body.get('content_table_stages')
         )
-        logger.debug(responce)
-        logger.debug(responce.group_table)
-        services.ResponceMaker.save_json_to_file(responce.group_table, 'table_groups_new.json')
+        responce = {
+            'compare_groups': {
+                'groups_info': table_groups.group_table,
+                'has_errors': has_errors
+            }
+        }
+
+        # logger.debug(responce.group_table)
+        # services.ResponceMaker.save_json_to_file(responce.group_table, 'table_groups_new.json')
 
 
         logger.debug(f'Время выполнения запроса: {time.time() - start_time}')
-        return Response(responce.group_table)
+        return Response(responce)
 
 
 """ CONFLICTS(UNSORTING...)  """

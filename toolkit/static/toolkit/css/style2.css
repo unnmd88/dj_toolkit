@@ -120,6 +120,33 @@ order: 0;
 }
 
 #table_compare_groups {
-  border: 3;
+  border-radius: 3;
   padding: auto;
 }
+
+#table_result {
+  border: 2px solid rgb(140 140 140);
+}
+
+#table_result caption {
+  caption-side: top;
+  text-align: left;
+  padding-bottom: 5px;
+  font-weight: bold;
+}
+
+.errors_content {
+  text-align: left;
+  background-color: #d6ecd4;
+
+}
+
+#table_result th, #table_result td{
+  border: 1px solid rgb(160 160 160);
+  padding: 8px 10px;
+  text-align: center;
+}
+
+
+
+

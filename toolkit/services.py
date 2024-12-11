@@ -3,8 +3,6 @@
 Если брать модель Model-View-Controller , то данный модуль относится к Controller
 """
 import abc
-import functools
-import itertools
 import json
 import os
 import pathlib
@@ -1172,7 +1170,7 @@ class Compares:
     Интерфейс для сравнения различных данных из паспорта
     """
 
-    def compare_groups_in_stages(self, src_group_table: str, src_stages_table: str) -> GroupTable:
+    def compare_groups_in_stages(self, src_group_table: str, src_stages_table: str) -> Tuple[GroupTable, bool]:
         """
         Проверяет на эквивалентность принадлежности группы к фазами количества групп в двух таблицах паспорта:
         таблицы направлений и таблицы временной программы
@@ -1188,6 +1186,8 @@ class Compares:
 
         table_groups = GroupTable(src_group_table, create_properties=True)
         table_stages = StagesTable(src_stages_table, create_properties=True)
+        has_errors = False
+
         for num_group, properties in table_groups.group_table.items():
             if properties.get('all_red'):
                 continue
@@ -1195,9 +1195,10 @@ class Compares:
                 properties.get('stages'), num_group, table_stages
             )
             if error_groups_discrepancy is not None:
-                table_groups.group_table.get(num_group).get('errors').append(error_groups_discrepancy)
+                table_groups.group_table[num_group]['errors'] = error_groups_discrepancy
                 table_groups.group_table[num_group]['ok'] = False
-        return table_groups
+                has_errors = True
+        return table_groups, has_errors
 
     def _compare_groups_discrepancy(
             self, table_groups_stages: List, name_group: str, table_stages: StagesTable

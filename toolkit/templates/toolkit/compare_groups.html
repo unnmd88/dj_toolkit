@@ -4,8 +4,8 @@
 {% block content %}
 <h1>{{ title }}</h1>
 <br><br>
-<div id="main_data">
-    <Table id="table_compare_groups">
+<div id="main_div">
+    <table id="table_compare_groups">
         <tr>
             <td>
             <label for="">Таблица направлений</label>
@@ -24,11 +24,22 @@
         <tr>
 
         </tr>
-    </Table>
+    </table>
     {% csrf_token %}
     
     <br>
     <button id="calculate"> Рассчитать </button>
+    <br> <br>
+    <table id="table_result">
+        <caption>Результат сравнения групп:</caption>
+        <tr>
+            <th scope="col"> Номер направления </th>
+            <th scope="col"> Тип направления </th>
+            <th scope="col"> Фазы в которых участвует направление </th>
+            <th scope="col"> Ошибки </th>
+        </tr>
+
+    </table>
 </div>
 
 
