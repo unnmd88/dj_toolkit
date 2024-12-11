@@ -132,6 +132,5 @@ function create_row_content(num_cols, num_group, group_content) {
   tr.append(td_stages);
   tr.append(td_errors);
   return tr;
-  
 }
 
