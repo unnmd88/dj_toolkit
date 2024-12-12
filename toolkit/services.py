@@ -507,7 +507,8 @@ class ResponceMaker:
         return data_hosts
 
     @classmethod
-    def create_responce_compare_groups_in_stages(cls, table_groups: Dict, has_errors: bool, err_in_user_data: None | str):
+    def create_responce_compare_groups_in_stages(cls, table_groups: Dict, has_errors: bool,
+                                                 err_in_user_data: None | str):
 
         responce = {
             'compare_groups': {
@@ -1114,9 +1115,9 @@ class CommonTables(metaclass=abc.ABCMeta):
         """
         ...
 
-    def separators_is_valid(self, data: str, num_separators: int, required_separator: str = '\t'):
-
+    def separators_is_valid(self, data: str, num_separators: int, required_separator: str = '\t') -> bool:
         return True if num_separators == data.count(required_separator) else False
+
 
 class GroupTable(CommonTables):
     """
@@ -1134,11 +1135,11 @@ class GroupTable(CommonTables):
         logger.debug(self.stages_table)
         logger.debug(self.group_table)
 
-    def _create_groups_table(self, data: str) -> Dict:
+    def _create_groups_table(self, data: str, separator: str = '\t') -> Dict:
 
         table_groups = {}
         try:
-            for line in (group.split('\t') for group in data.replace(' ', '').splitlines() if group):
+            for line in (group.split(separator) for group in data.replace(' ', '').splitlines() if group):
                 num_group, name_group, stages = line
                 determinant_always_red = {'красн', 'Пост.красное', 'красное', '-'}
                 group_properties = {
@@ -1152,7 +1153,8 @@ class GroupTable(CommonTables):
         except ValueError:
             return {}
         ResponceMaker.save_json_to_file(table_groups, 'table_groups_new.json')
-        return table_groups
+        return table_groups if self.separators_is_valid(data=data, num_separators=len(table_groups) * 2) else {}
+
 
     def create_stages_table(self):
         pass
@@ -1199,9 +1201,10 @@ class StagesTable(CommonTables):
             logger.debug(table_stages)
         except ValueError:
             return {}
-        if not self.separators_is_valid(data=data, num_separators=len(table_stages)):
-            return {}
-        return table_stages
+        # if not self.separators_is_valid(data=data, num_separators=len(table_stages)):
+        #     return {}
+        return table_stages if self.separators_is_valid(data=data, num_separators=len(table_stages)) else {}
+        # return table_stages
 
     def _create_groups_table(self, data: Dict[str, list]) -> Dict[str, list]:
         """
@@ -1302,7 +1305,7 @@ class Compares:
                         f'Группа={name_group}, Фаза={num_stage}'
                     )
                 elif num_stage != stage_ and name_group in groups_in_stage and stage_ not in table_groups_stages:
-                     curr_error = (
+                    curr_error = (
                         f'Группа присутствует в таблице фаз, но отсутствует в таблице направлений. '
                         f'Группа={name_group}, Фаза={stage_}'
                     )
@@ -1336,6 +1339,3 @@ class Compares:
             logger.debug(table_stages)
             err = 'Предоставлены некоррекнтные данные таблицы фаз(временной программы)'
         return err
-
-
-
