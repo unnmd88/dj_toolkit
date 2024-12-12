@@ -52,8 +52,6 @@ const placeholderTableStages = `В данное поле скопируйте с
 6	1,2,3,4,6,10`;
 
 
-
-
 // Отправка запроса команды с помощью библиотеки axios
 async function compare_groups_axios(event) {
 
@@ -116,7 +114,13 @@ function displayResultCompareGroups (responce_data) {
   const num_cols = table_result.rows[0].cells.length;
   const rows = document.querySelectorAll('#table_result tr');
   
+  const userDataIsValid = responce_data.compare_groups.error_in_user_data;
   remove_rows(table_result, rows.length, 1);
+  
+  if (typeof userDataIsValid === 'string') {
+    alert('Проверьте корректность данных:\n' + userDataIsValid);
+    return false;
+  }
 
   for (const group in groups_info) {
     table_result.append(create_row_content(num_cols, group, groups_info[group]));
@@ -150,6 +154,7 @@ function create_row_content(num_cols, num_group, group_content) {
   if (errors.length > 0) {
     errors.forEach((element, idx) => {
       td_errors.innerHTML += `${idx + 1}. ${element}`  + '<br>';
+      td_errors.setAttribute("background-color", "red");
     });
   }
 
@@ -158,8 +163,4 @@ function create_row_content(num_cols, num_group, group_content) {
   tr.append(td_stages);
   tr.append(td_errors);
   return tr;
-}
-
-function setPlaceHolder(target, content) {
-  target.value = content;
 }

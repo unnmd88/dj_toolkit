@@ -1114,6 +1114,9 @@ class CommonTables(metaclass=abc.ABCMeta):
         """
         ...
 
+    def separators_is_valid(self, data: str, num_separators: int, required_separator: str = '\t'):
+
+        return True if num_separators == data.count(required_separator) else False
 
 class GroupTable(CommonTables):
     """
@@ -1121,15 +1124,19 @@ class GroupTable(CommonTables):
     в свойства направлений для сравнения с другими таблицами паспорта.
     """
 
-    def create_properties(self, data: str = None) -> Dict:
+    def create_properties(self, data: str = None):
         """
         Формирует свойства таблицы на основе "Таблицы направлений"
         :return: словарь со свойствами направлений
         """
 
-        data = data or self.raw_data
-        table_groups = {}
+        self.group_table = self._create_groups_table(self.raw_data)
+        logger.debug(self.stages_table)
+        logger.debug(self.group_table)
 
+    def _create_groups_table(self, data: str) -> Dict:
+
+        table_groups = {}
         try:
             for line in (group.split('\t') for group in data.replace(' ', '').splitlines() if group):
                 num_group, name_group, stages = line
@@ -1141,14 +1148,10 @@ class GroupTable(CommonTables):
                     'ok': True,
                     'errors': []
                 }
-                # logger.debug(group_properties)
                 table_groups[num_group] = group_properties
         except ValueError:
             return {}
-
         ResponceMaker.save_json_to_file(table_groups, 'table_groups_new.json')
-        self.group_table = table_groups
-        logger.debug(self.group_table)
         return table_groups
 
     def create_stages_table(self):
@@ -1170,11 +1173,11 @@ class StagesTable(CommonTables):
         """
 
         self.stages_table = self._create_stage_table(self.raw_data)
-        self.group_table = self._create_groups_table(self.stages_table)
         logger.debug(self.stages_table)
+        self.group_table = self._create_groups_table(self.stages_table)
         logger.debug(self.group_table)
 
-    def _create_stage_table(self, data: str) -> Dict[str, list]:
+    def _create_stage_table(self, data: str, separator: str = '\t') -> Dict[str, list]:
         """
         Фомирует словарь с принадлежностью напралвений к фазе
         :param data: строка сырых данных с разделителем r'\t' по умолчанию.
@@ -1188,13 +1191,15 @@ class StagesTable(CommonTables):
 
         table_stages = {}
         try:
-            for stage_prop in (stage.split('\t') for stage in data.replace(' ', '').splitlines() if stage):
+            for stage_prop in (stage.split(separator) for stage in data.replace(' ', '').splitlines() if stage):
                 if not stage_prop:
                     continue
                 num_stage, groups_in_stage = stage_prop
                 table_stages[num_stage] = groups_in_stage.split(',')
             logger.debug(table_stages)
         except ValueError:
+            return {}
+        if not self.separators_is_valid(data=data, num_separators=len(table_stages)):
             return {}
         return table_stages
 
@@ -1205,6 +1210,9 @@ class StagesTable(CommonTables):
         :param num_groups:
         :return:
         """
+
+        if not data:
+            return {}
 
         groups = set()
         # Сформировать множество наименований групп
