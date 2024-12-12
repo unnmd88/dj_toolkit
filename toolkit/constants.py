@@ -132,6 +132,8 @@ class RequestOptions(Enum):
     chat_id = 'chat_id'
     hosts = 'hosts'
     type_request = 'type_request'
+    compare_groups = 'compare_groups'
+    calc_groups_in_stages = 'calc_groups_in_stages'
 
 
 class JsonResponceBody(Enum):

@@ -5,11 +5,18 @@
 ------------------------------------------------------------------------*/
 
 $(document).ready(function(){
-  document.querySelector('#table_groups').placeholder = placeholderTableGroups;
-  document.querySelector('#table_stages').placeholder = placeholderTableStages;
+
+
+
+  textArea_table_group.placeholder = placeholderTableGroups;
+  textArea_table_stages.placeholder = placeholderTableStages;
+  textArea_result_calc_groups_in_stages.placeholder = placeholderGroupsInStagesResult;
+
+  textArea_table_group.disabled  = true;
+  textArea_table_stages.disabled  = true;
+
+  hideElements([textArea_table_group, textArea_table_stages, tableCompareGroups, tableResult, btnCalculate, textArea_result_calc_groups_in_stages]);
 });
-
-
 
 /*------------------------------------------------------------------------
 |                                Константы                               |
@@ -50,6 +57,24 @@ const placeholderTableStages = `В данное поле скопируйте с
 4	4,7,8,9
 5	7,8,9,11
 6	1,2,3,4,6,10`;
+const placeholderGroupsInStagesResult = `В данном поле будет результат расчёта привязки направлений к фазам
+для "Таблицы направлений"`;
+
+
+// Элементы html страницы
+const tableCompareGroups = document.querySelector("#table_compare_groups");
+const tableResult = document.querySelector("#table_result");
+const textArea_table_group = document.querySelector('#table_groups');
+const textArea_table_stages = document.querySelector('#table_stages');
+const textArea_result_calc_groups_in_stages = document.querySelector('#result_calc_groups_in_stages');
+const btnCalculate = document.querySelector('#calculate');
+const selectChooseOption = document.querySelector('#choose_option');
+const optionsSelectChooseOption = {
+  nothing: '-',
+  compare_groups: 'compare_groups',
+  calc_groups_in_stages: 'calc_groups_in_stages'
+}
+const table_result = document.querySelector('#table_result');
 
 
 // Отправка запроса команды с помощью библиотеки axios
@@ -57,12 +82,18 @@ async function compare_groups_axios(event) {
 
     const content_table_groups = document.querySelector(`#table_groups`).value;
     const content_table_stages = document.querySelector(`#table_stages`).value;
-                                                       
+    
+    const checkValidOption = optionIsChecked();
+    if (!checkValidOption) {
+      return false;
+    }
+
     let csrfToken = $("input[name=csrfmiddlewaretoken]").val();
     try {
 
         const response = await axios.post(ROOT_ROUTE_API_COMPARE_GROUPS,          
-            {
+            { 
+              option: selectChooseOption.value,
               content_table_groups: content_table_groups,
               content_table_stages: content_table_stages
             },
@@ -78,7 +109,7 @@ async function compare_groups_axios(event) {
       const res = response.data;
         console.log('response.data');
         console.log(response.data);
-        displayResultCompareGroups(response.data);
+        displayResultCompareGroups(res);
 
     } catch (error) {
         if (error.response) { // get response with a status code not in range 2xx
@@ -98,9 +129,9 @@ async function compare_groups_axios(event) {
       }
 }
 
-const calculate = document.querySelector('#calculate');
-calculate.addEventListener('click', compare_groups_axios);
-
+// Events
+btnCalculate.addEventListener('click', compare_groups_axios);
+selectChooseOption.addEventListener('change', chooseOption);
 
  /*------------------------------------------------------------------------
 |                        Запись полученых данных в дисплей                 |
@@ -110,7 +141,7 @@ calculate.addEventListener('click', compare_groups_axios);
 function displayResultCompareGroups (responce_data) {
   const div = document.querySelector('#main_div');
   const groups_info = responce_data.compare_groups.groups_info;
-  const table_result = document.querySelector('#table_result');
+
   const num_cols = table_result.rows[0].cells.length;
   const rows = document.querySelectorAll('#table_result tr');
   
@@ -154,7 +185,7 @@ function create_row_content(num_cols, num_group, group_content) {
   if (errors.length > 0) {
     errors.forEach((element, idx) => {
       td_errors.innerHTML += `${idx + 1}. ${element}`  + '<br>';
-      td_errors.setAttribute("background-color", "red");
+      td_errors.setAttribute("bgcolor", "red");
     });
   }
 
@@ -163,4 +194,40 @@ function create_row_content(num_cols, num_group, group_content) {
   tr.append(td_stages);
   tr.append(td_errors);
   return tr;
+}
+
+function chooseOption(event) {
+  // this.textContent --> получает все option!
+  if (this.value === optionsSelectChooseOption.nothing) {
+    hideElements([tableCompareGroups, tableResult, btnCalculate]);
+  }
+  else if (this.value === optionsSelectChooseOption.compare_groups) {
+    textArea_table_group.disabled  = false;
+    textArea_table_stages.disabled  = false;
+    showElements([textArea_table_group, textArea_table_stages, btnCalculate, tableCompareGroups, tableResult]);
+  }
+  else if (this.value === optionsSelectChooseOption.calc_groups_in_stages) {
+    textArea_table_group.disabled  = true;
+    showElements([textArea_table_group, textArea_table_stages, btnCalculate, tableCompareGroups, tableResult, textArea_result_calc_groups_in_stages]);
+    hideElements([textArea_table_group, tableResult]);
+  }
+}
+
+function optionIsChecked() {
+  // return selectChooseOption.value === optionsSelectChooseOption.nothing ? false : true;
+  console.log(selectChooseOption.value );
+  console.log(optionsSelectChooseOption.nothing);
+  if (selectChooseOption.value === optionsSelectChooseOption.nothing) {
+    alert("Для отправки запроса выберите опцию");
+    return false;
+  }
+  return true;
+}
+
+function hideElements(elements) {
+  elements.forEach((elem) => elem.style.display = "none");
+}
+
+function showElements(elements) {
+  elements.forEach((elem) => elem.removeAttribute("style"));
 }

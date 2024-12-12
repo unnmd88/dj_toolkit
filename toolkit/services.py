@@ -1141,6 +1141,9 @@ class GroupTable(CommonTables):
         try:
             for line in (group.split(separator) for group in data.replace(' ', '').splitlines() if group):
                 num_group, name_group, stages = line
+                if not num_group or not name_group or not stages:
+                    print('[cma[sc')
+                    continue
                 determinant_always_red = {'красн', 'Пост.красное', 'красное', '-'}
                 group_properties = {
                     'type_group': name_group,
@@ -1154,7 +1157,6 @@ class GroupTable(CommonTables):
             return {}
         ResponceMaker.save_json_to_file(table_groups, 'table_groups_new.json')
         return table_groups if self.separators_is_valid(data=data, num_separators=len(table_groups) * 2) else {}
-
 
     def create_stages_table(self):
         pass
@@ -1237,7 +1239,7 @@ class StagesTable(CommonTables):
         return groups_in_stages
 
 
-class Compares:
+class PassportProcessing:
     """
     Интерфейс для сравнения различных данных из паспорта
     """
@@ -1339,3 +1341,7 @@ class Compares:
             logger.debug(table_stages)
             err = 'Предоставлены некоррекнтные данные таблицы фаз(временной программы)'
         return err
+
+    def create_groups_in_stages_content(self, src_stages_table: str):
+
+        table_stages = StagesTable(src_stages_table, create_properties=True)

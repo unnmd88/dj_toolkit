@@ -5,15 +5,18 @@
 <h1>{{ title }}</h1>
 <br><br>
 <div id="main_div">
+    <label for="choose_option"> Выберите опцию: </label>
+    <select id="choose_option">
+        <option value="-">-</option>
+        <option value="compare_groups">Сравнить направления</option>
+        <option value="calc_groups_in_stages">Рассчитать направления в фазах</option>
+    </select>
+    <br><br>
     <table id="table_compare_groups">
         <tr>
-            <td>
-            <label for="">Таблица направлений</label>
-            
-            </td>
-            <td><label for="">Таблица фаз(Временная программа)</label>
-
-            </td>
+            <th scope="col"> Таблица направлений </th>
+            <th scope="col"> Таблица фаз(Временная программа) </th>
+            <th scope="col"> Фазы, в кот. участ. направ </th>
         </tr>
         <td>
             <textarea placeholder="" class="compare_groups" id="table_groups"></textarea> 
@@ -21,9 +24,9 @@
         <td>
             <textarea class="compare_groups" id="table_stages"></textarea>
         </td>
-        <tr>
-
-        </tr>
+        <td>
+            <textarea readonly id="result_calc_groups_in_stages"></textarea>
+        </td>
     </table>
     {% csrf_token %}
     
