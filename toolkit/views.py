@@ -292,13 +292,16 @@ class CompareGroupsAPI(APIView):
         table_groups, has_errors, err_in_user_data = compare_group_in_stages.compare_groups_in_stages(
             data_body.get('content_table_groups'), data_body.get('content_table_stages')
         )
-        responce = {
-            'compare_groups': {
-                'groups_info': table_groups.group_table,
-                'has_errors': has_errors,
-                'error_in_user_data': err_in_user_data
-            }
-        }
+        responce = services.ResponceMaker.create_responce_compare_groups_in_stages(
+            table_groups.group_table, has_errors, err_in_user_data
+        )
+        # responce = {
+        #     'compare_groups': {
+        #         'groups_info': table_groups.group_table,
+        #         'has_errors': has_errors,
+        #         'error_in_user_data': err_in_user_data
+        #     }
+        # }
 
         logger.debug(f'Время выполнения запроса: {time.time() - start_time}')
         return Response(responce)

@@ -506,6 +506,17 @@ class ResponceMaker:
                 )
         return data_hosts
 
+    @classmethod
+    def create_responce_compare_groups_in_stages(cls, table_groups: Dict, has_errors: bool, err_in_user_data: None | str):
+
+        responce = {
+            'compare_groups': {
+                'groups_info': table_groups,
+                'has_errors': has_errors,
+                'error_in_user_data': err_in_user_data
+            }
+        }
+        return responce
 
 class ControllerManagementBase:
     """
