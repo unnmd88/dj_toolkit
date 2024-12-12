@@ -1258,7 +1258,16 @@ class Compares:
 
     def _compare_groups_discrepancy(
             self, table_groups_stages: List, name_group: str, table_stages: StagesTable
-    ) -> None | str:
+    ) -> None | List[str]:
+        """
+        Проверяет соответствие приадлежности группы к фазе в "Таблице направлений" и
+        таблицы "Временная программа"(таблица фаз)
+        :param table_groups_stages: фазы из колонки "Фазы, в кот. участ. направ."
+        :param name_group: группа, для которой будет осуществляться проверка соответсвия принадлжености.
+        :param table_stages: instance класса StagesTable
+        :return: Если есть несоответствия, вернёт list с текстами пояснения несоответствий, иначе None
+        """
+
         #
         # if stages_table_group is None:
         #     continue  # добавить проверку. возможно добавить ошибку в errors что список фаз не может быть пусттым
@@ -1266,7 +1275,6 @@ class Compares:
         for num_stage in table_groups_stages:
             for stage_, groups_in_stage in table_stages.stages_table.items():
                 curr_error = None
-                # groups_in_stage_ = groups_in_stage.split(',')
                 if num_stage == stage_ and name_group not in groups_in_stage:
                     curr_error = (
                         f'Группа присутствует в таблице направлений(<Фазы, в кот. участ. направ>), '
@@ -1289,6 +1297,15 @@ class Compares:
         return errors or None
 
     def _check_valid_user_data(self, table_groups: GroupTable, table_stages: StagesTable):
+        """
+        Проверяет корректность обработки входных данных из "Таблицы направления" и "Временной программы",
+        полученные от клиента и формирует текст ошибки.
+        Если словарь table_groups.group_table и/или table_stages.stages_table
+        пустой, значит полльзоваетелем были предоставлены некорректные данные.
+        :param table_groups: instance класса GroupTable
+        :param table_stages: instance класса StagesTable
+        :return: Текст ошибки err, если данные невалидны для обработки, иначе None
+        """
 
         err = None
         if not table_groups.group_table and not table_stages.stages_table:
