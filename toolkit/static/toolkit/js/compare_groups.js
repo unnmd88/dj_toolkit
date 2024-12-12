@@ -62,6 +62,7 @@ const placeholderGroupsInStagesResult = `В данном поле будет р�
 
 
 // Элементы html страницы
+const div = document.querySelector('#main_div');
 const tableCompareGroups = document.querySelector("#table_compare_groups");
 const tableResult = document.querySelector("#table_result");
 const textArea_table_group = document.querySelector('#table_groups');
@@ -109,7 +110,8 @@ async function compare_groups_axios(event) {
       const res = response.data;
         console.log('response.data');
         console.log(response.data);
-        displayResultCompareGroups(res);
+        make_result(selectChooseOption.value, res);
+        // displayResultCompareGroups(res);
 
     } catch (error) {
         if (error.response) { // get response with a status code not in range 2xx
@@ -137,9 +139,19 @@ selectChooseOption.addEventListener('change', chooseOption);
 |                        Запись полученых данных в дисплей                 |
 --------------------------------------------------------------------------*/
 
+// Общая функция для обработки responce и формирования контента на странице
+function make_result(option, responce) {
+  if (option === optionsSelectChooseOption.compare_groups) {
+    displayResultCompareGroups(responce);
+  }
+  else if (option === optionsSelectChooseOption.calc_groups_in_stages) {
+    displayResultCalcGroupsInStages(responce);
+  }
+}
+
 // Функция форирует таблицу направлений с результатами сравнения
 function displayResultCompareGroups (responce_data) {
-  const div = document.querySelector('#main_div');
+  
   const groups_info = responce_data.compare_groups.groups_info;
 
   const num_cols = table_result.rows[0].cells.length;
@@ -156,6 +168,24 @@ function displayResultCompareGroups (responce_data) {
   for (const group in groups_info) {
     table_result.append(create_row_content(num_cols, group, groups_info[group]));
   }
+}
+
+function displayResultCalcGroupsInStages(responce_data) {
+    console.log('displayResultCalcGroupsInStages');
+  const userDataIsValid = responce_data.make_groups_in_stages.error_in_user_data;
+  if (typeof userDataIsValid === 'string') {
+    alert('Проверьте корректность данных:\n' + userDataIsValid);
+    return false;
+  }
+
+  const result = responce_data.make_groups_in_stages.calculate_result;
+  
+  for(const key in result) {
+    console.log(key);
+    console.log(result[key].join(','));
+    textArea_result_calc_groups_in_stages.textContent += `${key}\tНаправление\t${result[key].join(',')}\n`;
+  }
+
 }
 
 // Удаляет все строки 
@@ -208,6 +238,7 @@ function chooseOption(event) {
   }
   else if (this.value === optionsSelectChooseOption.calc_groups_in_stages) {
     textArea_table_group.disabled  = true;
+    textArea_table_stages.disabled  = false;
     showElements([textArea_table_group, textArea_table_stages, btnCalculate, tableCompareGroups, tableResult, textArea_result_calc_groups_in_stages]);
     hideElements([textArea_table_group, tableResult]);
   }

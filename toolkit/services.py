@@ -507,8 +507,9 @@ class ResponceMaker:
         return data_hosts
 
     @classmethod
-    def create_responce_compare_groups_in_stages(cls, table_groups: Dict, has_errors: bool,
-                                                 err_in_user_data: None | str):
+    def create_responce_compare_groups_in_stages(
+            cls, table_groups: Dict, has_errors: bool, err_in_user_data: None | str
+    ) -> Dict:
 
         responce = {
             'compare_groups': {
@@ -519,6 +520,18 @@ class ResponceMaker:
         }
         return responce
 
+    @classmethod
+    def create_groups_in_stages_content(
+            cls, table_groups: Dict, has_errors: bool, err_in_user_data: None | str
+    ) -> Dict:
+        responce = {
+            'make_groups_in_stages': {
+                'calculate_result': table_groups,
+                'has_errors': has_errors,
+                'error_in_user_data': err_in_user_data
+            }
+        }
+        return responce
 
 class ControllerManagementBase:
     """
@@ -1262,7 +1275,7 @@ class PassportProcessing:
 
         table_groups = GroupTable(src_group_table, create_properties=True)
         table_stages = StagesTable(src_stages_table, create_properties=True)
-        err_in_user_data = self._check_valid_user_data(table_groups, table_stages)
+        err_in_user_data = self._check_valid_user_data_compares_groups(table_groups, table_stages)
         has_errors = False
 
         if err_in_user_data is not None:
@@ -1321,7 +1334,9 @@ class PassportProcessing:
                     errors.append(curr_error)
         return errors or None
 
-    def _check_valid_user_data(self, table_groups: GroupTable, table_stages: StagesTable):
+    def _check_valid_user_data_compares_groups(
+            self, table_groups: GroupTable, table_stages: StagesTable
+    ) -> None | str:
         """
         Проверяет корректность обработки входных данных из "Таблицы направления" и "Временной программы",
         полученные от клиента и формирует текст ошибки.
@@ -1342,6 +1357,18 @@ class PassportProcessing:
             err = 'Предоставлены некоррекнтные данные таблицы фаз(временной программы)'
         return err
 
-    def create_groups_in_stages_content(self, src_stages_table: str):
+    def _check_valid_user_data_groups_in_stages_content(self, table_stages: StagesTable) -> None | str:
+
+        err = None
+        if not table_stages.group_table or not table_stages.stages_table:
+            err = 'Предоставлены некоррекнтные данные таблицы направлений'
+        return err
+
+    def create_groups_in_stages_content(self, src_stages_table: str) -> Tuple[StagesTable, bool, None | str]:
 
         table_stages = StagesTable(src_stages_table, create_properties=True)
+        err_in_user_data = self._check_valid_user_data_groups_in_stages_content(table_stages)
+        has_errors = False
+        if err_in_user_data is not None:
+            has_errors = True
+        return table_stages, has_errors, err_in_user_data

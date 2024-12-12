@@ -298,7 +298,12 @@ class CompareGroupsAPI(APIView):
                 table_groups.group_table, has_errors, err_in_user_data
             )
         elif option == RequestOptions.calc_groups_in_stages.value:
-            pass
+            table_groups, has_errors, err_in_user_data = manager.create_groups_in_stages_content(
+                data_body.get('content_table_stages')
+            )
+            responce = services.ResponceMaker.create_groups_in_stages_content(
+                table_groups.group_table, has_errors, err_in_user_data
+            )
 
         logger.debug(f'Время выполнения запроса: {time.time() - start_time}')
         return Response(responce)
