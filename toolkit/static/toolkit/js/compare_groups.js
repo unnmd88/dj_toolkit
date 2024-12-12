@@ -5,8 +5,8 @@
 ------------------------------------------------------------------------*/
 
 $(document).ready(function(){
-
-
+  document.querySelector('#table_groups').placeholder = placeholderTableGroups;
+  document.querySelector('#table_stages').placeholder = placeholderTableStages;
 });
 
 
@@ -24,6 +24,35 @@ const TOKEN = '7174fa6f9d0f954a92d2a5852a7fc3bcaace7578';
 const ROOT_ROUTE_API = '/api/v1/'
 const ROOT_ROUTE_API_COMPARE_GROUPS = `/api/v1/compare-groups/`;
 
+const placeholderTableGroups = `В данное поле скопируйте содержимое трёх колонок "Таблицы направлений" из паспорта объекта:
+"№ нап.", "Тип направления", "Фазы, в кот. участ. направ.
+Важно! Необходимо копировать содержимое напрямую из паспорта.
+Пример:\n
+1	Транспортное	1,2,6
+2	Транспортное	1,2,3,6
+3	Общ. трансп.	1,2,3,6
+4	Транспортное	1,2,3,4,6
+5	Поворотное	1,2
+6	Пешеходное	1,2,3,6
+7	Транспортное	4,5
+8	Пешеходное	4,5
+9	Пешеходное	4,5
+10	Пешеходное	3,6
+11	Пешеходное	5
+12	Транспортное	Пост. красное`; 
+const placeholderTableStages = `В данное поле скопируйте содержимое двух колонок "Программа x" из паспорта объекта:
+"№ фазы", "Направления"
+Важно! Необходимо копировать содержимое напрямую из паспорта.
+Пример:\n
+1	1,2,3,4,5,6
+2	1,2,3,4,5,6
+3	2,3,4,6,10
+4	4,7,8,9
+5	7,8,9,11
+6	1,2,3,4,6,10`;
+
+
+
 
 // Отправка запроса команды с помощью библиотеки axios
 async function compare_groups_axios(event) {
@@ -33,7 +62,7 @@ async function compare_groups_axios(event) {
                                                        
     let csrfToken = $("input[name=csrfmiddlewaretoken]").val();
     try {
-        // display.textContent += '\n\nИдёт отправка команды...'
+
         const response = await axios.post(ROOT_ROUTE_API_COMPARE_GROUPS,          
             {
               content_table_groups: content_table_groups,
@@ -49,9 +78,6 @@ async function compare_groups_axios(event) {
         );
 
       const res = response.data;
-        // console.log('res[result]');
-        // console.log(res['result']);
-
         console.log('response.data');
         console.log(response.data);
         displayResultCompareGroups(response.data);
@@ -66,8 +92,6 @@ async function compare_groups_axios(event) {
         } else { // Something wrong in setting up the request
           console.log('Error', error.message);
         }
-        // console.log(error.config);
-        // display.textContent += '\nКоманда не отправлена, сервер недоступен';
         
       }
 
@@ -84,6 +108,7 @@ calculate.addEventListener('click', compare_groups_axios);
 |                        Запись полученых данных в дисплей                 |
 --------------------------------------------------------------------------*/
 
+// Функция форирует таблицу направлений с результатами сравнения
 function displayResultCompareGroups (responce_data) {
   const div = document.querySelector('#main_div');
   const groups_info = responce_data.compare_groups.groups_info;
@@ -106,7 +131,8 @@ function remove_rows(table, rows_length, row_num_start) {
     }
   }
 }
-  
+
+// Функция формирует строку с контентом для таблицы table_result(результат сравнения групп)
 function create_row_content(num_cols, num_group, group_content) {
 
   let tr = document.createElement('tr');
@@ -134,3 +160,6 @@ function create_row_content(num_cols, num_group, group_content) {
   return tr;
 }
 
+function setPlaceHolder(target, content) {
+  target.value = content;
+}
