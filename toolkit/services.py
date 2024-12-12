@@ -3,6 +3,7 @@
 Если брать модель Model-View-Controller , то данный модуль относится к Controller
 """
 import abc
+import functools
 import json
 import os
 import pathlib
@@ -1161,15 +1162,16 @@ class StagesTable(CommonTables):
         logger.debug(self.stages_table)
         logger.debug(self.group_table)
 
-    def _create_stage_table(self, data: str) -> Dict[str, str]:
+    def _create_stage_table(self, data: str) -> Dict[str, list]:
         """
         Фомирует словарь с принадлежностью напралвений к фазе
         :param data: строка сырых данных с разделителем r'\t' по умолчанию.
                  Пример: '1\t1,2,3,4,5,6\n2\t1,2,3,4,5,6\n3\t2,3,4,6,10\n4\t4,7,8,9\n5\t7,8,9,11\n6\t1,2,3,4,6,10\n\n'
         :return: словарь вида {Фаза: направления в фазе}.
                  Пример:
-                 {'1': '1,2,3,4,5,6', '2': '1,2,3,4,5,6', '3': '2,3,4,6,10', '4': '4,7,8,9',
-                 '5': '7,8,9,11', '6': '1,2,3,4,6,10'}
+                 {'1': ['1', '2', '3', '4', '5', '6'], '2': ['1', '2', '3', '4', '5', '6'],
+                 '3': ['2', '3', '4', '6', '10'], '4': ['4', '7', '8', '9'],
+                 '5': ['7', '8', '9', '11'], '6': ['1', '2', '3', '4', '6', '10']}
         """
 
         table_stages = {}
@@ -1178,13 +1180,13 @@ class StagesTable(CommonTables):
                 if not stage_prop:
                     continue
                 num_stage, groups_in_stage = stage_prop
-                table_stages[num_stage] = groups_in_stage
+                table_stages[num_stage] = groups_in_stage.split(',')
             logger.debug(table_stages)
         except ValueError:
             return {}
         return table_stages
 
-    def _create_groups_table(self, data: Dict[str, str]):
+    def _create_groups_table(self, data: Dict[str, list]) -> Dict[str, list]:
         """
         Формирует данные для колонки "Фазы в которых участвует направление" паспорта
         :param data:
@@ -1192,13 +1194,24 @@ class StagesTable(CommonTables):
         :return:
         """
 
-        column_groups_in_stages = list(map(list.extend, (groups_in_stage for groups_in_stage in data.values())))
-        logger.debug(column_groups_in_stages)
-        for groups_in_stage in data.values():
-            groups_in_stage_ = groups_in_stage.split(',')
-
-
-
+        groups = set()
+        # Сформировать множество наименований групп
+        for group in functools.reduce(lambda x, y: x + y, data.values()):
+            try:
+                groups.add(int(group))
+            except ValueError:
+                groups.add(float(group))
+        logger.debug(data)
+        # Сформировать словарь в принадлежностью группы к фазам:
+        # {'1': ['1', '2', '3', '4', '5', '6'], '2': ['1', '2', '3', '4', '5', '6'] ... }
+        groups_in_stages = {group: set() for group in map(str, sorted(groups))}
+        for _group in groups_in_stages:
+            for _stage, _group_in_stages in data.items():
+                if _group in _group_in_stages:
+                    groups_in_stages[_group].add(_stage)
+                continue
+            groups_in_stages[_group] = sorted(groups_in_stages[_group])
+        return groups_in_stages
 
 
 class Compares:
@@ -1253,14 +1266,14 @@ class Compares:
         for num_stage in table_groups_stages:
             for stage_, groups_in_stage in table_stages.stages_table.items():
                 curr_error = None
-                groups_in_stage_ = groups_in_stage.split(',')
-                if num_stage == stage_ and name_group not in groups_in_stage_:
+                # groups_in_stage_ = groups_in_stage.split(',')
+                if num_stage == stage_ and name_group not in groups_in_stage:
                     curr_error = (
                         f'Группа присутствует в таблице направлений(<Фазы, в кот. участ. направ>), '
                         f'но отсутствует таблице фаз. '
                         f'Группа={name_group}, Фаза={num_stage}'
                     )
-                elif num_stage != stage_ and name_group in groups_in_stage_ and stage_ not in table_groups_stages:
+                elif num_stage != stage_ and name_group in groups_in_stage and stage_ not in table_groups_stages:
                      curr_error = (
                         f'Группа присутствует в таблице фаз, но отсутствует в таблице направлений. '
                         f'Группа={name_group}, Фаза={stage_}'
