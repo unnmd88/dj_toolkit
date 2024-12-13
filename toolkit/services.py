@@ -11,6 +11,7 @@ import shutil
 import zipfile
 import time
 from typing import Coroutine, Dict, Tuple, List
+from collections.abc import Callable
 
 from dotenv import load_dotenv
 import logging
@@ -1117,6 +1118,7 @@ class CommonTables(metaclass=abc.ABCMeta):
         self.group_table = None
         self.stages_table = None
         self.num_groups = None
+        self.responce = None
         if create_properties:
             self.create_properties()
 
@@ -1124,6 +1126,14 @@ class CommonTables(metaclass=abc.ABCMeta):
     def create_properties(self, *args, **kwargs):
         """
         Метод для создания свойств какой - либо таблицы из паспорта
+        :return:
+        """
+        ...
+
+    @abc.abstractmethod
+    def create_responce(self, *args, **kwargs):
+        """
+        Метод формирует словарь для json-responce
         :return:
         """
         ...
@@ -1174,6 +1184,18 @@ class GroupTable(CommonTables):
     def create_stages_table(self):
         pass
 
+    def create_responce(self, has_errors, err_in_user_data):
+
+        responce = {
+            'compare_groups': {
+                'groups_info': self.group_table,
+                'has_errors': has_errors,
+                'error_in_user_data': err_in_user_data
+            }
+        }
+        self.responce = responce
+        return responce
+
 
 class StagesTable(CommonTables):
     """
@@ -1181,7 +1203,7 @@ class StagesTable(CommonTables):
     в свойства направлений для сравнения с другими таблицами паспорта.
     """
 
-    def create_properties(self):
+    def create_properties(self, create_group_table: bool = False):
         """
         Формирует свойства таблицы, необходимые для сравнения с таблицей фаз
         :return: словарь вида {фаза: направления в фазе}
@@ -1191,7 +1213,10 @@ class StagesTable(CommonTables):
 
         self.stages_table = self._create_stage_table(self.raw_data)
         logger.debug(self.stages_table)
-        self.group_table = self._create_groups_table(self.stages_table)
+        if create_group_table:
+            self.group_table = self._create_groups_table(self.stages_table)
+        else:
+            self.group_table = {}
         logger.debug(self.group_table)
 
     def _create_stage_table(self, data: str, separator: str = '\t') -> Dict[str, list]:
@@ -1216,10 +1241,7 @@ class StagesTable(CommonTables):
             logger.debug(table_stages)
         except ValueError:
             return {}
-        # if not self.separators_is_valid(data=data, num_separators=len(table_stages)):
-        #     return {}
         return table_stages if self.separators_is_valid(data=data, num_separators=len(table_stages)) else {}
-        # return table_stages
 
     def _create_groups_table(self, data: Dict[str, list]) -> Dict[str, list]:
         """
@@ -1231,7 +1253,6 @@ class StagesTable(CommonTables):
 
         if not data:
             return {}
-
         groups = set()
         # Сформировать множество наименований групп
         for group in functools.reduce(lambda x, y: x + y, data.values()):
@@ -1251,15 +1272,35 @@ class StagesTable(CommonTables):
             groups_in_stages[_group] = sorted(groups_in_stages[_group])
         return groups_in_stages
 
+    def create_responce(self, has_errors, err_in_user_data):
+        """
+        Формирует словарь для json-responce
+        :param has_errors: Наличие ошибкок после расчёта.
+        :param err_in_user_data: Валидность входящих данных от пользователя
+        :return:
+        """
+
+        responce = {
+            'make_groups_in_stages': {
+                'calculate_result': self.group_table,
+                'has_errors': has_errors,
+                'error_in_user_data': err_in_user_data
+            }
+        }
+        self.responce = responce
+        return responce
+
 
 class PassportProcessing:
     """
-    Интерфейс для сравнения различных данных из паспорта
+    Интерфейс для сравнения и расчёта различных данных из паспорта объекта
     """
 
-    def compare_groups_in_stages(
-            self, src_group_table: str, src_stages_table: str
-    ) -> Tuple[GroupTable, bool, None | str]:
+    def __init__(self, raw_table_groups=None, raw_table_stages=None):
+        self.raw_table_groups = raw_table_groups
+        self.raw_table_stages = raw_table_stages
+
+    def compare_groups_in_stages(self) -> Tuple[GroupTable, bool, None | str]:
         """
         Проверяет на эквивалентность принадлежности группы к фазами количества групп в двух таблицах паспорта:
         таблицы направлений и таблицы временной программы
@@ -1273,8 +1314,8 @@ class PassportProcessing:
         :return: Словарь для json-responce вида:
         """
 
-        table_groups = GroupTable(src_group_table, create_properties=True)
-        table_stages = StagesTable(src_stages_table, create_properties=True)
+        table_groups = GroupTable(self.raw_table_groups, create_properties=True)
+        table_stages = StagesTable(self.raw_table_stages, create_properties=True)
         err_in_user_data = self._check_valid_user_data_compares_groups(table_groups, table_stages)
         has_errors = False
 
@@ -1357,18 +1398,61 @@ class PassportProcessing:
             err = 'Предоставлены некоррекнтные данные таблицы фаз(временной программы)'
         return err
 
-    def _check_valid_user_data_groups_in_stages_content(self, table_stages: StagesTable) -> None | str:
+    def _check_valid_user_data_groups_in_stages_content(self, table_stages: StagesTable, err=None) -> None | str:
+        """
+        Проверяет валидность пользовательских(входных) данных для расчёта принадлежности направоений к фазам.
+        :param table_stages: instance класса StagesTable
+        :param err: Сущность ошибки
+        :return: При некорректных входных данных строку с ошибкой, иначе None
+        """
 
-        err = None
         if not table_stages.group_table or not table_stages.stages_table:
             err = 'Предоставлены некоррекнтные данные таблицы направлений'
         return err
 
-    def create_groups_in_stages_content(self, src_stages_table: str) -> Tuple[StagesTable, bool, None | str]:
+    def create_groups_in_stages_content(self) -> Tuple[StagesTable, bool, None | str]:
+        """
+        Формирует свойства в виде словаря для расчёта принадлежности групп к фазам, для
+        "Табблицы направлений", колонок "№ нап.", "Тип направления"	"Фазы, в кот. участ. направл."
+        :return: кортеж  вида: (instance класса StagesTable, наличие ошибок после расчёта, наличие ошибок в
+                 пользовательских данных)
+        """
 
-        table_stages = StagesTable(src_stages_table, create_properties=True)
+        table_stages = StagesTable(self.raw_table_stages)
+        table_stages.create_properties(create_group_table=True)
         err_in_user_data = self._check_valid_user_data_groups_in_stages_content(table_stages)
         has_errors = False
         if err_in_user_data is not None:
             has_errors = True
         return table_stages, has_errors, err_in_user_data
+
+    def _get_method(self, option: str) -> Callable:
+        """
+        Вовращает метод, сопоставленный переданной опции
+        :param option: опция в строковом представлении
+        :return: метод, который соответсвует переданной опции
+        """
+
+        matches = {
+            'compare_groups': self.compare_groups_in_stages,
+            'calc_groups_in_stages': self.create_groups_in_stages_content
+        }
+        return matches.get(option)
+
+    def get_result(self, options: List[str]) -> Dict:
+        """
+        Метод выполняет роль менеджера: получает на вход список опций, каждой из которых соответсвует
+        свой метод. Далее для каждой опции вызывает соответсвуйщий метод из self._get_method,
+        после чего формирует общий responce для всех вызванных методов.
+        :param options: Список строк с опциями, например: [compare_groups, calc_groups_in_stages]
+        :return: Словарь для responce
+        """
+
+        responce = {}
+        try:
+            for result in map(lambda option_: self._get_method(option_)(), options):
+                obj, has_errors, err_in_user_data = result
+                responce |= obj.create_responce(has_errors, err_in_user_data)
+        except TypeError:
+            return responce
+        return responce

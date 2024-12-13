@@ -96,7 +96,7 @@ async function compare_groups_axios(event) {
 
         const response = await axios.post(ROOT_ROUTE_API_COMPARE_GROUPS,          
             { 
-              option: selectChooseOption.value,
+              options: [selectChooseOption.value],
               content_table_groups: content_table_groups,
               content_table_stages: content_table_stages
             },
@@ -174,6 +174,7 @@ function displayResultCompareGroups (responce_data) {
 
 function displayResultCalcGroupsInStages(responce_data) {
     console.log('displayResultCalcGroupsInStages');
+    textAreaResultCalcGroupsInStages.value = '';
   const userDataIsValid = responce_data.make_groups_in_stages.error_in_user_data;
   if (typeof userDataIsValid === 'string') {
     alert('Проверьте корректность данных:\n' + userDataIsValid);
@@ -229,7 +230,7 @@ function chooseOption(event) {
   // this.textContent --> получает все option!
   document.querySelectorAll('textarea').forEach((el) => {
     el.value = '';
-  })
+  });
   remove_rows(tableResultCompareGroups, tableResultCompareGroups.rows.length, 1);
   if (this.value === optionsSelectChooseOption.nothing) {
     hideElements([tableCompareGroups, tableResultCompareGroups, btnCalculate, tableCompareGroups, tableResultCalcGroupsInStages]);

@@ -285,25 +285,26 @@ class CompareGroupsAPI(APIView):
 
         start_time = time.time()
         data_body = request.data
-        option = data_body.get('option', '')
-        responce = {}
+        options = data_body.get('options', [])
         logger.debug(data_body)
-
-        manager = services.PassportProcessing()
-        if option == RequestOptions.compare_groups.value:
-            table_groups, has_errors, err_in_user_data = manager.compare_groups_in_stages(
-                data_body.get('content_table_groups'), data_body.get('content_table_stages')
-            )
-            responce = services.ResponceMaker.create_responce_compare_groups_in_stages(
-                table_groups.group_table, has_errors, err_in_user_data
-            )
-        elif option == RequestOptions.calc_groups_in_stages.value:
-            table_groups, has_errors, err_in_user_data = manager.create_groups_in_stages_content(
-                data_body.get('content_table_stages')
-            )
-            responce = services.ResponceMaker.create_groups_in_stages_content(
-                table_groups.group_table, has_errors, err_in_user_data
-            )
+        manager = services.PassportProcessing(
+            data_body.get('content_table_groups'), data_body.get('content_table_stages')
+        )
+        responce = manager.get_result(options)
+        # if option == RequestOptions.compare_groups.value:
+        #     table_groups, has_errors, err_in_user_data = manager.compare_groups_in_stages(
+        #         data_body.get('content_table_groups'), data_body.get('content_table_stages')
+        #     )
+        #     responce = services.ResponceMaker.create_responce_compare_groups_in_stages(
+        #         table_groups.group_table, has_errors, err_in_user_data
+        #     )
+        # elif option == RequestOptions.calc_groups_in_stages.value:
+        #     table_groups, has_errors, err_in_user_data = manager.create_groups_in_stages_content(
+        #         data_body.get('content_table_stages')
+        #     )
+        #     responce = services.ResponceMaker.create_groups_in_stages_content(
+        #         table_groups.group_table, has_errors, err_in_user_data
+        #     )
 
         logger.debug(f'Время выполнения запроса: {time.time() - start_time}')
         return Response(responce)
