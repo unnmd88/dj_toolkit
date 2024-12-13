@@ -1184,7 +1184,13 @@ class GroupTable(CommonTables):
     def create_stages_table(self):
         pass
 
-    def create_responce(self, has_errors, err_in_user_data):
+    def create_responce(self, has_errors: str, err_in_user_data: str) -> Dict:
+        """
+        Формирует словарь для json-responce
+        :param has_errors: Наличие ошибкок после расчёта.
+        :param err_in_user_data: Валидность входящих данных от пользователя
+        :return: словарь для json-responce
+        """
 
         responce = {
             'compare_groups': {
@@ -1272,12 +1278,12 @@ class StagesTable(CommonTables):
             groups_in_stages[_group] = sorted(groups_in_stages[_group])
         return groups_in_stages
 
-    def create_responce(self, has_errors, err_in_user_data):
+    def create_responce(self, has_errors: str, err_in_user_data: str) -> Dict:
         """
         Формирует словарь для json-responce
         :param has_errors: Наличие ошибкок после расчёта.
         :param err_in_user_data: Валидность входящих данных от пользователя
-        :return:
+        :return: словарь для json-responce
         """
 
         responce = {
