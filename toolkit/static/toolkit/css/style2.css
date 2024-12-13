@@ -118,7 +118,7 @@ order: 0;
   height: 400px;
   resize: vertical;
 }
-#result_calc_groups_in_stages {
+#textarea_result_calc_groups_in_stages {
   padding: 10px;
   max-height: 600px;
   max-width: 250px;
@@ -131,16 +131,16 @@ order: 0;
   resize: vertical;
 }
 
-#table_compare_groups {
+#table_result_compare_groups {
   border-radius: 3;
   padding: auto;
 }
 
-#table_result {
+#table_result_compare_groups {
   border: 2px solid rgb(140 140 140);
 }
 
-#table_result caption {
+.result_table caption {
   caption-side: top;
   text-align: left;
   padding-bottom: 5px;
@@ -151,7 +151,7 @@ order: 0;
   text-align: left;
 }
 
-#table_result th, #table_result td{
+#table_result_compare_groups th, #table_result_compare_groups td{
   border: 1px solid rgb(160 160 160);
   padding: 8px 10px;
   text-align: center;

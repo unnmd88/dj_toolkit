@@ -5,18 +5,12 @@
 ------------------------------------------------------------------------*/
 
 $(document).ready(function(){
-
-
-
-  textArea_table_group.placeholder = placeholderTableGroups;
-  textArea_table_stages.placeholder = placeholderTableStages;
-  textArea_result_calc_groups_in_stages.placeholder = placeholderGroupsInStagesResult;
-
-  textArea_table_group.disabled  = true;
-  textArea_table_stages.disabled  = true;
-
-  hideElements([textArea_table_group, textArea_table_stages, tableCompareGroups, tableResult, btnCalculate, textArea_result_calc_groups_in_stages]);
+  textAreaTableGroup.placeholder = placeholderTableGroups;
+  textAreaTableStages.placeholder = placeholderTableStages;
+  textAreaResultCalcGroupsInStages.placeholder = placeholderGroupsInStagesResult;
+  hideElements([tableResultCompareGroups, btnCalculate, tableCompareGroups, tableResultCalcGroupsInStages]);
 });
+
 
 /*------------------------------------------------------------------------
 |                                Константы                               |
@@ -31,10 +25,10 @@ const TOKEN = '7174fa6f9d0f954a92d2a5852a7fc3bcaace7578';
 const ROOT_ROUTE_API = '/api/v1/'
 const ROOT_ROUTE_API_COMPARE_GROUPS = `/api/v1/compare-groups/`;
 
-const placeholderTableGroups = `В данное поле скопируйте содержимое трёх колонок "Таблицы направлений" из паспорта объекта:
-"№ нап.", "Тип направления", "Фазы, в кот. участ. направ.
+const placeholderTableGroups = `В данное поле скопируйте из "Таблицы направлений" паспорта содержимое трёх колонок:
+"№ нап.", "Тип направления", "Фазы, в кот. участ. направ."
 Важно! Необходимо копировать содержимое напрямую из паспорта.
-Пример:\n
+Пример для копирования в данное поле:\n
 1	Транспортное	1,2,6
 2	Транспортное	1,2,3,6
 3	Общ. трансп.	1,2,3,6
@@ -47,27 +41,28 @@ const placeholderTableGroups = `В данное поле скопируйте с
 10	Пешеходное	3,6
 11	Пешеходное	5
 12	Транспортное	Пост. красное`; 
-const placeholderTableStages = `В данное поле скопируйте содержимое двух колонок "Программа x" из паспорта объекта:
+const placeholderTableStages = `В данное поле скопируйте из "Программа x" содержимое двух колонок:
 "№ фазы", "Направления"
 Важно! Необходимо копировать содержимое напрямую из паспорта.
-Пример:\n
+Пример для копирования в данное поле:\n
 1	1,2,3,4,5,6
 2	1,2,3,4,5,6
 3	2,3,4,6,10
 4	4,7,8,9
 5	7,8,9,11
 6	1,2,3,4,6,10`;
-const placeholderGroupsInStagesResult = `В данном поле будет результат расчёта привязки направлений к фазам
+const placeholderGroupsInStagesResult = `В данном поле будет выведен результат расчёта привязки направлений к фазам
 для "Таблицы направлений"`;
 
 
 // Элементы html страницы
 const div = document.querySelector('#main_div');
 const tableCompareGroups = document.querySelector("#table_compare_groups");
-const tableResult = document.querySelector("#table_result");
-const textArea_table_group = document.querySelector('#table_groups');
-const textArea_table_stages = document.querySelector('#table_stages');
-const textArea_result_calc_groups_in_stages = document.querySelector('#result_calc_groups_in_stages');
+const tableResultCompareGroups = document.querySelector("#table_result_compare_groups");
+const tableResultCalcGroupsInStages = document.querySelector('#table_result_calc_groups_in_stages');
+const textAreaTableGroup = document.querySelector('#table_groups');
+const textAreaTableStages = document.querySelector('#table_stages');
+const textAreaResultCalcGroupsInStages = document.querySelector('#textarea_result_calc_groups_in_stages');
 const btnCalculate = document.querySelector('#calculate');
 const selectChooseOption = document.querySelector('#choose_option');
 const optionsSelectChooseOption = {
@@ -75,8 +70,15 @@ const optionsSelectChooseOption = {
   compare_groups: 'compare_groups',
   calc_groups_in_stages: 'calc_groups_in_stages'
 }
-const table_result = document.querySelector('#table_result');
 
+
+
+const ElementsToDisableOptionCalcGroupsInStages = [
+
+]
+const ElementsToDisableCompareGroups = [
+  
+]
 
 // Отправка запроса команды с помощью библиотеки axios
 async function compare_groups_axios(event) {
@@ -135,6 +137,7 @@ async function compare_groups_axios(event) {
 btnCalculate.addEventListener('click', compare_groups_axios);
 selectChooseOption.addEventListener('change', chooseOption);
 
+
  /*------------------------------------------------------------------------
 |                        Запись полученых данных в дисплей                 |
 --------------------------------------------------------------------------*/
@@ -154,11 +157,11 @@ function displayResultCompareGroups (responce_data) {
   
   const groups_info = responce_data.compare_groups.groups_info;
 
-  const num_cols = table_result.rows[0].cells.length;
-  const rows = document.querySelectorAll('#table_result tr');
+  const num_cols = tableCompareGroups.rows[0].cells.length;
+  const rows = document.querySelectorAll('#table_result_compare_groups tr');
   
   const userDataIsValid = responce_data.compare_groups.error_in_user_data;
-  remove_rows(table_result, rows.length, 1);
+  remove_rows(tableCompareGroups, rows.length, 1);
   
   if (typeof userDataIsValid === 'string') {
     alert('Проверьте корректность данных:\n' + userDataIsValid);
@@ -166,7 +169,7 @@ function displayResultCompareGroups (responce_data) {
   }
 
   for (const group in groups_info) {
-    table_result.append(create_row_content(num_cols, group, groups_info[group]));
+    tableResultCompareGroups.append(create_row_content(num_cols, group, groups_info[group]));
   }
 }
 
@@ -183,7 +186,7 @@ function displayResultCalcGroupsInStages(responce_data) {
   for(const key in result) {
     console.log(key);
     console.log(result[key].join(','));
-    textArea_result_calc_groups_in_stages.textContent += `${key}\tНаправление\t${result[key].join(',')}\n`;
+    textAreaResultCalcGroupsInStages.textContent += `${key}\tНаправление\t${result[key].join(',')}\n`;
   }
 
 }
@@ -226,21 +229,43 @@ function create_row_content(num_cols, num_group, group_content) {
   return tr;
 }
 
+// function chooseOption(event) {
+//   // this.textContent --> получает все option!
+//   if (this.value === optionsSelectChooseOption.nothing) {
+//     hideElements([tableCompareGroups, tableResult, btnCalculate]);
+//   }
+//   else if (this.value === optionsSelectChooseOption.compare_groups) {
+//     textArea_table_group.disabled  = false;
+//     textArea_table_stages.disabled  = false;
+//     showElements([textArea_table_group, textArea_table_stages, btnCalculate, tableCompareGroups, tableResult]);
+//   }
+//   else if (this.value === optionsSelectChooseOption.calc_groups_in_stages) {
+//     textArea_table_group.disabled  = true;
+//     textArea_table_stages.disabled  = false;
+//     showElements([textArea_table_group, textArea_table_stages, btnCalculate, tableCompareGroups, tableResult, textArea_result_calc_groups_in_stages]);
+//     hideElements([textArea_table_group, tableResult]);
+//   }
+// }
+
 function chooseOption(event) {
   // this.textContent --> получает все option!
+  document.querySelectorAll('textarea').forEach((el) => {
+    el.value = '';
+  })
   if (this.value === optionsSelectChooseOption.nothing) {
-    hideElements([tableCompareGroups, tableResult, btnCalculate]);
+    hideElements([tableCompareGroups, tableResultCompareGroups, btnCalculate, tableCompareGroups, tableResultCalcGroupsInStages]);
+    return;
   }
-  else if (this.value === optionsSelectChooseOption.compare_groups) {
-    textArea_table_group.disabled  = false;
-    textArea_table_stages.disabled  = false;
-    showElements([textArea_table_group, textArea_table_stages, btnCalculate, tableCompareGroups, tableResult]);
+  showElements([tableCompareGroups, tableResultCompareGroups, btnCalculate]);
+  if (this.value === optionsSelectChooseOption.compare_groups) {
+    textAreaTableGroup.disabled  = false;
+    showElements([btnCalculate, tableCompareGroups, tableResultCompareGroups]);
+    hideElements([tableResultCalcGroupsInStages]);
   }
   else if (this.value === optionsSelectChooseOption.calc_groups_in_stages) {
-    textArea_table_group.disabled  = true;
-    textArea_table_stages.disabled  = false;
-    showElements([textArea_table_group, textArea_table_stages, btnCalculate, tableCompareGroups, tableResult, textArea_result_calc_groups_in_stages]);
-    hideElements([textArea_table_group, tableResult]);
+    textAreaTableGroup.disabled  = true;
+    hideElements([tableResultCompareGroups]);
+    showElements([tableResultCalcGroupsInStages]);
   }
 }
 

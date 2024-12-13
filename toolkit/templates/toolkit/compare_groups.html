@@ -12,28 +12,32 @@
         <option value="calc_groups_in_stages">Рассчитать направления в фазах</option>
     </select>
     <br><br>
+    <button id="calculate"> Рассчитать </button>
+    <br><br>
     <table id="table_compare_groups">
         <tr>
             <th scope="col"> Таблица направлений </th>
             <th scope="col"> Таблица фаз(Временная программа) </th>
-            <th scope="col"> Фазы, в кот. участ. направ </th>
         </tr>
         <td>
-            <textarea placeholder="" class="compare_groups" id="table_groups"></textarea> 
+            <textarea class="compare_groups" id="table_groups"></textarea> 
         </td>
         <td>
             <textarea class="compare_groups" id="table_stages"></textarea>
         </td>
-        <td>
-            <textarea readonly id="result_calc_groups_in_stages"></textarea>
-        </td>
+
     </table>
-    {% csrf_token %}
-    
-    <br>
-    <button id="calculate"> Рассчитать </button>
-    <br> <br>
-    <table id="table_result">
+    {% csrf_token %}    
+    <br><br>
+    <table class="result_table" id="table_result_calc_groups_in_stages">
+        <caption>Результат расчёта привязки направлений к фазам:</caption>
+        <tr>
+            <td>
+                <textarea readonly id="textarea_result_calc_groups_in_stages"></textarea>
+            </td>
+        </tr>
+    </table>
+    <table class="result_table" id="table_result_compare_groups">
         <caption>Результат сравнения групп:</caption>
         <tr>
             <th scope="col"> Номер направления </th>
