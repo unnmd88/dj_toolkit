@@ -156,12 +156,11 @@ function make_result(option, responce) {
 function displayResultCompareGroups (responce_data) {
   
   const groups_info = responce_data.compare_groups.groups_info;
-
   const num_cols = tableCompareGroups.rows[0].cells.length;
-  const rows = document.querySelectorAll('#table_result_compare_groups tr');
-  
+  // const rows = document.querySelectorAll('#table_result_compare_groups tr');
+  console.log(tableResultCompareGroups.rows.length);
   const userDataIsValid = responce_data.compare_groups.error_in_user_data;
-  remove_rows(tableCompareGroups, rows.length, 1);
+  remove_rows(tableResultCompareGroups, tableResultCompareGroups.rows.length, 1);
   
   if (typeof userDataIsValid === 'string') {
     alert('Проверьте корректность данных:\n' + userDataIsValid);
