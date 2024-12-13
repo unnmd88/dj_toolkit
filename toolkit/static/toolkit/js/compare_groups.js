@@ -71,76 +71,66 @@ const optionsSelectChooseOption = {
   calc_groups_in_stages: 'calc_groups_in_stages'
 }
 
+/*------------------------------------------------------------------------
+|                               Events                                   |
+------------------------------------------------------------------------*/
 
+btnCalculate.addEventListener('click', compare_groups_axios);
+selectChooseOption.addEventListener('change', chooseOption);
 
-const ElementsToDisableOptionCalcGroupsInStages = [
-
-]
-const ElementsToDisableCompareGroups = [
-  
-]
+ /*------------------------------------------------------------------------
+|                      Запрос в api и обработка запроса                   |
+--------------------------------------------------------------------------*/
 
 // Отправка запроса команды с помощью библиотеки axios
 async function compare_groups_axios(event) {
 
-    const content_table_groups = document.querySelector(`#table_groups`).value;
-    const content_table_stages = document.querySelector(`#table_stages`).value;
-    
-    const checkValidOption = optionIsChecked();
-    if (!checkValidOption) {
-      return false;
+  const content_table_groups = document.querySelector(`#table_groups`).value;
+  const content_table_stages = document.querySelector(`#table_stages`).value;
+  
+  const checkValidOption = optionIsChecked();
+  if (!checkValidOption) {
+    return false;
+  }
+
+  let csrfToken = $("input[name=csrfmiddlewaretoken]").val();
+  try {
+
+      const response = await axios.post(ROOT_ROUTE_API_COMPARE_GROUPS,          
+          { 
+            options: [selectChooseOption.value],
+            content_table_groups: content_table_groups,
+            content_table_stages: content_table_stages
+          },
+          {  
+            headers: {
+            "X-CSRFToken": csrfToken, 
+          //   
+            "Authorization": `Token ${TOKEN}`
+            }
+          }
+      );
+
+    const res = response.data;
+      make_result(selectChooseOption.value, res);
+
+  } catch (error) {
+      if (error.response) { // get response with a status code not in range 2xx
+        console.log(error.response.data);
+        console.log(error.response.status);
+        console.log(error.response.headers);
+      } else if (error.request) { // no response
+        console.log(error.request);
+      } else { // Something wrong in setting up the request
+        console.log('Error', error.message);
+      }
+      
     }
 
-    let csrfToken = $("input[name=csrfmiddlewaretoken]").val();
-    try {
-
-        const response = await axios.post(ROOT_ROUTE_API_COMPARE_GROUPS,          
-            { 
-              options: [selectChooseOption.value],
-              content_table_groups: content_table_groups,
-              content_table_stages: content_table_stages
-            },
-            {  
-              headers: {
-              "X-CSRFToken": csrfToken, 
-            //   
-              "Authorization": `Token ${TOKEN}`
-              }
-            }
-        );
-
-      const res = response.data;
-        console.log('response.data');
-        console.log(response.data);
-        make_result(selectChooseOption.value, res);
-        // displayResultCompareGroups(res);
-
-    } catch (error) {
-        if (error.response) { // get response with a status code not in range 2xx
-          console.log(error.response.data);
-          console.log(error.response.status);
-          console.log(error.response.headers);
-        } else if (error.request) { // no response
-          console.log(error.request);
-        } else { // Something wrong in setting up the request
-          console.log('Error', error.message);
-        }
-        
-      }
-
-      finally {
-        // button.removeAttribute('disabled');  
-      }
+    finally {
+      // button.removeAttribute('disabled');  
+    }
 }
-
-// Events
-btnCalculate.addEventListener('click', compare_groups_axios);
-selectChooseOption.addEventListener('change', chooseOption);
-
-
- /*------------------------------------------------------------------------
-|                        Запись полученых данных в дисплей                 |
---------------------------------------------------------------------------*/
 
 // Общая функция для обработки responce и формирования контента на странице
 function make_result(option, responce) {
@@ -152,13 +142,15 @@ function make_result(option, responce) {
   }
 }
 
-// Функция форирует таблицу направлений с результатами сравнения
+ /*------------------------------------------------------------------------
+|            Запись полученых на странице в различные элементы            |
+--------------------------------------------------------------------------*/
+
+// Функция формирует и записывает данные на странице для опции "Сравнить напрвления"
 function displayResultCompareGroups (responce_data) {
   
   const groups_info = responce_data.compare_groups.groups_info;
   const num_cols = tableCompareGroups.rows[0].cells.length;
-  // const rows = document.querySelectorAll('#table_result_compare_groups tr');
-  console.log(tableResultCompareGroups.rows.length);
   const userDataIsValid = responce_data.compare_groups.error_in_user_data;
   remove_rows(tableResultCompareGroups, tableResultCompareGroups.rows.length, 1);
   
@@ -172,8 +164,8 @@ function displayResultCompareGroups (responce_data) {
   }
 }
 
+// Функция формирует и записывает данные на странице для опции "Рассчитать направления в фазах"
 function displayResultCalcGroupsInStages(responce_data) {
-    console.log('displayResultCalcGroupsInStages');
     textAreaResultCalcGroupsInStages.value = '';
   const userDataIsValid = responce_data.make_groups_in_stages.error_in_user_data;
   if (typeof userDataIsValid === 'string') {
@@ -188,7 +180,7 @@ function displayResultCalcGroupsInStages(responce_data) {
   }
 }
 
-// Удаляет все строки 
+// Удаляет строки таблицы
 function remove_rows(table, rows_length, row_num_start) { 
   if (rows_length > row_num_start) {
     for (let i=rows_length-row_num_start; i>=row_num_start; i--) {
@@ -226,6 +218,7 @@ function create_row_content(num_cols, num_group, group_content) {
   return tr;
 }
 
+// Формирует контент элементов на странице в зависимости от выбранной опции в элементе select
 function chooseOption(event) {
   // this.textContent --> получает все option!
   document.querySelectorAll('textarea').forEach((el) => {
@@ -249,6 +242,7 @@ function chooseOption(event) {
   }
 }
 
+// Проверяет выбрана ли опция перед отправкой запроса в api
 function optionIsChecked() {
   if (selectChooseOption.value === optionsSelectChooseOption.nothing) {
     alert("Для отправки запроса выберите опцию");
@@ -257,10 +251,12 @@ function optionIsChecked() {
   return true;
 }
 
+// Скрывает на странице переданные элементы
 function hideElements(elements) {
   elements.forEach((elem) => elem.style.display = "none");
 }
 
+// Показывает на странице переданные элементы
 function showElements(elements) {
   elements.forEach((elem) => elem.removeAttribute("style"));
 }
