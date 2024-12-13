@@ -1341,6 +1341,40 @@ class PassportProcessing:
                 has_errors = True
         return table_groups, has_errors, err_in_user_data
 
+    def create_groups_in_stages_content(self) -> Tuple[StagesTable, bool, None | str]:
+        """
+        Формирует свойства в виде словаря для расчёта принадлежности групп к фазам, для
+        "Табблицы направлений", колонок "№ нап.", "Тип направления"	"Фазы, в кот. участ. направл."
+        :return: кортеж  вида: (instance класса StagesTable, наличие ошибок после расчёта, наличие ошибок в
+                 пользовательских данных)
+        """
+
+        table_stages = StagesTable(self.raw_table_stages)
+        table_stages.create_properties(create_group_table=True)
+        err_in_user_data = self._check_valid_user_data_groups_in_stages_content(table_stages)
+        has_errors = False
+        if err_in_user_data is not None:
+            has_errors = True
+        return table_stages, has_errors, err_in_user_data
+
+    def get_result(self, options: List[str]) -> Dict:
+        """
+        Метод выполняет роль менеджера: получает на вход список опций, каждой из которых соответсвует
+        свой метод. Далее для каждой опции вызывает соответсвуйщий метод из self._get_method,
+        после чего формирует общий responce для всех вызванных методов.
+        :param options: Список строк с опциями, например: [compare_groups, calc_groups_in_stages]
+        :return: Словарь для responce
+        """
+
+        responce = {}
+        try:
+            for result in map(lambda option_: self._get_method(option_)(), options):
+                obj, has_errors, err_in_user_data = result
+                responce |= obj.create_responce(has_errors, err_in_user_data)
+        except TypeError:
+            return responce
+        return responce
+
     def _compare_groups_discrepancy(
             self, table_groups_stages: List, name_group: str, table_stages: StagesTable
     ) -> None | List[str]:
@@ -1416,22 +1450,6 @@ class PassportProcessing:
             err = 'Предоставлены некоррекнтные данные таблицы направлений'
         return err
 
-    def create_groups_in_stages_content(self) -> Tuple[StagesTable, bool, None | str]:
-        """
-        Формирует свойства в виде словаря для расчёта принадлежности групп к фазам, для
-        "Табблицы направлений", колонок "№ нап.", "Тип направления"	"Фазы, в кот. участ. направл."
-        :return: кортеж  вида: (instance класса StagesTable, наличие ошибок после расчёта, наличие ошибок в
-                 пользовательских данных)
-        """
-
-        table_stages = StagesTable(self.raw_table_stages)
-        table_stages.create_properties(create_group_table=True)
-        err_in_user_data = self._check_valid_user_data_groups_in_stages_content(table_stages)
-        has_errors = False
-        if err_in_user_data is not None:
-            has_errors = True
-        return table_stages, has_errors, err_in_user_data
-
     def _get_method(self, option: str) -> Callable:
         """
         Вовращает метод, сопоставленный переданной опции
@@ -1445,20 +1463,4 @@ class PassportProcessing:
         }
         return matches.get(option)
 
-    def get_result(self, options: List[str]) -> Dict:
-        """
-        Метод выполняет роль менеджера: получает на вход список опций, каждой из которых соответсвует
-        свой метод. Далее для каждой опции вызывает соответсвуйщий метод из self._get_method,
-        после чего формирует общий responce для всех вызванных методов.
-        :param options: Список строк с опциями, например: [compare_groups, calc_groups_in_stages]
-        :return: Словарь для responce
-        """
 
-        responce = {}
-        try:
-            for result in map(lambda option_: self._get_method(option_)(), options):
-                obj, has_errors, err_in_user_data = result
-                responce |= obj.create_responce(has_errors, err_in_user_data)
-        except TypeError:
-            return responce
-        return responce
