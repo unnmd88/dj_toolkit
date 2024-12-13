@@ -181,13 +181,10 @@ function displayResultCalcGroupsInStages(responce_data) {
   }
 
   const result = responce_data.make_groups_in_stages.calculate_result;
-  
-  for(const key in result) {
-    console.log(key);
-    console.log(result[key].join(','));
-    textAreaResultCalcGroupsInStages.textContent += `${key}\tНаправление\t${result[key].join(',')}\n`;
-  }
 
+  for(const key in result) {
+    textAreaResultCalcGroupsInStages.value += `${key}\tНаправление\t${result[key].join(',')}\n`;
+  }
 }
 
 // Удаляет все строки 
@@ -228,29 +225,12 @@ function create_row_content(num_cols, num_group, group_content) {
   return tr;
 }
 
-// function chooseOption(event) {
-//   // this.textContent --> получает все option!
-//   if (this.value === optionsSelectChooseOption.nothing) {
-//     hideElements([tableCompareGroups, tableResult, btnCalculate]);
-//   }
-//   else if (this.value === optionsSelectChooseOption.compare_groups) {
-//     textArea_table_group.disabled  = false;
-//     textArea_table_stages.disabled  = false;
-//     showElements([textArea_table_group, textArea_table_stages, btnCalculate, tableCompareGroups, tableResult]);
-//   }
-//   else if (this.value === optionsSelectChooseOption.calc_groups_in_stages) {
-//     textArea_table_group.disabled  = true;
-//     textArea_table_stages.disabled  = false;
-//     showElements([textArea_table_group, textArea_table_stages, btnCalculate, tableCompareGroups, tableResult, textArea_result_calc_groups_in_stages]);
-//     hideElements([textArea_table_group, tableResult]);
-//   }
-// }
-
 function chooseOption(event) {
   // this.textContent --> получает все option!
   document.querySelectorAll('textarea').forEach((el) => {
     el.value = '';
   })
+  remove_rows(tableResultCompareGroups, tableResultCompareGroups.rows.length, 1);
   if (this.value === optionsSelectChooseOption.nothing) {
     hideElements([tableCompareGroups, tableResultCompareGroups, btnCalculate, tableCompareGroups, tableResultCalcGroupsInStages]);
     return;
@@ -269,9 +249,6 @@ function chooseOption(event) {
 }
 
 function optionIsChecked() {
-  // return selectChooseOption.value === optionsSelectChooseOption.nothing ? false : true;
-  console.log(selectChooseOption.value );
-  console.log(optionsSelectChooseOption.nothing);
   if (selectChooseOption.value === optionsSelectChooseOption.nothing) {
     alert("Для отправки запроса выберите опцию");
     return false;
