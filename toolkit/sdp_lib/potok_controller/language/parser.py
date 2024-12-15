@@ -20,6 +20,7 @@ pg = ParserGenerator(
     ]
 )
 
+
 # class Parser:
 #     TOKENS = (
 #         "L_PAREN", "R_PAREN",
@@ -81,16 +82,15 @@ def expression_op(p):
         return left * right
 
 
-
 txt = "(3 + 3*(2 + 4*(2+15))  * 3) * 2"
-# txt = "3 + 3* (2 + 4) + 2"
 lexer = lg.build()
 
 for token in lexer.lex(txt):
     print(token)
 
-
 parser = pg.build()
 
 print(parser.parse(lexer.lex(txt)))
+
+
 
