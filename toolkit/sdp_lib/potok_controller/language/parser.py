@@ -1,7 +1,6 @@
 from rply import ParserGenerator
 from rply.token import BaseBox
 
-from lexer import lg
 
 TOKENS = (
     "L_PAREN",
@@ -9,14 +8,17 @@ TOKENS = (
     "PLUS",
     "SUB",
     "MUL",
-    'NUM'
+    "NUM",
+    "AND",
+    "OR"
 )
 
 pg = ParserGenerator(
     TOKENS,
     precedence=[
         ("left", ['PLUS', 'SUB']),
-        ("left", ['MUL'])
+        ("left", ['MUL']),
+        ("left", ['OR', 'AND'])
     ]
 )
 
@@ -69,6 +71,8 @@ def expression_br(p):
 @pg.production("expression : expression PLUS expression")
 @pg.production("expression : expression SUB expression")
 @pg.production("expression : expression MUL expression")
+@pg.production("expression : expression AND expression")
+@pg.production("expression : expression OR expression")
 def expression_op(p):
     left = p[0]
     op = p[1]
@@ -80,17 +84,25 @@ def expression_op(p):
         return left - right
     elif op.gettokentype() == "MUL":
         return left * right
+    elif op.gettokentype() == "AND":
+        return left & right
+        # return int(bool(left) & bool(right))
+    elif op.gettokentype() == "OR":
+        return left | right
+        # return int(bool(left) & bool(right))
 
 
-txt = "(3 + 3*(2 + 4*(2+15))  * 3) * 2"
-lexer = lg.build()
 
-for token in lexer.lex(txt):
-    print(token)
 
-parser = pg.build()
+if __name__ == '__main__':
+    txt = "(3 + 3*(2 + 4*(2+15))  * 3) * 2"
+    from lexer import lg
+    lexer = lg.build()
+    for token in lexer.lex(txt):
+        print(token)
+    parser = pg.build()
 
-print(parser.parse(lexer.lex(txt)))
+    print(parser.parse(lexer.lex(txt)))
 
 
 

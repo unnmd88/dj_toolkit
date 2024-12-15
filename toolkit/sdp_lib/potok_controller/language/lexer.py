@@ -9,6 +9,8 @@ lg.add("PLUS", r"\+")
 lg.add("SUB", r'\-')
 lg.add("MUL", r'\*')
 lg.add('NUM', r'\d+')
+lg.add('AND', r'and')
+lg.add('OR', r'or')
 
 lg.ignore(r'\s+')
 
