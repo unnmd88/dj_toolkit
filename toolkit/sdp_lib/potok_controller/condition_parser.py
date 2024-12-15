@@ -30,8 +30,8 @@ class ConditionParser:
                 else:
                     raise ValueError('Неверный аргумент функции mr')
                 token = self.add_token(f_name, fragment, arg)
-            elif 'fctmg' in fragment:
-                f_name = 'fctmg'
+            elif 'fctg' in fragment:
+                f_name = 'fctg'
                 arg = 'G'
                 token = f'{self.add_token(f_name, fragment, arg)} {data.pop(i + 1)} {data.pop(i + 1)}'
             else:
@@ -50,7 +50,7 @@ class ConditionParser:
             'ddo': r'[0-9]{1,3}',
             'ngp': r'[0-9]{1,3}',
             'mr': r'[1-9]{1,2}',
-            'fctmg': r'[1-9]{1,2}'
+            'fctg': r'[1-9]{1,2}'
         }
 
         pattern = patterns_regexp.get(f_name)
@@ -63,7 +63,7 @@ class ConditionParser:
 string = (
     '(ddr(D33) or ddr(D34) or ddr(D35) or ddr(D36) or ddr(D37) or ddr(D38) or ddr(D39) or ddr(D40) '
     'or ddr(D41) or ddr(D42) or ddr(D43) or ddr(D44) or ddr(D45) or ddr(D46) or ddr(D47)) and mr(G1)'
-    ' and fctmg(G1) >= 40 and ddr(D1) or not ddr(D120)')
+    ' and fctg(G1) >= 40 and ddr(D1) or not ddr(D120)')
 
 manager = ConditionParser(string)
 

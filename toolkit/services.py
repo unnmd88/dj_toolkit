@@ -97,9 +97,9 @@ class QuerysetToDB:
     @sync_to_async()
     def async_db_query(param_for_search):
         queryset = TrafficLightsObjects.objects.filter(number=int(param_for_search))
-        res = queryset.values()
+        res = queryset.values_()
         if res:
-            res = queryset.values()[0]
+            res = queryset.values_()[0]
         logger.debug(res)
         return res
 
