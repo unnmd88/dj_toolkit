@@ -1,5 +1,6 @@
-from enum import Enum
-
+"""
+В данном модуле определены константы для ДК Поток
+"""
 
 DET_FUNCTIONS = (
     'ddr', 'ddo', 'ngp'
@@ -12,6 +13,3 @@ SG_FUNCTIONS = (
 ALLOWED_FUNCTIONS = (
     'ddr', 'mr', 'fctg', 'ddo', 'ngp', 'fcra', 'fcfg', 'fceg', 'fcflg', 'fca', 'fcr',
 )
-
-class Functions(Enum):
-    pass
