@@ -63,6 +63,15 @@ class TestConditionParse(TestCase):
         with self.assertRaises(TypeError) as e:
             condition_parser.ConditionParser('any_string')._get_arg('drr', '(drr(D2)))')
 
+    def test__validate_fctg(self):
+        with self.assertRaises(TypeError) as e:
+            condition_parser.ConditionParser('any_string')._validate_fctg('fctg(G1)', '=', '40')
+        with self.assertRaises(ValueError) as e:
+            condition_parser.ConditionParser('any_string')._validate_fctg('fctg(G1)', '>=', '04')
+        with self.assertRaises(ValueError) as e:
+            condition_parser.ConditionParser('any_string')._validate_fctg('fctg(G1)', '<=', 'abra')
+
+
 
 if __name__ == '__main__':
     main()
