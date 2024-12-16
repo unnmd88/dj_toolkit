@@ -2,14 +2,13 @@ from typing import List, Dict
 
 from .lexer import lg
 from .parser import pg
-
 from .condition_parser import ConditionParser
 
+"""
+Модуль предоставляет api для взаимодействия со условиями перехода/продления
+из Traffic lights configurator контроллера Поток
+"""
 
-"""
-Модуль предоставляет api для взаимодействия со условиями-выражениями перехода/продления
-из Traffic lights configurator
-"""
 
 class BaseCondition:
     """
@@ -137,4 +136,3 @@ if __name__ == '__main__':
     # language_parser = Tokens(string_condition)
     # buttons_for_web = language_parser.get_tokens()
     # print()
-
