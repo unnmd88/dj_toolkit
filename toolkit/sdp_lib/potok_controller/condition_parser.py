@@ -33,10 +33,9 @@ class ConditionParser:
             for f_name in ALLOWED_FUNCTIONS:
                 if f_name in fragment:
                     arg = self._get_arg(f_name, fragment)
-                    token = (
-                        f'{self.add_token(f_name, fragment, arg)} {data.pop(i + 1)} {data.pop(i + 1)}'
-                        if f_name == 'fctg' else self.add_token(f_name, fragment, arg)
-                    )
+                    token = self.add_token(f_name, fragment, arg)
+                    if f_name == 'fctg':
+                        token = self._validate_fctg(token, data.pop(i + 1), data.pop(i + 1))
                     break
             if token is None:
                 continue
@@ -48,7 +47,22 @@ class ConditionParser:
         self.tokens = tokens
         return tokens
 
-    def add_token(self, f_name: str, fragment: str, name_argument: str):
+    def _validate_fctg(self, token: str, operator: str, value: str) -> str:
+        """
+        Проверяет валидность оператора и значения для функции fctg.
+        :param token: fctg по дефолту
+        :param operator: оператор из функции условия вызова/продления
+        :param value: значение из функции условия вызова/продления
+        :return: Токен(функция). Пример: 'fctg(G1) >= 40'
+        """
+
+        if operator not in {'>', '<', '==', '>=', '<='}:
+            raise TypeError(f'Недопустимый оператор для функции fctg: {operator}')
+        if not value.isdigit() or value.startswith('0'):
+            raise ValueError(f'Недопустимое значение функции fctg: {value}')
+        return f'{token} {operator} {value}'
+
+    def add_token(self, f_name: str, fragment: str, name_argument: str) -> str:
         """
         Генерирует токен(функцию)
         :param f_name: имя функции: 'ddr', 'mr', 'fctg' и т.д.
@@ -74,7 +88,7 @@ class ConditionParser:
             raise ValueError(f'Неверный аргумент функции {f_name}: {"".join(digit_argument)}')
         return f'{f_name}({name_argument}{digit_argument[0]})'
 
-    def _get_arg(self, f_name: str, fragment: str):
+    def _get_arg(self, f_name: str, fragment: str) -> str:
         """
         Определяет часть аргумента для переданной функции.
         :param f_name: имя токена-функции контроллера Поток: 'ddr', 'mr', 'fctg' и т.д.

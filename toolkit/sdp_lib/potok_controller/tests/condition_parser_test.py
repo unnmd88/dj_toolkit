@@ -22,6 +22,7 @@ class TestConditionParse(TestCase):
             'and fctg(G1) >= 40'
         )
         tokens = condition_parser.ConditionParser(string).create_tokens()
+        print(tokens)
 
         self.assertEqual(tokens, expected_tokens)
 
