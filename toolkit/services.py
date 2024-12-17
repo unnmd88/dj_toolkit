@@ -12,7 +12,6 @@ import zipfile
 import time
 from typing import Coroutine, Dict, Tuple, List
 from collections.abc import Callable
-
 from dotenv import load_dotenv
 import logging
 
@@ -20,12 +19,12 @@ import _asyncio
 import aiohttp
 import asyncio
 import ipaddress
-
 from asgiref.sync import sync_to_async
 from django.forms import model_to_dict
 from toolkit.models import TrafficLightsObjects, SaveConfigFiles, TelegrammUsers
 from toolkit.sdp_lib import controller_management, controllers
 from engineering_tools.settings import MEDIA_ROOT
+
 from .constants import (
     AvailableControllers,
     AvailableSetCommandsController,
@@ -36,6 +35,7 @@ from .constants import (
     RequestOptions,
     AvailableTypesRequest
 )
+from toolkit.sdp_lib.potok_controller import user_api
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -1464,3 +1464,11 @@ class PassportProcessing:
         return matches.get(option)
 
 
+class GetFunctionsPotokTrafficLightsConfigurator:
+
+    def __init__(self, condition_string):
+        self.condition_string = condition_string
+        self.functions = {}
+
+    def get_functions(self):
+        pass
