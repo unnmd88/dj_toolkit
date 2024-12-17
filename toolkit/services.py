@@ -35,7 +35,7 @@ from .constants import (
     RequestOptions,
     AvailableTypesRequest
 )
-from toolkit.sdp_lib.potok_controller import user_api
+from toolkit.sdp_lib.potok_controller import potok_user_api
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -1471,4 +1471,4 @@ class GetFunctionsPotokTrafficLightsConfigurator:
         self.functions = {}
 
     def get_functions(self):
-        pass
+        return potok_user_api.Tokens(self.condition_string).get_tokens()

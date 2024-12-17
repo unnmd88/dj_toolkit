@@ -19,8 +19,7 @@ $(document).ready(function(){
 const TOKEN = 'a090474ab50a6ec440eef021295d5f0e750afa00';
 //shared_desktop
 // const TOKEN = 'fb682e5942fa8ce5c26ab8cd3e8eaba41c4cd961';
-const ROOT_ROUTE_API = '/api/v1/'
-const ROOT_ROUTE_API_COMPARE_GROUPS = `/api/v1/compare-groups/`;
+const ROUTE_API_TLC = `/api/v1/potok-tlc/`;
 
 const input_condition = document.querySelector('#condition');
 const btn_create_buttons = document.querySelector('#create_functions');
@@ -46,7 +45,7 @@ async function getFunctionsFromConditionAxios(event) {
   let csrfToken = $("input[name=csrfmiddlewaretoken]").val();
   try {
 
-      const response = await axios.post(ROOT_ROUTE_API_COMPARE_GROUPS,          
+      const response = await axios.post(ROUTE_API_TLC,          
           { 
             options: [],
             condition: condition,
@@ -61,6 +60,7 @@ async function getFunctionsFromConditionAxios(event) {
       );
 
     const res = response.data;
+    console.log(res);  
 
 
   } catch (error) {
@@ -77,7 +77,7 @@ async function getFunctionsFromConditionAxios(event) {
     }
 
     finally {
-      // button.removeAttribute('disabled');  
+      
     }
 }
 
@@ -88,3 +88,14 @@ async function getFunctionsFromConditionAxios(event) {
 |            Запись полученых на странице в различные элементы            |
 --------------------------------------------------------------------------*/
 
+ /*------------------------------------------------------------------------
+|   Создать таблицу с функциями из строки условия перехода/продления      |
+--------------------------------------------------------------------------*/
+
+function createTable (response) {
+  const table = document.createElement('table');
+  input_condition.append(table);
+  table.setAttribute('id', 'table_functions');
+  tr = document.createElement('td');
+  table.setAttribute('')
+}

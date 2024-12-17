@@ -316,8 +316,12 @@ class PotokTrafficLightsConfiguratorAPI(APIView):
     def post(self, request):
         start_time = time.time()
         data_body = request.data
+        condition = data_body.get('condition')
         print(f'data_body: {data_body}')
-        functions_from_condition_string = ...
+        functions_from_condition_string = services.GetFunctionsPotokTrafficLightsConfigurator(condition)
+        print(f'funcs: {functions_from_condition_string.get_functions()}')
+
+        return Response({'result': functions_from_condition_string.get_functions()})
 
 
 """ CONFLICTS(UNSORTING...)  """
