@@ -22,5 +22,16 @@ class TestGetTokens(TestCase):
         ])
 
 
+class TestChecker(TestCase):
+
+    def test_check_parens(self):
+        self.assertFalse(user_api.Checker('(ddr(D1))').check_parens())
+        self.assertFalse(user_api.Checker('ddr(D1) and (not (ddr(D3)))').check_parens())
+        self.assertFalse(user_api.Checker('(mr(G1) or (mr(G2) and mr(G3)) or mr(G4))').check_parens())
+        self.assertTrue(user_api.Checker('ddr(D1) or (ddr(D1) and ddr(D2)))').check_parens())
+        self.assertTrue(user_api.Checker('ddr(D1) or (((((ddr(D1) and ddr(D2)))').check_parens())
+        self.assertTrue(user_api.Checker('ddr(D1) and (((ddr(D2) or ddr(D3))').check_parens())
+
+
 if __name__ == '__main__':
     main()

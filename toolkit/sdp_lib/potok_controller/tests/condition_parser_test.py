@@ -72,6 +72,5 @@ class TestConditionParse(TestCase):
             condition_parser.ConditionParser('any_string')._validate_fctg('fctg(G1)', '<=', 'abra')
 
 
-
 if __name__ == '__main__':
     main()

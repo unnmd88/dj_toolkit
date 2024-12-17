@@ -1,13 +1,13 @@
+"""
+Модуль предоставляет api для взаимодействия со условиями перехода/продления
+из Traffic lights configurator контроллера Поток
+"""
+import collections
 from typing import List, Dict
 
 from .lexer import lg
 from .parser import pg
 from .condition_parser import ConditionParser
-
-"""
-Модуль предоставляет api для взаимодействия со условиями перехода/продления
-из Traffic lights configurator контроллера Поток
-"""
 
 
 class BaseCondition:
@@ -26,7 +26,7 @@ class BaseCondition:
         self.condition_string = condition_string
 
 
-class ConditionResult:
+class ConditionResult(BaseCondition):
     """
     Класс обработки строки условия перехода/продления из tlc конфигурации контроллера Поток
     """
@@ -41,7 +41,7 @@ class ConditionResult:
                                     перехода/продления с заданными значениями
         """
 
-        self.condition_string = condition_string
+        super().__init__(condition_string)
         self.condition_string_vals_instead_func = None
         self.current_result = None
 
@@ -91,7 +91,7 @@ class ConditionResult:
         return self.condition_string_vals_instead_func
 
 
-class Tokens:
+class Tokens(BaseCondition):
     """
     Обработка токенов конфигурации tlc контроллера Поток.
     В данном контексте токен эквивалентен функции из строки с условием перехода/продления.
@@ -103,7 +103,7 @@ class Tokens:
         :param condition_data: Строка с условием перехода/продления из tlc конфигурации контроллера Поток
         """
 
-        self.condition_string = condition_string
+        super().__init__(condition_string)
         self.current_tokens = None
 
     def get_tokens(self) -> List:
@@ -115,6 +115,33 @@ class Tokens:
         # condition_parser = ConditionParser(self.condition_data)
         self.current_tokens = ConditionParser(self.condition_string).create_tokens()
         return self.current_tokens
+
+
+class Checker(BaseCondition):
+    """
+    Содержит различные проверки строки условия/перехода конфигурации tlc
+    """
+
+    def check_parens(self) -> List:
+        """
+        Проверяет корректность расставленных скобок в строке условия вызова/продления
+        :return: Пустой список, если открывающие и закрывающие скобки расставлены корректно.
+                 Если стек пуст и встречается закрывающая скобка - возвращает список с одной закрывающей скобкой [')']
+                 Если отсутствуют необходимые закрывающие скобки - возвращает список скобок,
+                 которые не были закрыты. Например из строки 'ddr(D1) and (((ddr(D2) or ddr(D3))' вернёт ['(', '(']
+        """
+
+        stack = []
+        for char in self.condition_string:
+            if char == '(':
+                stack.append(char)
+            elif char == ')':
+                if stack and stack[-1] == '(':
+                    stack.pop()
+                elif not stack:
+                    stack.append(char)
+                    break
+        return stack
 
 
 if __name__ == '__main__':
