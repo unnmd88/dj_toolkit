@@ -310,6 +310,16 @@ class CompareGroupsAPI(APIView):
         return Response(responce)
 
 
+class PotokTrafficLightsConfiguratorAPI(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        start_time = time.time()
+        data_body = request.data
+        print(f'data_body: {data_body}')
+        functions_from_condition_string = ...
+
+
 """ CONFLICTS(UNSORTING...)  """
 
 
@@ -424,6 +434,13 @@ class CompareGroups(TemplateView):
     }
 
 
+class PotokTrafficLightsConfigurator(TemplateView):
+    template_name = 'toolkit/potok_tlc.html'
+    extra_context = {
+        'title': 'Поток Traffic Lights Configurator'
+    }
+
+
 def index(request):
     print('ind')
 
@@ -448,7 +465,7 @@ def login(request):
     return HttpResponse('Авторизация')
 
 
-def options(request):
+def options_(request):
     return HttpResponse('Возможности')
 
 

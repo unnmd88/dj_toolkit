@@ -157,6 +157,9 @@ order: 0;
   text-align: center;
 }
 
-
+#condition {
+  width: 800px;
+  height: 25px;
+}
 
 

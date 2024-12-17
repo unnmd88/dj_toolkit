@@ -9,7 +9,7 @@ from .views import (
     ControllerManagementHostsConfigurationViewSetAPI,
     SearchByNumberTrafficLightsAPIView,
     ControllerManagementAPI,
-    TrafficLightsUpdate, CompareGroups, CompareGroupsAPI
+    TrafficLightsUpdate, CompareGroups, CompareGroupsAPI, PotokTrafficLightsConfiguratorAPI
 )
 
 
@@ -23,7 +23,7 @@ urlpatterns = [
     path('about/', views.about, name='about'),
     path("login/", views.login, name='login'),
     path("contact/", views.contact, name='contact'),
-    path("options/", views.options, name='options'),
+    path("options/", views.options_, name='options'),
     path("swarco/", views.controller_swarco, name='swarco'),
     path("peek/", views.controller_peek, name='peek'),
     path("potok/", views.controller_potok, name='potok'),
@@ -34,6 +34,7 @@ urlpatterns = [
     path("manage_controllers/", views.ManageControllers.as_view(), name='manage_controllers'),
     path("download_config/", views.DownloadConfig.as_view(), name='download_config'),
     path("compare_groups/", views.CompareGroups.as_view(), name='compare_groups'),
+    path("potok_tlc/", views.PotokTrafficLightsConfigurator.as_view(), name='potok_tlc'),
 
     path("api/v1/", include(router.urls)),
     path("api/v1/manage-controller/", ControllerManagementAPI.as_view()),
@@ -42,6 +43,8 @@ urlpatterns = [
     # path("api/v1/download-config-web/", DownloadFileFromControllerAPI.as_view()),
 
     path("api/v1/compare-groups/", CompareGroupsAPI.as_view()),
+
+    path("api/v1/potok-tlc/", PotokTrafficLightsConfiguratorAPI.as_view()),
 
     path('api/v1/trafficlight-objects/<str:number>', SearchByNumberTrafficLightsAPIView.as_view()),
     path('api/v1/update_trafficlihgtdata/', TrafficLightsUpdate.as_view()),

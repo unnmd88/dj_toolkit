@@ -3,7 +3,6 @@
 из Traffic lights configurator контроллера Поток
 """
 
-import queue
 from typing import List, Dict
 
 from .lexer import lg
