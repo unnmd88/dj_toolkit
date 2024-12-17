@@ -2,7 +2,8 @@
 Модуль предоставляет api для взаимодействия со условиями перехода/продления
 из Traffic lights configurator контроллера Поток
 """
-import collections
+
+import queue
 from typing import List, Dict
 
 from .lexer import lg
