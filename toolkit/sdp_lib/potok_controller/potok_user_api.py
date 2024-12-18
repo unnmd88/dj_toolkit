@@ -2,15 +2,18 @@
 Модуль предоставляет api для взаимодействия со условиями перехода/продления
 из Traffic lights configurator контроллера Поток
 """
-
+import abc
 from typing import List, Dict
 
 from .lexer import lg
 from .parser import pg
 from .condition_parser import ConditionParser
 
+lexer = lg.build()
+parser = pg.build()
 
-class BaseCondition:
+
+class BaseCondition(metaclass=abc.ABCMeta):
     """
     Базовый класс, связанный с обработкой строки условия перехода/продления
     из конфигурации tlc контроллера Поток.
@@ -85,8 +88,6 @@ class ConditionResult(BaseCondition):
         else:
             raise TypeError(f'Некорректный тип данных: {type(data)}. Допустимый тип "str" или "dict"')
 
-        lexer = lg.build()
-        parser = pg.build()
         self.condition_string_vals_instead_func = ConditionParser.get_condition_string_with_vals_instead_func(
             self.condition_string_vals_instead_func
         )
