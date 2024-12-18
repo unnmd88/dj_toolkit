@@ -37,6 +37,17 @@ class TestConditionResult(TestCase):
 
     def test_get_condition_result(self):
         string = "ddr(D4) or ddr(D5) or ddr(D6) or ddr(D7) and mr(G1)"
+
+        self.assertTrue(potok_user_api.ConditionResult(string).get_condition_result(
+            "0 or 0 or 1 or 1 and 0"
+        ))
+        self.assertTrue(potok_user_api.ConditionResult(string).get_condition_result(
+            "0 or 0 or 0 or 1 and 1"
+        ))
+        self.assertFalse(potok_user_api.ConditionResult(string).get_condition_result(
+            "0 or 0 or 0 or 0 and 1"
+        ))
+
         with self.assertRaises(TypeError) as e:
             potok_user_api.ConditionResult(string).get_condition_result(1)
         with self.assertRaises(TypeError) as e:

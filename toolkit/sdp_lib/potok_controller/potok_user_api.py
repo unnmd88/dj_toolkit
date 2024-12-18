@@ -87,6 +87,9 @@ class ConditionResult(BaseCondition):
         else:
             raise TypeError(f'Некорректный тип данных: {type(data)}. Допустимый тип "str" или "dict"')
 
+        self.condition_string_vals_instead_func = (
+            self.condition_string_vals_instead_func.replace('or', '+').replace('and', '*')
+        )
         result: int = parser.parse(lexer.lex(self.condition_string_vals_instead_func))
         self.current_result = bool(result)
         print(f'int result: {result}, bool result: {self.current_result}')
