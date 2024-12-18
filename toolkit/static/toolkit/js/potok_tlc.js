@@ -22,7 +22,10 @@ const TOKEN = '7174fa6f9d0f954a92d2a5852a7fc3bcaace7578';
 const ROUTE_API_TLC = `/api/v1/potok-tlc/`;
 
 const input_condition = document.querySelector('#condition');
+const idTableTokensFunctions = 'table_functions';
+let   tableTokensFunctions = document.querySelector(`#${idTableTokensFunctions}`);
 const btn_create_buttons = document.querySelector('#create_functions');
+const btn_check_condition = document.querySelector(`#check_condition`);
 // const table_create_functions = document.querySelector('#table_functions');
 
 
@@ -31,6 +34,7 @@ const btn_create_buttons = document.querySelector('#create_functions');
 ------------------------------------------------------------------------*/
 
 btn_create_buttons.addEventListener('click', getFunctionsFromConditionAxios);
+btn_check_condition.addEventListener('click', createDataForCheckCondition);
 
 
  /*------------------------------------------------------------------------
@@ -62,7 +66,7 @@ async function getFunctionsFromConditionAxios(event) {
 
     const res = response.data;
 
-    createTable(res);
+    createTableFunctions(res);
 
 
   } catch (error) {
@@ -94,69 +98,65 @@ async function getFunctionsFromConditionAxios(event) {
 |   Создать таблицу с функциями из строки условия перехода/продления      |
 --------------------------------------------------------------------------*/
 
-function createTable (response) {
+// Создает <table> с функциями, полученными из строки "Условие перехода/продления"
+function createTableFunctions (response) {
   console.log(response);
-  
-  const table = document.createElement('table');
-  table.setAttribute('id', 'table_functions');
-  // const tr = document.createElement('tr');
-  
-  // const td1 = document.createElement('td');
-  // td1.textContent = 'fdfsdfs';
-  // tr.appendChild(td1);
-  // td1.innerText = 'iufh8sdgfowkfd';
-  // tr.append(td1);
-  // table.append(tr);
-  // input_condition.append(table);
+  const tokensFunctions = response.result;
+  const len_tr = Math.sqrt(tokensFunctions.length);
+  // Если повторное нажатие на кнопку "Сформировать функции и условия", удаляем имеющуюся таблицу и формируем новую
 
-  const tokens = response.result;
+  console.log(tableTokensFunctions);
+  if (tableTokensFunctions !== null) {
+    tableTokensFunctions.remove()
+  }
+  tableTokensFunctions = document.createElement('table');
+  tableTokensFunctions.setAttribute('id', idTableTokensFunctions);
 
-  let len_tr = Math.sqrt(tokens.length);
-  let tr = document.createElement('tr');
-  tokens.forEach((element, index, array) => {
-    console.log(Math.floor(index/len_tr));
-    if (Math.floor(index % len_tr) == 0) {
-      console.log(Math.floor(index/len_tr));
-      table.append(tr);
-      tr = document.createElement('tr');
-    }
+  let tr, td, chkbx, label;
+  tr = document.createElement('tr');
 
-  
-  console.log(len_tr);
-  let td = document.createElement('td');
-  let chkbx = document.createElement('input');
+  tokensFunctions.forEach((element, index, array) => {  
+  td = document.createElement('td');
+  chkbx = document.createElement('input');
+  label = document.createElement('label');
+
+  if (Math.floor(index % len_tr) == 0) {
+    tableTokensFunctions.append(tr);
+    tr = document.createElement('tr');
+  }
+
   chkbx.setAttribute('type', 'checkbox');
   chkbx.id = element;
-  
-
-  let label = document.createElement('label');
   label.setAttribute('for', element);
   label.innerHTML = element;
-  label.append(chkbx);
-  td.append(label);
 
-  // td.textContent = element;
+  td.append(chkbx);
+  td.append(label);
   tr.append(td);
   });
-  table.append(tr);
 
-  // for (let i = 0; i < 3; i++) {
-  //   let tr = document.createElement('tr');
-    
-  //   for (let i = 0; i < 3; i++) {
-  //     let td = document.createElement('td');
-  //     td.textContent = 'tRTG'
-  //     tr.append(td);
-  //   }
-    
-  //   table.append(tr);
+  tableTokensFunctions.append(tr);
+  console.log(tableTokensFunctions);  
+  btn_create_buttons.after(tableTokensFunctions);
+}
 
-  // }
-  let p = document.createElement('p');
-  let br = document.createElement('br');
-  // btn_create_buttons.after(p);
-  // btn_create_buttons.after(p);
-  btn_create_buttons.after(br);
-  btn_create_buttons.after(table);
+function createDataForCheckCondition() {
+  let dataReq = {condition: input_condition.value};
+  let conditionWithFuncValues = input_condition.value
+  console.log(document.querySelectorAll(`#${idTableTokensFunctions} td`));
+  document.querySelectorAll(`#${idTableTokensFunctions} td`).forEach((el) => {
+    console.log('elem text --> ' + el.textContent);
+    console.log('elem id --> ' + el.firstChild.id);
+    console.log('elem  firstChild --> ' + el.firstChild);
+    console.log('elem firstChild.checked  --> ' + el.firstChild.checked);
+    if (el.firstChild.id != el.textContent) {
+      alert('Произошла ошибка в расчёте. Нажмите еще раз копку "Сформироват функции из условия"')
+      return false;
+    }
+    dataReq[el.textContent] = el.firstChild.checked;
+    conditionWithFuncValues = conditionWithFuncValues.replace(el.textContent, Number(el.firstChild.checked));
 
+  });
+  dataReq.conditionValues = conditionWithFuncValues;
+  console.log(dataReq);
 }

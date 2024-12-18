@@ -534,6 +534,7 @@ class ResponceMaker:
         }
         return responce
 
+
 class ControllerManagementBase:
     """
     Базовый класс управления контроллерами
@@ -1472,3 +1473,11 @@ class GetFunctionsPotokTrafficLightsConfigurator:
 
     def get_functions(self):
         return potok_user_api.Tokens(self.condition_string).get_tokens()
+
+
+class GetResultCondition:
+    def __init__(self, condition_string: str):
+        self.condition_string = condition_string
+
+    def get_condition_result(self):
+        potok_user_api.ConditionResult(self.condition_string).get_condition_result()
