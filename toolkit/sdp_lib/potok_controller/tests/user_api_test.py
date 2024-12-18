@@ -33,5 +33,15 @@ class TestChecker(TestCase):
         self.assertTrue(potok_user_api.Checker('ddr(D1) and (((ddr(D2) or ddr(D3))').check_parens())
 
 
+class TestConditionResult(TestCase):
+
+    def test_get_condition_result(self):
+        string = "ddr(D4) or ddr(D5) or ddr(D6) or ddr(D7) and mr(G1)"
+        with self.assertRaises(TypeError) as e:
+            potok_user_api.ConditionResult(string).get_condition_result(1)
+        with self.assertRaises(TypeError) as e:
+            potok_user_api.ConditionResult(string).get_condition_result((1, 2, 34,))
+
+
 if __name__ == '__main__':
     main()
