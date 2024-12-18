@@ -142,6 +142,7 @@ function createTableFunctions (response) {
 
 function createDataForCheckCondition() {
   let dataReq = {condition: input_condition.value};
+  let funcValues = {};
   let conditionWithFuncValues = input_condition.value
   console.log(document.querySelectorAll(`#${idTableTokensFunctions} td`));
   document.querySelectorAll(`#${idTableTokensFunctions} td`).forEach((el) => {
@@ -153,10 +154,12 @@ function createDataForCheckCondition() {
       alert('Произошла ошибка в расчёте. Нажмите еще раз копку "Сформироват функции из условия"')
       return false;
     }
-    dataReq[el.textContent] = el.firstChild.checked;
-    conditionWithFuncValues = conditionWithFuncValues.replace(el.textContent, Number(el.firstChild.checked));
+    funcValues[el.textContent] = Number(el.firstChild.checked);
+    // conditionWithFuncValues = conditionWithFuncValues.replace(el.textContent, Number(el.firstChild.checked));
 
   });
-  dataReq.conditionValues = conditionWithFuncValues;
+  // dataReq.conditionValues = conditionWithFuncValues;
+  dataReq.funcValues = funcValues;
   console.log(dataReq);
+  return dataReq;
 }
