@@ -78,8 +78,6 @@ class ConditionResult(BaseCondition):
         :return: Результат выражения с заданными значениями токенов(функций)
         """
 
-        lexer = lg.build()
-        parser = pg.build()
         if isinstance(data, Dict):
             self.func_to_val(data)
         elif isinstance(data, str):
@@ -87,7 +85,13 @@ class ConditionResult(BaseCondition):
         else:
             raise TypeError(f'Некорректный тип данных: {type(data)}. Допустимый тип "str" или "dict"')
 
-        self.condition_string_vals_instead_func = self.replace_chars({'and': '*', 'or': '+'})
+        lexer = lg.build()
+        parser = pg.build()
+        self.condition_string_vals_instead_func = ConditionParser.get_condition_string_with_vals_instead_func(
+            self.condition_string_vals_instead_func
+        )
+
+        print(f'self.condition_string_vals_instead_func: {self.condition_string_vals_instead_func}')
 
         result: int = parser.parse(lexer.lex(self.condition_string_vals_instead_func))
         self.current_result = bool(result)
@@ -116,22 +120,20 @@ class ConditionResult(BaseCondition):
             self.condition_string_vals_instead_func = self.condition_string_vals_instead_func.replace(name, val)
         return self.condition_string_vals_instead_func
 
-    def replace_chars(self, data: Dict[str, str], string=None) -> str:
+    def replace_chars(self, replace_data: Dict[str, str], string=None) -> str:
         """
         Заменяет символы в строке.
         :param string: строка, в которой требуется заменить символы. если None,
                        то берёт строку self.condition_string_vals_instead_func.
-        :param data: k: символы, которые требуется заемить, v: символы, на которые требуется заемить
+        :param replace_data: k: символы, которые требуется заемить, v: символы, на которые требуется заемить
         :return: строка с заменёнными символами. если kwargs пустой, возвращает переданную строку
         """
 
-        string = string or self.condition_string_vals_instead_func
-        if not data:
+        string: str = string or self.condition_string_vals_instead_func
+        if not replace_data:
             return string
-        for pattern, replacement in data.items():
-            string = (
-                string.replace(pattern, replacement)
-            )
+        for pattern, replacement in replace_data.items():
+            string = string.replace(pattern, replacement)
         return string
 
 

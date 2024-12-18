@@ -1,5 +1,5 @@
 import re
-from typing import List
+from typing import List, Dict
 
 from .constants import DET_FUNCTIONS, ALLOWED_FUNCTIONS, SG_FUNCTIONS
 
@@ -113,11 +113,33 @@ class ConditionParser:
             raise TypeError(f'Передана некорректная функция {f_name}')
         return arg
 
+    @classmethod
+    def get_condition_string_with_vals_instead_func(cls, string: str) -> str:
+        """
+        Заменяет "or" и "and" в строке на "+" и "*" соответственно.
+        :param string: строка, в которой требуется заменить символы.
+        :return: строка с заменёнными символами.
+        """
 
-string = (
-    '(ddr(D33) or ddr(D34) or ddr(D35) or ddr(D36) or ddr(D37) or ddr(D38) or ddr(D39) or ddr(D40) '
-    'or ddr(D41) or ddr(D42) or ddr(D43) or ddr(D44) or ddr(D45) or ddr(D46) or ddr(D47)) and mr(G1)'
-    ' and fctg(G1) >= 40 and ddr(D1) or not ddr(D120)')
+        return cls.replace_chars(replace_data={'and': '*', 'or': '+'}, string=string)
+
+    @classmethod
+    def replace_chars(cls, replace_data: Dict[str, str], string: str):
+        """
+        Заменяет символы в строке.
+        :param string: строка, в которой требуется заменить символы.
+        :param replace_data: k: символы, которые требуется заемить, v: символы, на которые требуется заемить
+        :return: строка с заменёнными символами. если kwargs пустой, возвращает переданную строку
+        """
+
+        for pattern, replacement in replace_data.items():
+            string = string.replace(pattern, replacement)
+        return string
+
+# string = (
+#     '(ddr(D33) or ddr(D34) or ddr(D35) or ddr(D36) or ddr(D37) or ddr(D38) or ddr(D39) or ddr(D40) '
+#     'or ddr(D41) or ddr(D42) or ddr(D43) or ddr(D44) or ddr(D45) or ddr(D46) or ddr(D47)) and mr(G1)'
+#     ' and fctg(G1) >= 40 and ddr(D1) or not ddr(D120)')
 
 if __name__ == '__main__':
     manager = ConditionParser(string)
