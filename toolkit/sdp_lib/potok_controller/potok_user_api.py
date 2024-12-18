@@ -52,25 +52,6 @@ class ConditionResult(BaseCondition):
         return (f'Последний полученный результат: {self.current_result}\nУсловие: {self.condition_string}\n'
                 f'Условие с заменённыыми функциями на значения: {self.condition_string_vals_instead_func}')
 
-    # def get_condition_result(self, values: Dict) -> bool:
-    #     """
-    #     Возращает результат результат переданного выражения строки условия
-    #     перехода/продления из tlc конфигурации контроллера Поток.
-    #     :param values: словарь с данными, в котором определено соответствие значения для функции(т.е
-    #            в исходную строку условия будут подставлены значения '1' или '0').
-    #            Пример: {'ddr(D33)': '1', 'ddr(D34)': '0', mr(G2): '1', 'fctg(G1)<66: '0'}
-    #     :return: Результат выражения с заданными значениями токенов(функций)
-    #     """
-    #
-    #     lexer = lg.build()
-    #     parser = pg.build()
-    #     self.func_to_val(values)
-    #
-    #     result: int = parser.parse(lexer.lex(self.condition_string_vals_instead_func))
-    #     self.current_result = bool(result)
-    #     print(f'int result: {result}, bool result: {self.current_result}')
-    #     return self.current_result
-
     def get_condition_result(self, data: str | Dict) -> bool:
         """
         Возращает результат результат переданного выражения строки условия
@@ -92,9 +73,9 @@ class ConditionResult(BaseCondition):
             self.condition_string_vals_instead_func
         )
 
-        print(f'self.condition_string_vals_instead_func: {self.condition_string_vals_instead_func}')
-
         result: int = parser.parse(lexer.lex(self.condition_string_vals_instead_func))
+        if result > 1:
+            raise ValueError(f"Ошибка результата: {result}. Должен быть 1 или 0") # Для этапа отладки
         self.current_result = bool(result)
         print(f'int result: {result}, bool result: {self.current_result}')
         return self.current_result
