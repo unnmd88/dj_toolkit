@@ -37,36 +37,33 @@ class TestConditionResult(TestCase):
 
     def test_get_condition_result(self):
         string = "ddr(D4) or ddr(D5) or ddr(D6) or ddr(D7) and mr(G1)"
-
+        """ Тесты на корректность возвращаемого значения. Сравниваю результат парсера и eval """
         self.assertEqual(
             potok_user_api.ConditionResult(string).get_condition_result("0 or 0 or 1 or 1 and 0"),
             bool(eval("0 + 0 + 1 + 1 * 0"))
         )
-
         self.assertEqual(
             potok_user_api.ConditionResult(string).get_condition_result("1 or 1 or 1 or 1 and 0"),
             bool(eval("1 + 1 + 1 + 1 * 0"))
         )
-
         self.assertEqual(
             potok_user_api.ConditionResult(string).get_condition_result("(1 or 1 or 1 or 1) and 0"),
             bool(eval("(1 + 1 + 1 + 1) * 0"))
         )
-
         self.assertEqual(
             potok_user_api.ConditionResult(string).get_condition_result("(1 or 1 or 1 or 1) and 0 or 1"),
             bool(eval("(1 + 1 + 1 + 1) * 0 + 1"))
         )
-
         self.assertEqual(
             potok_user_api.ConditionResult(string).get_condition_result("(1 or 1 or 1 or 1) and 0 or 1 and 0"),
             bool(eval("(1 + 1 + 1 + 1) * 0 + 1 * 0"))
         )
-
         self.assertEqual(
             potok_user_api.ConditionResult(string).get_condition_result("(1 or 1 or 1 or 1 and 1) and (0 or 0)"),
             bool(eval("(1 + 1 + 1 + 1 * 1) * (0 + 0)"))
         )
+
+        """ Тесты на правильность возращаемого значения выражения(условия перехода/продления) """
 
         self.assertTrue(potok_user_api.ConditionResult(string).get_condition_result(
             "0 or 0 or 1 or 1 and 0"
@@ -77,6 +74,17 @@ class TestConditionResult(TestCase):
         self.assertFalse(potok_user_api.ConditionResult(string).get_condition_result(
             "0 or 0 or 0 or 0 and 1"
         ))
+
+        """ Тесты на то, что метод может принимать str или Dict """
+        string2 = "(ddr(D4) or ddr(D5) or ddr(D6) or ddr(D7)) and mr(G1)"
+        self.assertEqual(
+            potok_user_api.ConditionResult(string2).get_condition_result("(1 or 1 or 1 or 1) and 0"),
+            potok_user_api.ConditionResult(string2).get_condition_result(
+                {'ddr(D4)': '1', 'ddr(D5)': '1', 'ddr(D6)': '1', 'ddr(D7)': '1', 'mr(G1)': '0'}
+            ),
+        )
+
+        """ Тесты на бросание исключения """
 
         with self.assertRaises(TypeError) as e:
             potok_user_api.ConditionResult(string).get_condition_result(1)
