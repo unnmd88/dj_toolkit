@@ -38,6 +38,36 @@ class TestConditionResult(TestCase):
     def test_get_condition_result(self):
         string = "ddr(D4) or ddr(D5) or ddr(D6) or ddr(D7) and mr(G1)"
 
+        self.assertEqual(
+            potok_user_api.ConditionResult(string).get_condition_result("0 or 0 or 1 or 1 and 0"),
+            bool(eval("0 + 0 + 1 + 1 * 0"))
+        )
+
+        self.assertEqual(
+            potok_user_api.ConditionResult(string).get_condition_result("1 or 1 or 1 or 1 and 0"),
+            bool(eval("1 + 1 + 1 + 1 * 0"))
+        )
+
+        self.assertEqual(
+            potok_user_api.ConditionResult(string).get_condition_result("(1 or 1 or 1 or 1) and 0"),
+            bool(eval("(1 + 1 + 1 + 1) * 0"))
+        )
+
+        self.assertEqual(
+            potok_user_api.ConditionResult(string).get_condition_result("(1 or 1 or 1 or 1) and 0 or 1"),
+            bool(eval("(1 + 1 + 1 + 1) * 0 + 1"))
+        )
+
+        self.assertEqual(
+            potok_user_api.ConditionResult(string).get_condition_result("(1 or 1 or 1 or 1) and 0 or 1 and 0"),
+            bool(eval("(1 + 1 + 1 + 1) * 0 + 1 * 0"))
+        )
+
+        self.assertEqual(
+            potok_user_api.ConditionResult(string).get_condition_result("(1 or 1 or 1 or 1 and 1) and (0 or 0)"),
+            bool(eval("(1 + 1 + 1 + 1 * 1) * (0 + 0)"))
+        )
+
         self.assertTrue(potok_user_api.ConditionResult(string).get_condition_result(
             "0 or 0 or 1 or 1 and 0"
         ))

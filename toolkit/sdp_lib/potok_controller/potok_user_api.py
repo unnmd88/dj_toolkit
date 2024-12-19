@@ -74,8 +74,9 @@ class ConditionResult(BaseCondition):
         )
 
         result: int = parser.parse(lexer.lex(self.condition_string_vals_instead_func))
-        if result > 1:
-            raise ValueError(f"Ошибка результата: {result}. Должен быть 1 или 0") # Для этапа отладки
+        print(f'result_ : {result}')
+        if not isinstance(result, int):
+            raise TypeError(f"Ошибка возвращаемого значения: {type(result)}. Должен быть int")  # Для этапа отладки
         self.current_result = bool(result)
         print(f'int result: {result}, bool result: {self.current_result}')
         return self.current_result
