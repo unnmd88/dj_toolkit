@@ -97,9 +97,9 @@ class ConditionResult(BaseCondition):
         self.condition_string_vals_instead_func = self.condition_string
 
         for name, val in values.items():
-            if not val.isdigit() or int(val) not in range(2):
+            if not isinstance(val, int) or val not in range(2):
                 raise ValueError(f'Передано неверное значение:{val}. Заменяемое значение должно быть 0 или 1')
-            self.condition_string_vals_instead_func = self.condition_string_vals_instead_func.replace(name, val)
+            self.condition_string_vals_instead_func = self.condition_string_vals_instead_func.replace(name, str(val))
         return self.condition_string_vals_instead_func
 
     def replace_chars(self, replace_data: Dict[str, str], string=None) -> str:

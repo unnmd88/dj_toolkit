@@ -23,9 +23,13 @@ const ROUTE_API_TLC = `/api/v1/potok-tlc/`;
 
 const input_condition = document.querySelector('#condition');
 const idTableTokensFunctions = 'table_functions';
+const idCreateFunctions = 'create_functions';
+const idGetConditionResult = 'get_condition_result';
+const idConditionResult = 'condition_result';
 let   tableTokensFunctions = document.querySelector(`#${idTableTokensFunctions}`);
-const btn_create_buttons = document.querySelector('#create_functions');
-const btn_check_condition = document.querySelector(`#check_condition`);
+const btnCreateButtons = document.querySelector(`#${idCreateFunctions}`);
+const btnGetConditionResult = document.querySelector(`#${idGetConditionResult}`);
+const labelConditionResult = document.querySelector(`#${idConditionResult}`)
 // const table_create_functions = document.querySelector('#table_functions');
 
 
@@ -33,8 +37,8 @@ const btn_check_condition = document.querySelector(`#check_condition`);
 |                               Events                                   |
 ------------------------------------------------------------------------*/
 
-btn_create_buttons.addEventListener('click', getFunctionsFromConditionAxios);
-btn_check_condition.addEventListener('click', createDataForCheckCondition);
+btnCreateButtons.addEventListener('click', requestToApiAxios);
+btnGetConditionResult.addEventListener('click', requestToApiAxios);
 
 
  /*------------------------------------------------------------------------
@@ -42,18 +46,35 @@ btn_check_condition.addEventListener('click', createDataForCheckCondition);
 --------------------------------------------------------------------------*/
 
 // Отправка запроса команды с помощью библиотеки axios
-async function getFunctionsFromConditionAxios(event) {
-
+async function requestToApiAxios(event) {
   const condition = input_condition.value;
-  console.log('condition: '+ condition);
+  console.log('condition: ' + condition);
+  let get_functions_from_condition_string = false, get_condition_result = false;
+
+  const data = {};
+  let requestEntity;
+  if (this.id == idCreateFunctions) {
+    get_functions_from_condition_string = true;
+  }
+  else if (this.id == idGetConditionResult) {
+    get_condition_result = true;
+    data.get_condition_result = collectDataGetResultCondition();
+  }
+
+  const options = {
+    get_functions_from_condition_string: get_functions_from_condition_string,
+    get_condition_result: get_condition_result
+  };
+
   
   let csrfToken = $("input[name=csrfmiddlewaretoken]").val();
   try {
 
       const response = await axios.post(ROUTE_API_TLC,          
           { 
-            options: [],
+            options: options,
             condition: condition,
+            payload: data,
           },
           {  
             headers: {
@@ -66,7 +87,12 @@ async function getFunctionsFromConditionAxios(event) {
 
     const res = response.data;
 
-    createTableFunctions(res);
+    if (this.id == idCreateFunctions) {
+      createTableFunctions(res);
+    }
+    else if (this.id == idGetConditionResult) {
+      createGetConditionResult(res);
+    }
 
 
   } catch (error) {
@@ -99,15 +125,15 @@ async function getFunctionsFromConditionAxios(event) {
 --------------------------------------------------------------------------*/
 
 // Создает <table> с функциями, полученными из строки "Условие перехода/продления"
-function createTableFunctions (response) {
+function createTableFunctions(response) {
   console.log(response);
-  const tokensFunctions = response.result;
+  const tokensFunctions = response.functions;
   const len_tr = Math.sqrt(tokensFunctions.length);
   // Если повторное нажатие на кнопку "Сформировать функции и условия", удаляем имеющуюся таблицу и формируем новую
 
   console.log(tableTokensFunctions);
   if (tableTokensFunctions !== null) {
-    tableTokensFunctions.remove()
+    tableTokensFunctions.remove();
   }
   tableTokensFunctions = document.createElement('table');
   tableTokensFunctions.setAttribute('id', idTableTokensFunctions);
@@ -137,29 +163,32 @@ function createTableFunctions (response) {
 
   tableTokensFunctions.append(tr);
   console.log(tableTokensFunctions);  
-  btn_create_buttons.after(tableTokensFunctions);
+  btnCreateButtons.after(tableTokensFunctions);
 }
 
-function createDataForCheckCondition() {
-  let dataReq = {condition: input_condition.value};
-  let funcValues = {};
-  let conditionWithFuncValues = input_condition.value
+function createGetConditionResult(responce) {
+  labelConditionResult.innerHTML = `Результат: ${responce.result}`;
+}
+
+function collectDataGetResultCondition() {
+  let dataReq = {};
+  let func_values = {};
   console.log(document.querySelectorAll(`#${idTableTokensFunctions} td`));
   document.querySelectorAll(`#${idTableTokensFunctions} td`).forEach((el) => {
-    console.log('elem text --> ' + el.textContent);
-    console.log('elem id --> ' + el.firstChild.id);
-    console.log('elem  firstChild --> ' + el.firstChild);
-    console.log('elem firstChild.checked  --> ' + el.firstChild.checked);
+    // console.log('elem text --> ' + el.textContent);
+    // console.log('elem id --> ' + el.firstChild.id);
+    // console.log('elem  firstChild --> ' + el.firstChild);
+    // console.log('elem firstChild.checked  --> ' + el.firstChild.checked);
     if (el.firstChild.id != el.textContent) {
-      alert('Произошла ошибка в расчёте. Нажмите еще раз копку "Сформироват функции из условия"')
+      alert('Произошла ошибка в расчёте. Нажмите еще раз копку "Сформировать функции из условия"')
       return false;
     }
-    funcValues[el.textContent] = Number(el.firstChild.checked);
+    func_values[el.textContent] = Number(el.firstChild.checked);
     // conditionWithFuncValues = conditionWithFuncValues.replace(el.textContent, Number(el.firstChild.checked));
 
   });
-  // dataReq.conditionValues = conditionWithFuncValues;
-  dataReq.funcValues = funcValues;
+
+  dataReq.func_values = func_values;
   console.log(dataReq);
   return dataReq;
 }

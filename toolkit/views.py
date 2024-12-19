@@ -313,15 +313,41 @@ class CompareGroupsAPI(APIView):
 class PotokTrafficLightsConfiguratorAPI(APIView):
     permission_classes = (IsAuthenticated,)
 
+    get_functions_from_condition_string = 'get_functions_from_condition_string'
+    get_condition_result = 'get_condition_result'
+    condition = 'condition'
+
     def post(self, request):
         start_time = time.time()
         data_body = request.data
-        condition = data_body.get('condition')
-        print(f'data_body: {data_body}')
-        functions_from_condition_string = services.GetFunctionsPotokTrafficLightsConfigurator(condition)
-        print(f'funcs: {functions_from_condition_string.get_functions()}')
+        condition = data_body.get(self.condition)
+        options = data_body.get('options')
+        if options is None:
+            return Response({'detail': 'Предоставлены некорректные данные для запроса'})
+        option_get_functions_from_condition_string = options.get(self.get_functions_from_condition_string)
+        option_get_condition_result = options.get(self.get_condition_result)
 
-        return Response({'result': functions_from_condition_string.get_functions()})
+        print(f'data_body: {data_body}')
+        if option_get_functions_from_condition_string:
+            get_funcs = services.GetFunctionsPotokTrafficLightsConfigurator(condition)
+            get_funcs.get_functions()
+            responce = {
+                'functions': get_funcs.functions,
+                'errors': get_funcs.errors
+            }
+        elif option_get_condition_result:
+            func_values = data_body.get('payload').get('get_condition_result').get('func_values')
+            get_result_condition = services.GetResultCondition(condition, func_values)
+            get_result_condition.get_condition_result()
+            responce = {
+                'result': get_result_condition.current_result,
+                'errors': get_result_condition.errors
+            }
+        else:
+            responce = {'detail': 'Предоставлены некорректные данные для запроса'}
+        print(f'responce: {responce}')
+        print(f'Время выполения запроса составило {time.time() - start_time}')
+        return Response(responce)
 
 
 """ CONFLICTS(UNSORTING...)  """
