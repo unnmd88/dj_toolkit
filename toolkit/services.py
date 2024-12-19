@@ -1476,6 +1476,10 @@ class GetFunctionsPotokTrafficLightsConfigurator:
 
 
 class GetResultCondition:
+    """
+    Интерфейс проверки условия продления/перехода из tlc контроллера Поток
+    """
+
     def __init__(self, condition_string: str, func_values: Dict):
         self.condition_string = condition_string
         self.func_values = func_values
