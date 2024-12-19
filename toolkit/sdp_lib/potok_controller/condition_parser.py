@@ -135,16 +135,3 @@ class ConditionParser:
         for pattern, replacement in replace_data.items():
             string = string.replace(pattern, replacement)
         return string
-
-# string = (
-#     '(ddr(D33) or ddr(D34) or ddr(D35) or ddr(D36) or ddr(D37) or ddr(D38) or ddr(D39) or ddr(D40) '
-#     'or ddr(D41) or ddr(D42) or ddr(D43) or ddr(D44) or ddr(D45) or ddr(D46) or ddr(D47)) and mr(G1)'
-#     ' and fctg(G1) >= 40 and ddr(D1) or not ddr(D120)')
-
-if __name__ == '__main__':
-    manager = ConditionParser(string)
-
-    res = manager.create_tokens()
-    print(res)
-    # for tok in res_parse:
-    #     string = string.replace(tok, 'False').replace('and', '*').replace()

@@ -6,19 +6,15 @@ TOKENS = (
     "L_PAREN",
     "R_PAREN",
     "PLUS",
-    "SUB",
     "MUL",
     "NUM",
-    "AND",
-    "OR"
 )
 
 pg = ParserGenerator(
     TOKENS,
     precedence=[
-        ("left", ['PLUS', 'SUB']),
+        ("left", ['PLUS']),
         ("left", ['MUL']),
-        ("left", ['OR', 'AND'])
     ]
 )
 
@@ -69,10 +65,7 @@ def expression_br(p):
 
 
 @pg.production("expression : expression PLUS expression")
-@pg.production("expression : expression SUB expression")
 @pg.production("expression : expression MUL expression")
-@pg.production("expression : expression AND expression")
-@pg.production("expression : expression OR expression")
 def expression_op(p):
     left = p[0]
     op = p[1]
@@ -80,16 +73,9 @@ def expression_op(p):
 
     if op.gettokentype() == "PLUS":
         return left + right
-    elif op.gettokentype() == "SUB":
-        return left - right
     elif op.gettokentype() == "MUL":
         return left * right
-    elif op.gettokentype() == "AND":
-        return left & right
-        # return int(bool(left) & bool(right))
-    elif op.gettokentype() == "OR":
-        return left | right
-        # return int(bool(left) & bool(right))
+
 
 
 
