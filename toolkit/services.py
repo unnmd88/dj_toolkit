@@ -1476,8 +1476,27 @@ class GetFunctionsPotokTrafficLightsConfigurator:
 
 
 class GetResultCondition:
-    def __init__(self, condition_string: str):
+    def __init__(self, condition_string: str, func_values: Dict):
         self.condition_string = condition_string
+        self.func_values = func_values
+        self.errors = []
 
-    def get_condition_result(self):
-        potok_user_api.ConditionResult(self.condition_string).get_condition_result()
+    def get_condition_result(self, func_values: Dict = None):
+        """
+        Получет результат условия вызова/продления выражения tlc контроллера Поток.
+        :param func_values: значения функций, которые будут подставлены в условие вызова/продления
+        :return: True, если условие выподняется при наборе func_values, иначе False
+        """
+
+        func_values = func_values or self.func_values
+        if self.compare_func_from_condition() and not self.errors:
+            return potok_user_api.ConditionResult(self.condition_string).get_condition_result(func_values)
+
+    def compare_func_from_condition(self) -> bool:
+        curr_tokens = potok_user_api.Tokens(self.condition_string).get_tokens()
+        if curr_tokens != list(self.func_values.items()):
+            self.errors.append('Ошибка данных: функции из условия продления/вызова и функции с переданными значениями'
+                               'различны. Сформируйте заново функции из строки условия перехода/продления')
+            return False
+        return True
+
