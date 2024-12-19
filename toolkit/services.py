@@ -1493,6 +1493,12 @@ class GetResultCondition:
             return potok_user_api.ConditionResult(self.condition_string).get_condition_result(func_values)
 
     def check_valid_funcs_from_condition(self) -> bool:
+        """
+        Проверят валидность функций(токенов) из условия вызова/продления выражения tlc контроллера Поток с
+        self.func_values из переданного запроса.
+        :return: True, если набор функций одинаков, иначе False
+        """
+
         curr_tokens = potok_user_api.Tokens(self.condition_string).get_tokens()
         if curr_tokens != list(self.func_values.items()):
             self.errors.append('Ошибка данных: функции из условия продления/вызова и функции с переданными значениями'
