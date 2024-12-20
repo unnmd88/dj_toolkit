@@ -75,7 +75,7 @@ class TrafficLightConfigurator(models.Model):
     function_values = models.CharField(max_length=255, verbose_name='Значения функций', default='')
     condition_string_for_parse = models.TextField(verbose_name='Условие с заданными значениями функций', default='')
     tokens = models.CharField(max_length=255, verbose_name='Функции(токены) из условия tlc', default='')
-    result = models.BooleanField(
+    result_condition_value = models.BooleanField(
         verbose_name='Результат выражения условия из tlc для заданных функций', default='', null=True
     )
     errors = models.CharField(max_length=255, verbose_name='Ошибки')

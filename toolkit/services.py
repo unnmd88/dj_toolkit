@@ -1566,6 +1566,6 @@ class GetResultCondition:
             condition_string=self.condition_string,
             condition_string_for_parse=self.condition_string_for_parse or '',
             function_values=self.func_values,
-            result=self.current_result,
+            result_condition_value=self.current_result,
             errors=', '.join(e for e in self.errors) if self.errors else ''
         )
