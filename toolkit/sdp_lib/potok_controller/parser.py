@@ -8,6 +8,7 @@ TOKENS = (
     "PLUS",
     "MUL",
     "NUM",
+    "NOT",
 )
 
 pg = ParserGenerator(
@@ -15,6 +16,7 @@ pg = ParserGenerator(
     precedence=[
         ("left", ['PLUS']),
         ("left", ['MUL']),
+        ("right", ['NOT']),
     ]
 )
 
@@ -66,7 +68,7 @@ def expression_br(p):
 
 @pg.production("expression : expression PLUS expression")
 @pg.production("expression : expression MUL expression")
-def expression_op(p):
+def expression_bin_op(p):
     left = p[0]
     op = p[1]
     right = p[2]
@@ -77,15 +79,20 @@ def expression_op(p):
         return left * right
 
 
+@pg.production("expression : NOT expression")
+def expression_un_op(p):
+    print(p)
+    return int(not p[1])
 
 
 
 if __name__ == '__main__':
-    txt = "(3 + 3*(2 + 4*(2+15))  * 3) * 2"
+    # txt = "(3 + 3*(2 + 4*(2+15))  * 3) * 2 + not 2"
+    txt = "not 1 * not 0 + (1 + 5 * 0) * 0"
     from lexer import lg
     lexer = lg.build()
-    for token in lexer.lex(txt):
-        print(token)
+    print([token for token in lexer.lex(txt)])
+
     parser = pg.build()
 
     print(parser.parse(lexer.lex(txt)))
