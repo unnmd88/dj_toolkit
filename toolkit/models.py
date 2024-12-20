@@ -68,3 +68,16 @@ class TelegrammUsers(models.Model):
     def __str__(self):
         return f'{self.chat_id} {self.username} {self.first_name} {self.username} {self.access_level}'
 
+
+class TrafficLightConfigurator(models.Model):
+    function = models.CharField(max_length=255, verbose_name='Тип запроса')
+    condition_string = models.TextField(verbose_name='Условие из tlc')
+    function_values = models.CharField(max_length=255, verbose_name='Значения функций', default='')
+    condition_string_for_parse = models.TextField(verbose_name='Условие с заданными значениями функций', default='')
+    tokens = models.CharField(max_length=255, verbose_name='Функции(токены) из условия tlc', default='')
+    result = models.BooleanField(
+        verbose_name='Результат выражения условия из tlc для заданных функций', default='', null=True
+    )
+    errors = models.CharField(max_length=255, verbose_name='Ошибки')
+    time_create = models.DateTimeField(auto_now_add=True, verbose_name='Время создания')
+

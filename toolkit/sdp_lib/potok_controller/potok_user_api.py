@@ -39,8 +39,8 @@ class ConditionResult(BaseCondition):
         """
         :param condition_data: Строка с условием перехода/продления из tlc конфигурации контроллера Поток
                Пример: '(ddr(D33) or ddr(D34)) and mr(G2) and (fctg(G1)<66)'
-        :param self.condition_string_vals_instead_func: Строка, в которой функции заменены на
-                                                        требуемые значения
+        :param self.condition_string_for_parse: Строка, в которой функции заменены на требуемые значения и операторы
+                                                "and" и "or" заменены на "*" и "+" соответсвенно.
         :param self.current_result: Результат последнего запроса значения всего выражения условия
                                     перехода/продления с заданными значениями
         """

@@ -167,7 +167,8 @@ function createTableFunctions(response) {
 }
 
 function createGetConditionResult(responce) {
-  labelConditionResult.innerHTML = `Результат: ${responce.result}`;
+  let res = responce.result
+  labelConditionResult.innerHTML = `Результат условия с заданными значениями: ${res.toString().toUpperCase()}`;
 }
 
 function collectDataGetResultCondition() {

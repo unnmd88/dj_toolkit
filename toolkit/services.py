@@ -21,7 +21,7 @@ import asyncio
 import ipaddress
 from asgiref.sync import sync_to_async
 from django.forms import model_to_dict
-from toolkit.models import TrafficLightsObjects, SaveConfigFiles, TelegrammUsers
+from toolkit.models import TrafficLightsObjects, SaveConfigFiles, TelegrammUsers, TrafficLightConfigurator
 from toolkit.sdp_lib import controller_management, controllers
 from engineering_tools.settings import MEDIA_ROOT
 
@@ -1465,7 +1465,21 @@ class PassportProcessing:
         return matches.get(option)
 
 
+class TrafficLightConfiguratorPotok(metaclass=abc.ABCMeta):
+    def __init__(self, condition_string):
+        self.condition_string = condition_string
+
+    @abc.abstractmethod
+    def write_data_to_db(self):
+        """
+        Записывает в бд результаты выполнения функции
+        :return:
+        """
+        ...
+
+
 class GetFunctionsPotokTrafficLightsConfigurator:
+    function_name = 'Извлечь функции'
 
     def __init__(self, condition_string):
         self.condition_string = condition_string
@@ -1474,13 +1488,24 @@ class GetFunctionsPotokTrafficLightsConfigurator:
 
     def get_functions(self):
         self.functions = potok_user_api.Tokens(self.condition_string).get_tokens()
+        self.write_data_to_db()
         return self.functions
+
+    def write_data_to_db(self):
+        TrafficLightConfigurator.objects.create(
+            function=self.function_name,
+            condition_string=self.condition_string,
+            tokens=self.functions,
+            errors=', '.join(e for e in self.errors) if self.errors else ''
+        )
 
 
 class GetResultCondition:
     """
     Интерфейс проверки условия продления/перехода из tlc контроллера Поток
     """
+
+    function_name = 'Значение условия'
 
     def __init__(self, condition_string: str, func_values: Dict):
         self.condition_string = condition_string
@@ -1498,7 +1523,8 @@ class GetResultCondition:
         func_vals = func_values or self.func_values
         if self.check_valid_funcs_from_condition() and not self.errors:
             self.current_result = potok_user_api.ConditionResult(self.condition_string).get_condition_result(func_vals)
-            return self.current_result
+        self.write_data_to_db()
+        return self.current_result
 
     def check_valid_funcs_from_condition(self) -> bool:
         """
@@ -1516,3 +1542,12 @@ class GetResultCondition:
             return False
         return True
 
+    def write_data_to_db(self):
+
+        TrafficLightConfigurator.objects.create(
+            function=self.function_name,
+            condition_string=self.condition_string,
+            function_values=self.func_values,
+            resut=self.current_result,
+            errors=', '.join(e for e in self.errors) if self.errors else ''
+        )
