@@ -1511,6 +1511,7 @@ class GetResultCondition:
         self.condition_string = condition_string
         self.func_values = func_values
         self.current_result = None
+        self.condition_string_for_parse = None
         self.errors = []
 
     def get_condition_result(self, func_values: Dict = None):
@@ -1522,7 +1523,9 @@ class GetResultCondition:
 
         func_vals = func_values or self.func_values
         if self.check_valid_funcs_from_condition() and not self.errors:
-            self.current_result = potok_user_api.ConditionResult(self.condition_string).get_condition_result(func_vals)
+            request = potok_user_api.ConditionResult(self.condition_string)
+            self.current_result = request.get_condition_result(func_vals)
+            self.condition_string_for_parse = request.condition_string_for_parse
         self.write_data_to_db()
         return self.current_result
 
@@ -1547,7 +1550,8 @@ class GetResultCondition:
         TrafficLightConfigurator.objects.create(
             function=self.function_name,
             condition_string=self.condition_string,
+            condition_string_for_parse=self.condition_string_for_parse or '',
             function_values=self.func_values,
-            resut=self.current_result,
+            result=self.current_result,
             errors=', '.join(e for e in self.errors) if self.errors else ''
         )

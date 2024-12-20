@@ -1,5 +1,6 @@
 from typing import List, Dict
 
+
 from .lexer import LexerOriginalConditionString
 
 
@@ -27,7 +28,8 @@ class ConditionStringPotokTlc:
         :return: Список токенов(функций) из self.condition_string
         """
 
-        self.tokens = [token.value.strip() for token in lexer.lex(self.condition_string)]
+        all_tokens = {token.value.strip() for token in lexer.lex(self.condition_string)}
+        self.tokens = sorted([token for token in all_tokens])
         print(self.tokens)
         return self.tokens
 
