@@ -2,15 +2,6 @@ from rply import ParserGenerator
 from .constants import TOKENS
 
 
-# TOKENS = (
-#     "L_PAREN",
-#     "R_PAREN",
-#     "PLUS",
-#     "MUL",
-#     "NUM",
-#     "NOT",
-# )
-
 pg = ParserGenerator(
     TOKENS,
     precedence=[

@@ -9,7 +9,7 @@ from .lexer import LexerValuesInConditionString
 from .parser import pg
 from .condition_string import ConditionStringPotokTlc
 
-# lexer = lg.build()
+
 lexer = LexerValuesInConditionString.get_lexer().build()
 parser = pg.build()
 
