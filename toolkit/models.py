@@ -72,9 +72,9 @@ class TelegrammUsers(models.Model):
 class TrafficLightConfigurator(models.Model):
     function = models.CharField(max_length=255, verbose_name='Тип запроса')
     condition_string = models.TextField(verbose_name='Условие из tlc')
-    function_values = models.CharField(max_length=255, verbose_name='Значения функций', default='')
+    function_values = models.TextField(max_length=255, verbose_name='Значения функций', default='')
     condition_string_for_parse = models.TextField(verbose_name='Условие с заданными значениями функций', default='')
-    tokens = models.CharField(max_length=255, verbose_name='Функции(токены) из условия tlc', default='')
+    tokens = models.TextField(max_length=255, verbose_name='Функции(токены) из условия tlc', default='')
     result_condition_value = models.BooleanField(
         verbose_name='Результат выражения условия из tlc для заданных функций', default='', null=True
     )
