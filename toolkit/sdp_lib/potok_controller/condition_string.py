@@ -6,7 +6,7 @@ from .lexer import LexerOriginalConditionString
 lexer = LexerOriginalConditionString.get_lexer().build()
 
 
-class ConditionParser:
+class ConditionStringPotokTlc:
     """
     Класс - обрабчик в строки условия перехода/продления
     Traffic lights configurator контроллера Поток

@@ -21,7 +21,7 @@ class TestConditionParse(TestCase):
             'ddr(D41) or ddr(D42) or ddr(D43) or ddr(D44) or ddr(D45) or ddr(D46) or ddr(D47)) and mr(G1) '
             'and fctg(G1) >= 40'
         )
-        tokens = condition_string.ConditionParser(string).create_tokens()
+        tokens = condition_string.ConditionStringPotokTlc(string).create_tokens()
         print(tokens)
 
         self.assertEqual(tokens, expected_tokens)
@@ -31,7 +31,7 @@ class TestConditionParse(TestCase):
             'ddr(D41))))))))))))) or (((ddr(D42) or ddr(D43) or ddr(D44) or '
             '((((ddr(D45) or ddr(D46) or ddr(D47)) and mr(G1))))) and fctg(G1) >= 40'
         )
-        tokens2 = condition_string.ConditionParser(string2).create_tokens()
+        tokens2 = condition_string.ConditionStringPotokTlc(string2).create_tokens()
         self.assertEqual(tokens2, expected_tokens)
 
 

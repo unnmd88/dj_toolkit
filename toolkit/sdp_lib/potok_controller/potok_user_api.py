@@ -7,7 +7,7 @@ from typing import List, Dict
 
 from .lexer import LexerValuesInConditionString
 from .parser import pg
-from .condition_string import ConditionParser
+from .condition_string import ConditionStringPotokTlc
 
 # lexer = lg.build()
 lexer = LexerValuesInConditionString.get_lexer().build()
@@ -70,7 +70,7 @@ class ConditionResult(BaseCondition):
         else:
             raise TypeError(f'Некорректный тип данных: {type(data)}. Допустимый тип "str" или "dict"')
 
-        self.condition_string_vals_instead_func = ConditionParser.get_condition_string_with_vals_instead_func(
+        self.condition_string_vals_instead_func = ConditionStringPotokTlc.get_condition_string_with_vals_instead_func(
             self.condition_string_vals_instead_func
         )
 
@@ -142,7 +142,7 @@ class Tokens(BaseCondition):
         """
 
         # condition_parser = ConditionParser(self.condition_data)
-        self.current_tokens = ConditionParser(self.condition_string).create_tokens()
+        self.current_tokens = ConditionStringPotokTlc(self.condition_string).create_tokens()
         return self.current_tokens
 
 
