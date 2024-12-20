@@ -1478,11 +1478,11 @@ class TrafficLightConfiguratorPotok(metaclass=abc.ABCMeta):
         ...
 
 
-class GetFunctionsPotokTrafficLightsConfigurator:
+class GetFunctionsPotokTrafficLightsConfigurator(TrafficLightConfiguratorPotok):
     function_name = 'Извлечь функции'
 
     def __init__(self, condition_string):
-        self.condition_string = condition_string
+        super().__init__(condition_string)
         self.functions = None
         self.errors = []
 
@@ -1510,7 +1510,7 @@ class GetFunctionsPotokTrafficLightsConfigurator:
         )
 
 
-class GetResultCondition:
+class GetResultCondition(TrafficLightConfiguratorPotok):
     """
     Интерфейс проверки условия продления/перехода из tlc контроллера Поток
     """
@@ -1518,7 +1518,7 @@ class GetResultCondition:
     function_name = 'Значение условия'
 
     def __init__(self, condition_string: str, func_values: Dict):
-        self.condition_string = condition_string
+        super().__init__(condition_string)
         self.func_values = func_values
         self.current_result = None
         self.condition_string_for_parse = None
