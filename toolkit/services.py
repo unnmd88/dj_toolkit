@@ -1486,12 +1486,22 @@ class GetFunctionsPotokTrafficLightsConfigurator:
         self.functions = None
         self.errors = []
 
-    def get_functions(self):
+    def get_functions(self) -> List:
+        """
+        Формирует список с функциями(токенами) из self.condition_string и записывает результат в бд
+        :return: Список с функциями(токенами) из self.condition_string
+        """
+
         self.functions = potok_user_api.Tokens(self.condition_string).get_tokens()
         self.write_data_to_db()
         return self.functions
 
-    def write_data_to_db(self):
+    def write_data_to_db(self) -> None:
+        """
+        Записывает результат получения функций(токенов) в бд
+        :return: None
+        """
+
         TrafficLightConfigurator.objects.create(
             function=self.function_name,
             condition_string=self.condition_string,
@@ -1545,7 +1555,11 @@ class GetResultCondition:
             return False
         return True
 
-    def write_data_to_db(self):
+    def write_data_to_db(self) -> None:
+        """
+        Записывает результат получения значения условия продления/перехода из tlc в бд
+        :return:  None
+        """
 
         TrafficLightConfigurator.objects.create(
             function=self.function_name,
