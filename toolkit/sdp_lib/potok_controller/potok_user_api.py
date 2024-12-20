@@ -5,11 +5,12 @@
 import abc
 from typing import List, Dict
 
-from .lexer import lg
+from .lexer import LexerValuesInConditionString
 from .parser import pg
-from .condition_parser import ConditionParser
+from .condition_string import ConditionParser
 
-lexer = lg.build()
+# lexer = lg.build()
+lexer = LexerValuesInConditionString.get_lexer().build()
 parser = pg.build()
 
 
@@ -98,7 +99,7 @@ class ConditionResult(BaseCondition):
 
         for name, val in values.items():
             if not isinstance(val, int) or val not in range(2):
-                raise ValueError(f'Передано неверное значение:{val}. Заменяемое значение должно быть 0 или 1')
+                raise ValueError(f'Передано неверное значение: {val}. Заменяемое значение должно быть 0 или 1')
             self.condition_string_vals_instead_func = self.condition_string_vals_instead_func.replace(name, str(val))
         return self.condition_string_vals_instead_func
 
@@ -177,17 +178,9 @@ if __name__ == '__main__':
         'ddr(D33)': '0', 'ddr(D34)': '0', 'ddr(D35)': '0', 'ddr(D36)': '0',
         'fctg(G1)<66': '1'
     }
-    # string_condition = ('(ddr(D33) or ddr(D34) or ddr(D35) or ddr(D36) or '
-    #                     'ddr(D37) or ddr(D38) or ddr(D39) or ddr(D40) or ddr(D41) '
-    #                     'or ddr(D42) or ddr(D43) or ddr(D44) or ddr(D45) or ddr(D46) '
-    #                     'or ddr(D47)) and (fctg(G1)<66)')
     string_condition = '(ddr(D33) or ddr(D34) or ddr(D35) or ddr(D36)) and (fctg(G1)<66)'
 
     t = ConditionResult(string_condition)
-    # print(t.func_to_val(values_))
     print(t)
     t.get_condition_result(values_)
 
-    # language_parser = Tokens(string_condition)
-    # buttons_for_web = language_parser.get_tokens()
-    # print()
