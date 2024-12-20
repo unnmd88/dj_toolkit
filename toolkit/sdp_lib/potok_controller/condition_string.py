@@ -32,7 +32,7 @@ class ConditionStringPotokTlc:
         return self.tokens
 
     @classmethod
-    def get_condition_string_with_vals_instead_func(cls, string: str) -> str:
+    def replace_operators(cls, string: str) -> str:
         """
         Заменяет "or" и "and" в строке на "+" и "*" соответственно.
         :param string: строка, в которой требуется заменить символы.

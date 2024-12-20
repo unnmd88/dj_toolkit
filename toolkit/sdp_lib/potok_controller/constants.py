@@ -13,3 +13,12 @@ SG_FUNCTIONS = (
 ALLOWED_FUNCTIONS = (
     'ddr', 'mr', 'fctg', 'ddo', 'ngp', 'fcra', 'fcfg', 'fceg', 'fcflg', 'fca', 'fcr',
 )
+
+TOKENS = (
+    "L_PAREN",
+    "R_PAREN",
+    "PLUS",
+    "MUL",
+    "NUM",
+    "NOT",
+)

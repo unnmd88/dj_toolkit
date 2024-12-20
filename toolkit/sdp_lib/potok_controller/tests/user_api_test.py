@@ -63,6 +63,16 @@ class TestConditionResult(TestCase):
             bool(eval("(1 + 1 + 1 + 1 * 1) * (0 + 0)"))
         )
 
+        self.assertEqual(
+            potok_user_api.ConditionResult(string).get_condition_result("not 1"),
+            bool(eval("int(not 1)"))
+        )
+
+        self.assertEqual(
+            potok_user_api.ConditionResult(string).get_condition_result("not (not(1)) + 1* 1 + 1 * 0"),
+            bool(eval("int(not (not 1)) + 1* 1 + 1 * 0"))
+        )
+
         """ Тесты на правильность возращаемого значения выражения(условия перехода/продления) """
 
         self.assertTrue(potok_user_api.ConditionResult(string).get_condition_result(
@@ -80,7 +90,7 @@ class TestConditionResult(TestCase):
         self.assertEqual(
             potok_user_api.ConditionResult(string2).get_condition_result("(1 or 1 or 1 or 1) and 0"),
             potok_user_api.ConditionResult(string2).get_condition_result(
-                {'ddr(D4)': '1', 'ddr(D5)': '1', 'ddr(D6)': '1', 'ddr(D7)': '1', 'mr(G1)': '0'}
+                {'ddr(D4)': 1, 'ddr(D5)': 1, 'ddr(D6)': 1, 'ddr(D7)': 1, 'mr(G1)': 0}
             ),
         )
 

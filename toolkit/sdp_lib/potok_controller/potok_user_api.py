@@ -46,12 +46,12 @@ class ConditionResult(BaseCondition):
         """
 
         super().__init__(condition_string)
-        self.condition_string_vals_instead_func = None
+        self.condition_string_for_parse = None
         self.current_result = None
 
     def __repr__(self):
         return (f'Последний полученный результат: {self.current_result}\nУсловие: {self.condition_string}\n'
-                f'Условие с заменённыыми функциями на значения: {self.condition_string_vals_instead_func}')
+                f'Условие с заменённыыми функциями на значения: {self.condition_string_for_parse}')
 
     def get_condition_result(self, data: str | Dict) -> bool:
         """
@@ -66,15 +66,15 @@ class ConditionResult(BaseCondition):
         if isinstance(data, Dict):
             self.func_to_val(data)
         elif isinstance(data, str):
-            self.condition_string_vals_instead_func = data
+            self.condition_string_for_parse = data
         else:
             raise TypeError(f'Некорректный тип данных: {type(data)}. Допустимый тип "str" или "dict"')
 
-        self.condition_string_vals_instead_func = ConditionStringPotokTlc.get_condition_string_with_vals_instead_func(
-            self.condition_string_vals_instead_func
+        self.condition_string_for_parse = ConditionStringPotokTlc.replace_operators(
+            self.condition_string_for_parse
         )
 
-        result: int = parser.parse(lexer.lex(self.condition_string_vals_instead_func))
+        result: int = parser.parse(lexer.lex(self.condition_string_for_parse))
         if not isinstance(result, int):
             raise TypeError(f"Ошибка возвращаемого значения: {type(result)}. Должен быть int")  # Для этапа отладки
         self.current_result = bool(result)
@@ -95,29 +95,13 @@ class ConditionResult(BaseCondition):
                          return -> '(1 or 0) and 1 and 0'
         """
 
-        self.condition_string_vals_instead_func = self.condition_string
+        self.condition_string_for_parse = self.condition_string
 
         for name, val in values.items():
             if not isinstance(val, int) or val not in range(2):
                 raise ValueError(f'Передано неверное значение: {val}. Заменяемое значение должно быть 0 или 1')
-            self.condition_string_vals_instead_func = self.condition_string_vals_instead_func.replace(name, str(val))
-        return self.condition_string_vals_instead_func
-
-    def replace_chars(self, replace_data: Dict[str, str], string=None) -> str:
-        """
-        Заменяет символы в строке.
-        :param string: строка, в которой требуется заменить символы. если None,
-                       то берёт строку self.condition_string_vals_instead_func.
-        :param replace_data: k: символы, которые требуется заемить, v: символы, на которые требуется заемить
-        :return: строка с заменёнными символами. если kwargs пустой, возвращает переданную строку
-        """
-
-        string: str = string or self.condition_string_vals_instead_func
-        if not replace_data:
-            return string
-        for pattern, replacement in replace_data.items():
-            string = string.replace(pattern, replacement)
-        return string
+            self.condition_string_for_parse = self.condition_string_for_parse.replace(name, str(val))
+        return self.condition_string_for_parse
 
 
 class Tokens(BaseCondition):
