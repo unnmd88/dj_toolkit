@@ -81,21 +81,22 @@ def expression_bin_op(p):
 
 @pg.production("expression : NOT expression")
 def expression_un_op(p):
-    print(p)
     return int(not p[1])
 
 
 
 if __name__ == '__main__':
     # txt = "(3 + 3*(2 + 4*(2+15))  * 3) * 2 + not 2"
-    txt = "not 1 * not 0 + (1 + 5 * 0) * 0"
+    txt = "not 1 * not 0 + (1 + 5 * 0) * 0 * not 1"
+    txt__ = "int(not 1) * int(not 0) + (1 + 5 * 0) * 0 * int not 1"
     from lexer import lg
     lexer = lg.build()
     print([token for token in lexer.lex(txt)])
 
     parser = pg.build()
-
-    print(parser.parse(lexer.lex(txt)))
+    res = parser.parse(lexer.lex(txt))
+    print(f'res: {res}')
+    print(f'equal: {eval("int(not 1) * int(not 0) + (1 + 5 * 0) * 0") == res}')
 
 
 
