@@ -837,8 +837,8 @@ class FileDownLoad:
                 data_hosts[ipAddr][JsonResponceBody.REQ_ERRORS.value] = errIndication
                 continue
             if isinstance(obj, controller_management.SwarcoSSHBase):
-                manager = controllers.SwarcoParseConfigXML(
-                    f'{src}/{controllers.SwarcoParseConfigXML.xml_itc_config_name}'
+                manager = ITC_PC_config.SwarcoParseConfigXML(
+                    f'{src}/{ITC_PC_config.SwarcoParseConfigXML.xml_itc_config_name}'
                 )
                 errIndication, data = manager.create_PTC2(src)
                 # data[0] -> path к конфигу, data[1] -> доп. сведения. В случае Swarco -> словарь с данными из
@@ -895,8 +895,8 @@ class FileDownLoad:
                 data_hosts[ipAddr][JsonResponceBody.REQ_ERRORS.value] = errIndication
                 continue
             if isinstance(obj, controller_management.SwarcoSSHBase):
-                manager = controllers.SwarcoParseConfigXML(
-                    f'{src}/{controllers.SwarcoParseConfigXML.xml_itc_config_name}'
+                manager = ITC_PC_config.SwarcoParseConfigXML(
+                    f'{src}/{ITC_PC_config.SwarcoParseConfigXML.xml_itc_config_name}'
                 )
                 errIndication, data = manager.create_PTC2(src)
                 # data[0] -> path к конфигу, data[1] -> доп. сведения. В случае Swarco -> словарь с данными из
