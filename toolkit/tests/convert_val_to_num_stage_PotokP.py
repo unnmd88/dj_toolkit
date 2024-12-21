@@ -1,5 +1,5 @@
 from unittest import TestCase, main
-from toolkit.sdp_lib.controller_management import PotokP
+from toolkit.sdp_lib.management_controllers.controller_management import PotokP
 
 
 class TestPotokP(TestCase):

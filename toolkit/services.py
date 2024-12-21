@@ -22,9 +22,10 @@ import ipaddress
 from asgiref.sync import sync_to_async
 from django.forms import model_to_dict
 from toolkit.models import TrafficLightsObjects, SaveConfigFiles, TelegrammUsers, TrafficLightConfigurator
-from toolkit.sdp_lib import controller_management, controllers
 from engineering_tools.settings import MEDIA_ROOT
 
+from toolkit.sdp_lib import controllers
+from .sdp_lib.management_controllers import controller_management
 from .constants import (
     AvailableControllers,
     AvailableSetCommandsController,
