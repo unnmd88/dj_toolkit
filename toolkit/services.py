@@ -24,7 +24,7 @@ from django.forms import model_to_dict
 from toolkit.models import TrafficLightsObjects, SaveConfigFiles, TelegrammUsers, TrafficLightConfigurator
 from engineering_tools.settings import MEDIA_ROOT
 
-from toolkit.sdp_lib import controllers
+from .sdp_lib.swarco_controller import ITC_PC_config
 from .sdp_lib.management_controllers import controller_management
 from .constants import (
     AvailableControllers,

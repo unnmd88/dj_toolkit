@@ -1,10 +1,10 @@
-import enum
 import os
-import time
+from datetime import datetime
 from io import BytesIO
 from typing import Generator
+import enum
+
 from xml.etree import ElementTree as ET
-from datetime import datetime
 
 
 class NamesForSwarcoXML(enum.Enum):
