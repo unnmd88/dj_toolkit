@@ -1,3 +1,8 @@
+"""
+Модуль для получения данных из конфигурации, а также формирования нового файла
+конфигурации ITC-PC контроллера Swarco
+"""
+
 import os
 from datetime import datetime
 from io import BytesIO
