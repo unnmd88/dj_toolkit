@@ -1,4 +1,3 @@
-import json
 from io import BytesIO
 import logging
 import time
@@ -388,6 +387,9 @@ class ProcessedRequestConflicts(ProcessedRequestBase):
         return ProcessedRequestBase.reverse_slashes(path).split('media/')[1]
 
     def __init__(self, request):
+        print(request)
+        print(request.FILES)
+        print(request.POST)
         self.request = request
         self.post_req_dict = request.POST.dict()
         self.files_dict = request.FILES.dict()

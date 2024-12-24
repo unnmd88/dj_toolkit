@@ -5,10 +5,6 @@ import time
 from rply import LexerGenerator
 from typing import Dict
 
-
-
-
-
 lg2 = LexerGenerator()
 
 lg2.add("ddr", r'ddr\(D\d{1,3}\)')
