@@ -57,7 +57,13 @@ class Conflicts:
             json.dump(json_data, f, ensure_ascii=False, indent=4)
             f.write('\n\n')
 
-    def set_to_list(self, target):
+    def set_to_list(self, target: Dict):
+        """
+        Рекурсивно превращает множества set в список list значения словаря target.
+        :param target: словарь, в котом значения set необходмио заменить на list
+        :return:
+        """
+
         for k, v in target.items():
             if isinstance(v, dict):
                 self.set_to_list(v)
