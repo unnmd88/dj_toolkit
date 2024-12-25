@@ -40,7 +40,7 @@ class TestConflicts(TestCase):
             self.current_calculation.instance_data[DataFields.all_num_groups.value], [i for i in range(1, 14)]
         )
 
-    def test_define_allow_make_config(self):
+    def test_allow_make_config_true(self):
         """
         Проверят корректность определения ключа "allow_make_config" из словаря self.instance_data.
         :return:
@@ -48,6 +48,20 @@ class TestConflicts(TestCase):
         self.assertTrue(
             self.current_calculation.instance_data[DataFields.allow_make_config.value], True
         )
+
+    def test_test_allow_make_config_false(self):
+        raw_stages = {
+            '1': '1,2,3,4',
+            '2': '2,5,6',
+            '3': '4.1,4.2,8,9'
+        }
+        curr_calc = Conflicts(raw_stages)
+        curr_calc.calculate()
+        self.assertTrue(
+            self.current_calculation.instance_data[DataFields.allow_make_config.value], False
+        )
+
+
 
 
 if __name__ == '__main__':

@@ -165,6 +165,7 @@ class Conflicts:
         :return: None
         """
 
+        pprint.pprint(self.instance_data)
         groups_prop = self.instance_data[DataFields.groups_property.value]
         for group in self.instance_data.get(DataFields.sorted_all_num_groups.value):
             groups_prop[group] = self.get_conflicts_and_stages_properties_for_group(group)
