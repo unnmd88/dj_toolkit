@@ -43,6 +43,8 @@ class TestConflicts(TestCase):
     def test_allow_make_config_true(self):
         """
         Проверят корректность определения ключа "allow_make_config" из словаря self.instance_data.
+        Если все номера направлений приналжежат типу int, значение ключа
+        DataFields.allow_make_config.value в словаре instance_data должно быть True.
         :return:
         """
         self.assertTrue(
@@ -50,6 +52,12 @@ class TestConflicts(TestCase):
         )
 
     def test_test_allow_make_config_false(self):
+        """
+        Проверят корректность определения ключа "allow_make_config" из словаря self.instance_data.
+        Если хотя бы один из номеров направлений не является числом типа int, значение ключа
+        DataFields.allow_make_config.value в словаре instance_data должно быть False.
+        :return:
+        """
         raw_stages = {
             '1': '1,2,3,4',
             '2': '2,5,6',
