@@ -2,7 +2,7 @@ import json
 import pprint
 import time
 from enum import Enum
-from typing import Dict, Set
+from typing import Dict, Set, Tuple
 import logging
 
 
@@ -93,7 +93,14 @@ class Conflicts:
             processed_stages, unsorted_all_num_groups, always_red_groups
         )
 
-    def get_always_red_and_all_unsorted_groups(self, unsorted_all_num_groups: Set):
+    def get_always_red_and_all_unsorted_groups(self, unsorted_all_num_groups: Set) -> Tuple[Set, Set]:
+        """
+        Определяет для общее количество групп в виде set и группы, являющиеся "постоянно красными" в вид set
+        :param unsorted_all_num_groups: set из групп, которые учатсвуют хотя бы в одной фазе.
+        :return: Кортеж из set. unsorted_all_num_groups -> все номера групп, always_red_groups -> set
+                 из групп, которые являются "Пост. красн."
+        """
+
         always_red_groups = set()
         for group in range(1, max(unsorted_all_num_groups) + 1):
             if group not in unsorted_all_num_groups:
@@ -194,7 +201,7 @@ if __name__ == '__main__':
     example = {
         '1': '1,4,2,3,5,5,5,5,3,4,2',
         '2': '1,6,7,7,3',
-        '3': '9,10,8,13,3'
+        '3': '9,10,8,13,3,100'
     }
     start_time = time.time()
     obj = Conflicts(example)
