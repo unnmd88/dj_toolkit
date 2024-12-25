@@ -222,7 +222,7 @@ class Conflicts:
                 enemy_groups.add(group)
         return enemy_groups
 
-    def calculate(self):
+    def calculate(self, create_json=False):
         """
         Последовательное выполнений методов, приводящее к формированию полного результата расчёта
         конфликтов и остальных свойств.
@@ -234,7 +234,10 @@ class Conflicts:
             if self.instance_data[DataFields.errors.value]:
                 break
             func()
-        self.save_json_to_file(self.instance_data)
+        if create_json:
+            self.save_json_to_file(self.instance_data)
+        else:
+            self.set_to_list(self.instance_data)
 
 
 
@@ -245,9 +248,10 @@ if __name__ == '__main__':
     example = {
         '1': '1,4,2,3,5,5,5,5,3,4,2',
         '2': '1,6,7,7,3',
-        '3': '9,10,8,13,3,10,49'
+        '3': '9,10,8,13,3,10,',
+        '4': '5,6,4'
     }
     start_time = time.time()
     obj = Conflicts(example)
-    obj.calculate()
+    obj.calculate(create_json=True)
     print(f'ВРемя выполеения составило: {time.time() - start_time}')
