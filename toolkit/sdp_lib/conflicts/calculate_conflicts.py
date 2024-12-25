@@ -5,11 +5,7 @@ from enum import Enum
 from typing import Dict, Set
 import logging
 
-example = {
-    '1': '1,4,2,3,5,5,5,5,3,4,2',
-    '2': '1,6,7,7,',
-    '3': '9,10,8,13'
-}
+
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +17,9 @@ class DataFields(Enum):
     sorted_all_num_groups = 'sorted_all_num_groups'
     errors = 'errors'
     allow_make_config = 'allow_make_config'
-    all_red_groups = 'all_red_groups'
+    always_red_groups = 'always_red_groups'
+    always_red = 'always_red'
+    always_green = 'always_green'
     conflicts = 'conflicts'
     enemy_groups = 'enemy_groups'
     stages = 'stages'
@@ -37,7 +35,7 @@ class Conflicts:
             DataFields.sorted_stages_data.value: None,
             DataFields.max_group.value: None,
             DataFields.all_num_groups.value: set(),
-            DataFields.all_red_groups.value: set(),
+            DataFields.always_red_groups.value: None,
             DataFields.groups_property.value: {},
             DataFields.sorted_all_num_groups.value: None,
             DataFields.allow_make_config.value: None,
@@ -68,78 +66,105 @@ class Conflicts:
 
     def create_data_for_calculate_conflicts(self, separator: str = ','):
         """
-        Формирует sorted_stages_data и max_group для self.instance_data
+        Формирует данные для расчёта конфликтов. Определяет возможность формирования конфига .PTC2 или .DAT
+        по следующему правилу: если все группы представляют собой однозначные целые числа int, то
+        allow_make_config == True. Если присутствуют группы типа 5.1, 5.2(определяю как float), то
+        allow_make_config ==False.
         :param separator: разделитель для формирования списка направлений
         :return:
         """
 
         processed_stages = {}
         stage = None
-        unsorted_all_num_groups = self.instance_data[DataFields.all_num_groups.value]
+        unsorted_num_groups = self.instance_data[DataFields.all_num_groups.value]
         try:
             for stage, groups in self.instance_data['raw_stages_data'].items():
                 unsorted_stages = {int(g) if g.isdigit() else float(g) for g in groups.split(separator) if g}
                 processed_stages[stage] = unsorted_stages
-                unsorted_all_num_groups |= unsorted_stages
+                unsorted_num_groups |= unsorted_stages
         except ValueError as err:
             self.instance_data['errors'].append(
                 f'Некорректный номер направления у фазы '
                 f'{stage}: {str(err).split(":")[-1].replace(" ", "")}, должен быть числом'
             )
-        self.get_all_red_and_max_group(unsorted_all_num_groups)
-        self.add_data_to_instance_data_dict_for_calc_conflicts(processed_stages, unsorted_all_num_groups)
-        pprint.pprint(self.instance_data)
 
-    def get_all_red_and_max_group(self, unsorted_all_num_groups: Set):
+        unsorted_all_num_groups, always_red_groups = self.get_always_red_and_all_unsorted_groups(unsorted_num_groups)
+        self.add_data_to_instance_data_dict_for_calc_conflicts(
+            processed_stages, unsorted_all_num_groups, always_red_groups
+        )
+
+    def get_always_red_and_all_unsorted_groups(self, unsorted_all_num_groups: Set):
+        always_red_groups = set()
         for group in range(1, max(unsorted_all_num_groups) + 1):
             if group not in unsorted_all_num_groups:
-                self.instance_data[DataFields.all_red_groups.value].add(group)
+                always_red_groups.add(group)
                 unsorted_all_num_groups.add(group)
+        return unsorted_all_num_groups, always_red_groups
 
-    def add_data_to_instance_data_dict_for_calc_conflicts(self, processed_stages: Dict, unsorted_all_num_groups: Set):
+    def add_data_to_instance_data_dict_for_calc_conflicts(
+            self, processed_stages: Dict, unsorted_all_num_groups: Set, all_red_groups: Set
+    ):
+        """
+        Добавляет элементы словаря(ключ: значение) для self.instance_data
+        :param all_red_groups: set из групп, которые не участвуют ни в одной фазе.
+        :param processed_stages:
+        :param unsorted_all_num_groups:
+        :return:
+        """
         self.instance_data[DataFields.sorted_stages_data.value] = processed_stages
         self.instance_data[DataFields.all_num_groups.value] = unsorted_all_num_groups
+        self.instance_data[DataFields.always_red_groups.value] = all_red_groups
         self.instance_data[DataFields.allow_make_config.value] = all(
             isinstance(g, int) for g in unsorted_all_num_groups)
         self.instance_data[DataFields.max_group.value] = len(self.instance_data[DataFields.all_num_groups.value])
         self.instance_data[DataFields.sorted_all_num_groups.value] = sorted(unsorted_all_num_groups)
 
-    def calculate_conflicts(self):
+    def calculate_conflicts(self) -> None:
+        """
+        Формирует словарь для всех групп с данными о группе: конфликтами и фазами, в которых участвует направеление
+        :return: None
+        """
 
         groups_prop = self.instance_data[DataFields.groups_property.value]
         for group in self.instance_data.get(DataFields.sorted_all_num_groups.value):
-            groups_prop[group] = self.get_conflicts_and_stages_for_group(group)
+            groups_prop[group] = self.get_conflicts_and_stages_properties_for_group(group)
         pprint.pprint(self.instance_data)
 
-    def get_conflicts_and_stages_for_group(self, num_group: int):
+    def get_conflicts_and_stages_properties_for_group(self, num_group: int):
         """
         Формирует конфликты для группы.
         :param num_group: Номер группы, для котороый будут сформированы конфликты в виде set
         :return: Словарь data для num_group вида:
-                 {'stages': {фазы(в которых участвует num_group) типа str},
+                 {
+                  'stages': {фазы(в которых участвует num_group) типа str},
                   'enemy_groups': {группы, с которыми есть конфликт у группы num_group типа str}
                  }
                 Пример data: {'stages': {'1', '2'}, 'enemy_groups': {'4', '5', '6'}}
         """
 
-        num_group_in_stages = set()
+        group_in_stages = set()
         conflict_groups = {g for g in self.instance_data[DataFields.all_num_groups.value] if g != num_group}
         for stage, groups_in_stage in self.instance_data[DataFields.sorted_stages_data.value].items():
             if num_group in groups_in_stage:
-                num_group_in_stages.add(stage)
+                group_in_stages.add(stage)
                 for g in groups_in_stage:
                     conflict_groups.discard(g)
         assert conflict_groups == self.supervisor_conflicts(num_group)
+        is_always_red: bool = False if group_in_stages else True
+        is_always_green: bool = group_in_stages == set(self.instance_data[DataFields.sorted_stages_data.value].keys())
+        assert not((is_always_red is True) and (is_always_green is True))
         data = {
-            DataFields.stages.value: num_group_in_stages,
-            DataFields.enemy_groups.value: conflict_groups
+            DataFields.stages.value: group_in_stages,
+            DataFields.enemy_groups.value: conflict_groups,
+            DataFields.always_red.value: is_always_red,
+            DataFields.always_green.value: is_always_green
         }
         return data
 
     def supervisor_conflicts(self, num_group: int) -> Set:
         """
         Метод формирует set из групп, с которыми есть конфликт у группы num_group. Является проверкой
-        корректности формирования конфликтных групп метода self.calculate_conflicts.
+        корректности формирования конфликтных групп метода self.get_conflicts_and_stages_for_group.
         Алгоритм формирования set из конфликтных групп:
         В цикле перебираем все группы из self.instance_data[DataFields.sorted_all_num_groups.value] и
         смотрим, если num_group и очередная перебираемая группа не присутсвуют вместе ни в одной фазе, то
@@ -157,9 +182,6 @@ class Conflicts:
                 enemy_groups.add(group)
         return enemy_groups
 
-
-
-
     def calculate(self):
         self.create_data_for_calculate_conflicts()
         self.calculate_conflicts()
@@ -169,6 +191,11 @@ class Conflicts:
 if __name__ == '__main__':
     from engineering_tools.settings import LOGGING
 
+    example = {
+        '1': '1,4,2,3,5,5,5,5,3,4,2',
+        '2': '1,6,7,7,3',
+        '3': '9,10,8,13,3'
+    }
     start_time = time.time()
     obj = Conflicts(example)
     obj.calculate()
