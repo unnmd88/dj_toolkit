@@ -1,5 +1,6 @@
 import json
 import pprint
+import time
 from enum import Enum
 from typing import Dict, Set
 import logging
@@ -111,22 +112,53 @@ class Conflicts:
         pprint.pprint(self.instance_data)
 
     def get_conflicts_and_stages_for_group(self, num_group: int):
+        """
+        Формирует конфликты для группы.
+        :param num_group: Номер группы, для котороый будут сформированы конфликты в виде set
+        :return: Словарь data для num_group вида:
+                 {'stages': {фазы(в которых участвует num_group) типа str},
+                  'enemy_groups': {группы, с которыми есть конфликт у группы num_group типа str}
+                 }
+                Пример data: {'stages': {'1', '2'}, 'enemy_groups': {'4', '5', '6'}}
+        """
 
         num_group_in_stages = set()
-        max_groups = self.instance_data[DataFields.max_group.value] + 1
-        conflict_groups = {g for g in range(1, max_groups) if g != num_group}
+        conflict_groups = {g for g in self.instance_data[DataFields.all_num_groups.value] if g != num_group}
         for stage, groups_in_stage in self.instance_data[DataFields.sorted_stages_data.value].items():
-
             if num_group in groups_in_stage:
                 num_group_in_stages.add(stage)
                 for g in groups_in_stage:
                     conflict_groups.discard(g)
-                print(f'num_group: {num_group} : {conflict_groups}')
+        assert conflict_groups == self.supervisor_conflicts(num_group)
         data = {
             DataFields.stages.value: num_group_in_stages,
             DataFields.enemy_groups.value: conflict_groups
         }
         return data
+
+    def supervisor_conflicts(self, num_group: int) -> Set:
+        """
+        Метод формирует set из групп, с которыми есть конфликт у группы num_group. Является проверкой
+        корректности формирования конфликтных групп метода self.calculate_conflicts.
+        Алгоритм формирования set из конфликтных групп:
+        В цикле перебираем все группы из self.instance_data[DataFields.sorted_all_num_groups.value] и
+        смотрим, если num_group и очередная перебираемая группа не присутсвуют вместе ни в одной фазе, то
+        добавляем очередную перебираемую группу(g) в множество enemy_groups.
+        :param num_group: Номер группы, для которой будет сформировано set конфликтных групп
+        :return: set из конфликтных групп для группы num_group
+        """
+
+        enemy_groups = set()
+        for group in (g for g in self.instance_data[DataFields.sorted_all_num_groups.value] if g != num_group):
+            for groups_in_stage in self.instance_data[DataFields.sorted_stages_data.value].values():
+                if {num_group, group}.issubset(groups_in_stage):
+                    break
+            else:
+                enemy_groups.add(group)
+        return enemy_groups
+
+
+
 
     def calculate(self):
         self.create_data_for_calculate_conflicts()
@@ -137,5 +169,7 @@ class Conflicts:
 if __name__ == '__main__':
     from engineering_tools.settings import LOGGING
 
+    start_time = time.time()
     obj = Conflicts(example)
     obj.calculate()
+    print(f'ВРемя выполеения составило: {time.time() - start_time}')
