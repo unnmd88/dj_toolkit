@@ -104,6 +104,27 @@ class Conflicts:
             processed_stages, unsorted_all_num_groups, always_red_groups
         )
 
+    def check_data_for_calculate_is_valid(self, num_groups: int, num_stages: int):
+        """
+        Проверяет валидное количество направлений и фаз. Если передано недопустимое количество фаз
+        и направлений, добавляет сообщение об ошибке в self.instance_data[DataFields.number_of_stages.value] и
+        возвращает Falsе, иначе возвращает True
+        :param num_groups: Количество группю
+        :param num_stages: Количество фаз
+        :return: True, если количество направлений и фаз допустимо, иначе False.
+        """
+
+        self.instance_data[DataFields.number_of_groups.value] = num_groups
+        self.instance_data[DataFields.number_of_stages.value] = num_stages
+        if num_groups > 48:
+            self.instance_data[DataFields.errors.value].append(
+                f'Превышено максимально допустимое количество(48) групп: {num_groups}.'
+            )
+        if num_stages > 128:
+            self.instance_data[DataFields.errors.value].append(
+                f'Превышено максимально допустимое количество(128) фаз: {num_stages}.'
+            )
+        return not bool(self.instance_data[DataFields.errors.value])
 
     def get_always_red_and_all_unsorted_groups(self, unsorted_all_num_groups: Set) -> Tuple[Set, Set]:
         """
@@ -200,28 +221,6 @@ class Conflicts:
             else:
                 enemy_groups.add(group)
         return enemy_groups
-
-    def check_data_for_calculate_is_valid(self, num_groups: int, num_stages: int):
-        """
-        Проверяет валидное количество направлений и фаз. Если передано недопустимое количество фаз
-        и направлений, добавляет сообщение об ошибке в self.instance_data[DataFields.number_of_stages.value] и
-        возвращает Falsе, иначе возвращает True
-        :param num_groups: Количество группю
-        :param num_stages: Количество фаз
-        :return: True, если количество направлений и фаз допустимо, иначе False.
-        """
-
-        self.instance_data[DataFields.number_of_groups.value] = num_groups
-        self.instance_data[DataFields.number_of_stages.value] = num_stages
-        if num_groups > 48:
-            self.instance_data[DataFields.errors.value].append(
-                f'Превышено максимально допустимое количество(48) групп: {num_groups}.'
-            )
-        if num_stages > 128:
-            self.instance_data[DataFields.errors.value].append(
-                f'Превышено максимально допустимое количество(128) фаз: {num_stages}.'
-            )
-        return not bool(self.instance_data[DataFields.errors.value])
 
     def calculate(self):
         """
