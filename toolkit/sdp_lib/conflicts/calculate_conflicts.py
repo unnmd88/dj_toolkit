@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 class DataFields(Enum):
     sorted_stages_data = 'sorted_stages_data'
-    max_group = 'max_group'
+    number_of_groups = 'number_of_groups'
+    number_of_stages = 'number_of_stages'
     all_num_groups = 'all_num_groups'
     sorted_all_num_groups = 'sorted_all_num_groups'
     errors = 'errors'
@@ -33,7 +34,8 @@ class Conflicts:
         self.instance_data = {
             'raw_stages_data': raw_stages_data,
             DataFields.sorted_stages_data.value: None,
-            DataFields.max_group.value: None,
+            DataFields.number_of_groups.value: None,
+            DataFields.number_of_stages.value: None,
             DataFields.all_num_groups.value: set(),
             DataFields.always_red_groups.value: None,
             DataFields.groups_property.value: {},
@@ -89,15 +91,19 @@ class Conflicts:
                 processed_stages[stage] = unsorted_stages
                 unsorted_num_groups |= unsorted_stages
         except ValueError as err:
-            self.instance_data['errors'].append(
+            self.instance_data[DataFields.errors.value].append(
                 f'Некорректный номер направления у фазы '
                 f'{stage}: {str(err).split(":")[-1].replace(" ", "")}, должен быть числом'
             )
+
+        if not self.check_data_for_calculate_is_valid(max(unsorted_num_groups), len(processed_stages.keys())):
+            return
 
         unsorted_all_num_groups, always_red_groups = self.get_always_red_and_all_unsorted_groups(unsorted_num_groups)
         self.add_data_to_instance_data_dict_for_calc_conflicts(
             processed_stages, unsorted_all_num_groups, always_red_groups
         )
+
 
     def get_always_red_and_all_unsorted_groups(self, unsorted_all_num_groups: Set) -> Tuple[Set, Set]:
         """
@@ -129,7 +135,7 @@ class Conflicts:
         self.instance_data[DataFields.always_red_groups.value] = all_red_groups
         self.instance_data[DataFields.allow_make_config.value] = all(
             isinstance(g, int) for g in unsorted_all_num_groups)
-        self.instance_data[DataFields.max_group.value] = len(self.instance_data[DataFields.all_num_groups.value])
+
         self.instance_data[DataFields.sorted_all_num_groups.value] = sorted(unsorted_all_num_groups)
 
     def calculate_conflicts(self) -> None:
@@ -195,10 +201,43 @@ class Conflicts:
                 enemy_groups.add(group)
         return enemy_groups
 
+    def check_data_for_calculate_is_valid(self, num_groups: int, num_stages: int):
+        """
+        Проверяет валидное количество направлений и фаз. Если передано недопустимое количество фаз
+        и направлений, добавляет сообщение об ошибке в self.instance_data[DataFields.number_of_stages.value] и
+        возвращает Falsе, иначе возвращает True
+        :param num_groups: Количество группю
+        :param num_stages: Количество фаз
+        :return: True, если количество направлений и фаз допустимо, иначе False.
+        """
+
+        self.instance_data[DataFields.number_of_groups.value] = num_groups
+        self.instance_data[DataFields.number_of_stages.value] = num_stages
+        if num_groups > 48:
+            self.instance_data[DataFields.errors.value].append(
+                f'Превышено максимально допустимое количество(48) групп: {num_groups}.'
+            )
+        if num_stages > 128:
+            self.instance_data[DataFields.errors.value].append(
+                f'Превышено максимально допустимое количество(128) фаз: {num_stages}.'
+            )
+        return not bool(self.instance_data[DataFields.errors.value])
+
     def calculate(self):
-        self.create_data_for_calculate_conflicts()
-        self.calculate_conflicts()
+        """
+        Последовательное выполнений методов, приводящее к формированию полного результата расчёта
+        конфликтов и остальных свойств.
+        :return:
+        """
+
+        functions: tuple = self.create_data_for_calculate_conflicts, self.calculate_conflicts,
+        for func in functions:
+            if self.instance_data[DataFields.errors.value]:
+                break
+            func()
         self.save_json_to_file(self.instance_data)
+
+
 
 
 if __name__ == '__main__':
@@ -207,7 +246,7 @@ if __name__ == '__main__':
     example = {
         '1': '1,4,2,3,5,5,5,5,3,4,2',
         '2': '1,6,7,7,3',
-        '3': '9,10,8,13,3,100'
+        '3': '9,10,8,13,3,10,49'
     }
     start_time = time.time()
     obj = Conflicts(example)
