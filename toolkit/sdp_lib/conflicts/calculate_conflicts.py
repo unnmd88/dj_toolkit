@@ -2,10 +2,8 @@ import json
 import pprint
 import time
 from enum import Enum
-from typing import Dict, Set, Tuple
+from typing import Dict, Set, Tuple, List
 import logging
-
-
 
 logger = logging.getLogger(__name__)
 
@@ -25,15 +23,21 @@ class DataFields(Enum):
     enemy_groups = 'enemy_groups'
     stages = 'stages'
     groups_property = 'groups_property'
+    type_controller = 'type_controller'
+    conflict = '| K|'
+    no_conflict = '| O|'
+    curr_group_matrix = '| *|'
+    base_matrix = 'base_matrix'
 
 
-class Conflicts:
+class BaseConflicts:
 
     def __init__(self, raw_stages_data: Dict):
 
         self.instance_data = {
             'raw_stages_data': raw_stages_data,
             DataFields.sorted_stages_data.value: None,
+            DataFields.type_controller.value: None,
             DataFields.number_of_groups.value: None,
             DataFields.number_of_stages.value: None,
             DataFields.all_num_groups.value: set(),
@@ -193,7 +197,7 @@ class Conflicts:
         assert conflict_groups == self.supervisor_conflicts(num_group)
         is_always_red: bool = False if group_in_stages else True
         is_always_green: bool = group_in_stages == set(self.instance_data[DataFields.sorted_stages_data.value].keys())
-        assert not((is_always_red is True) and (is_always_green is True))
+        assert not ((is_always_red is True) and (is_always_green is True))
         data = {
             DataFields.stages.value: group_in_stages,
             DataFields.enemy_groups.value: conflict_groups,
@@ -230,7 +234,7 @@ class Conflicts:
         :return:
         """
 
-        functions: tuple = self.create_data_for_calculate_conflicts, self.calculate_conflicts,
+        functions: tuple = self.create_data_for_calculate_conflicts, self.calculate_conflicts, self.create_matrix
         for func in functions:
             if self.instance_data[DataFields.errors.value]:
                 break
@@ -240,7 +244,48 @@ class Conflicts:
         else:
             self.set_to_list(self.instance_data)
 
+    def create_matrix(self):
+        num_groups = self.instance_data[DataFields.number_of_groups.value] + 1
+        # При инициализации формируется шапка матрицы(первая строка) вида:
+        # | *| |01| |02| |03| |04| |05| |06| |07| |08| |09| |10|... и т.д., в зависимости от кол-ва групп
+        matrix = [
+            [DataFields.curr_group_matrix.value if i == 0 else f'|0{i}|' if i < 10 else f'|{i}|'
+             for i in range(num_groups)]
+        ]
 
+        for num_group, property_group in self.instance_data[DataFields.groups_property.value].items():
+            enemy_groups = property_group[DataFields.enemy_groups.value]
+            matrix.append(
+                self.create_row_in_matrix(num_groups, num_group, enemy_groups)
+            )
+        self.instance_data[DataFields.base_matrix.value] = matrix
+
+    def create_row_in_matrix(self, num_groups, current_group: int, enemy_groups: Set) -> List:
+
+        g = f'|0{current_group}|' if current_group < 10 else f'|{current_group}|'
+        row = [
+            DataFields.curr_group_matrix.value if i == current_group else
+            DataFields.conflict.value if i in enemy_groups else DataFields.no_conflict.value if i > 0
+            else g for i in range(num_groups)
+        ]
+        return row
+
+class SwarcoConflicts(BaseConflicts):
+    def __init__(self, raw_stages_data):
+        super().__init__(raw_stages_data)
+        self.instance_data[DataFields.type_controller.value] = 'Swarco'
+
+    def calculate(self, create_json=False):
+        """
+        Последовательное выполнений методов, приводящее к формированию полного результата расчёта
+        конфликтов и остальных свойств.
+        :return:
+        """
+
+        super().calculate(create_json=True)
+
+    def stages_bin_val(self):
+        pass
 
 
 if __name__ == '__main__':
@@ -253,6 +298,8 @@ if __name__ == '__main__':
         '4': '5,6,4'
     }
     start_time = time.time()
-    obj = Conflicts(example)
+    obj = SwarcoConflicts(example)
     obj.calculate(create_json=True)
     print(f'ВРемя выполеения составило: {time.time() - start_time}')
+    for m in obj.instance_data[DataFields.base_matrix.value]:
+        print(m)
