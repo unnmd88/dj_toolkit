@@ -1,7 +1,9 @@
+import functools
 import json
 import pprint
 import time
 from enum import Enum
+from operator import add
 from typing import Dict, Set, Tuple, List
 import logging
 
@@ -24,10 +26,114 @@ class DataFields(Enum):
     stages = 'stages'
     groups_property = 'groups_property'
     type_controller = 'type_controller'
-    conflict = '| K|'
-    no_conflict = '| O|'
-    curr_group_matrix = '| *|'
+    conflictK = '| K|'
+    no_conflictO = '| O|'
+    cross_group_star_matrix = '| *|'
     base_matrix = 'base_matrix'
+    conflictF997 = '03.0;'
+    no_conflictF997 = '  . ;'
+    cross_group997 = 'X;'
+    matrix_F997 = 'matrix_F997'
+    swarco = 'Swarco'
+    peek = 'Peek'
+
+
+class DataBuilder:
+    def __init__(self):
+        self.output_matrix = None
+        self.f997 = None
+        self.numbers_conflicts_groups = None
+        self.stages_bin_vals = None
+        self.sum_conflicts = None
+
+    def __repr__(self):
+
+        return (f'output_matrix:\n{self._unpack_matrix(self.output_matrix)}'
+                f'f997: \n{self._unpack_matrix(self.f997)}\n'
+                f'f994: \n{self.numbers_conflicts_groups}\n'
+                f'stages_bin_vals: {self.stages_bin_vals}\n'
+                f'sum_conflicts: {self.sum_conflicts}')
+
+    def _unpack_matrix(self, obj) -> str:
+        return '\n'.join((''.join(m) for m in obj)) + '\n'
+
+
+    def create_data(self, num_groups: int, groups_property: Dict) -> List:
+
+        self.output_matrix = [self.create_first_row_output_matrix(num_groups)]
+        self.f997, self.numbers_conflicts_groups, self.stages_bin_vals = [], [], []
+        self.sum_conflicts = 0
+
+        for num_group, property_group in groups_property.items():
+            enemy_groups = property_group[DataFields.enemy_groups.value]
+            stages = property_group[DataFields.stages.value]
+            self.output_matrix.append(self.create_row_output_matrix(num_groups, num_group, enemy_groups))
+            self.f997.append(self.create_row_f997(num_groups, num_group, enemy_groups))
+            self.numbers_conflicts_groups.append(f"{';'.join(map(str, sorted(enemy_groups)))};")
+            self.sum_conflicts += len(enemy_groups)
+            print(list(map(lambda x: 2**(x - 1), (int(s) for s in stages))))
+            if self.stages_bin_vals is not None:
+                if not all(g.isdigit() for g in stages):
+                    self.stages_bin_vals = None
+                bin_val = sum(map(lambda x: 2 ** x if x != 8 else 2 ** 0, (int(s) for s in stages)))
+                self.stages_bin_vals.append(f'{"0" *  (3 - len(str(bin_val)))}{bin_val}')
+
+
+
+
+
+
+
+
+        return
+
+    def create_first_row_output_matrix(self, num_groups: int) -> List[str]:
+        # формируется шапка матрицы(первая строка) вида:
+        # | *| |01| |02| |03| |04| |05| |06| |07| |08| |09| |10|... и т.д., в зависимости от кол-ва групп
+        row = [
+            DataFields.cross_group_star_matrix.value if i == 0 else f'|0{i}|' if i < 10 else f'|{i}|'
+            for i in range(num_groups + 1)
+        ]
+        return row
+
+    def create_row_output_matrix(self, num_groups, current_group: int, enemy_groups: Set) -> List[str]:
+        g = f'|0{current_group}|' if current_group < 10 else f'|{current_group}|'
+        row = [
+            DataFields.cross_group_star_matrix.value if i == current_group else
+            DataFields.conflictK.value if i in enemy_groups else DataFields.no_conflictO.value if i > 0
+            else g for i in range(num_groups + 1)
+        ]
+        return row
+
+    def create_row_f997(self, num_groups, current_group: int, enemy_groups: Set[int]) -> List[str]:
+        row = [
+            DataFields.cross_group997.value if i + 1 == current_group else
+            DataFields.conflictF997.value if i + 1 in enemy_groups else DataFields.no_conflictF997.value
+            for i in range(num_groups)
+        ]
+        return row
+
+
+
+class SwarcoDataBuilder(DataBuilder):
+    def create_matrix_F997(self, num_groups: int, groups_property: Dict) -> List:
+        matrix = []
+        for num_group, property_group in groups_property.items():
+            enemy_groups = property_group[DataFields.enemy_groups.value]
+            matrix.append(
+                self.create_row_output_matrix(num_groups, num_group, enemy_groups)
+            )
+        return matrix
+
+    def create_row_matrix_F997(self, num_groups, current_group: int, enemy_groups: Set):
+        row = [
+            DataFields.cross_group997.value if i == current_group + 1 else
+            DataFields.conflictF997.value if i + 1 in enemy_groups else DataFields.no_conflictF997.value
+            for i in range(num_groups)
+        ]
+        return row
+
+
 
 
 class BaseConflicts:
@@ -47,6 +153,9 @@ class BaseConflicts:
             DataFields.allow_make_config.value: None,
             DataFields.errors.value: []
         }
+
+    def __repr__(self):
+        return json.dumps(self.instance_data, indent=4)
 
     def save_json_to_file(self, json_data, file_name='conflicts.json', mode: str = 'w') -> None:
         """
@@ -169,11 +278,9 @@ class BaseConflicts:
         :return: None
         """
 
-        pprint.pprint(self.instance_data)
         groups_prop = self.instance_data[DataFields.groups_property.value]
         for group in self.instance_data.get(DataFields.sorted_all_num_groups.value):
             groups_prop[group] = self.get_conflicts_and_stages_properties_for_group(group)
-        pprint.pprint(self.instance_data)
 
     def get_conflicts_and_stages_properties_for_group(self, num_group: int):
         """
@@ -234,7 +341,7 @@ class BaseConflicts:
         :return:
         """
 
-        functions: tuple = self.create_data_for_calculate_conflicts, self.calculate_conflicts, self.create_matrix
+        functions: tuple = self.create_data_for_calculate_conflicts, self.calculate_conflicts
         for func in functions:
             if self.instance_data[DataFields.errors.value]:
                 break
@@ -244,31 +351,41 @@ class BaseConflicts:
         else:
             self.set_to_list(self.instance_data)
 
-    def create_matrix(self):
-        num_groups = self.instance_data[DataFields.number_of_groups.value] + 1
-        # При инициализации формируется шапка матрицы(первая строка) вида:
-        # | *| |01| |02| |03| |04| |05| |06| |07| |08| |09| |10|... и т.д., в зависимости от кол-ва групп
-        matrix = [
-            [DataFields.curr_group_matrix.value if i == 0 else f'|0{i}|' if i < 10 else f'|{i}|'
-             for i in range(num_groups)]
-        ]
+        data = DataBuilder()
+        data.create_data(
+            self.instance_data[DataFields.number_of_groups.value], self.instance_data[DataFields.groups_property.value]
+        )
+        print('***************************************')
+        print(data)
+        #
+        # self.instance_data[DataFields.base_matrix.value] = data.output_matrix
 
-        for num_group, property_group in self.instance_data[DataFields.groups_property.value].items():
-            enemy_groups = property_group[DataFields.enemy_groups.value]
-            matrix.append(
-                self.create_row_in_matrix(num_groups, num_group, enemy_groups)
-            )
-        self.instance_data[DataFields.base_matrix.value] = matrix
+    # def create_matrix(self):
+    #     num_groups = self.instance_data[DataFields.number_of_groups.value] + 1
+    #     # При инициализации формируется шапка матрицы(первая строка) вида:
+    #     # | *| |01| |02| |03| |04| |05| |06| |07| |08| |09| |10|... и т.д., в зависимости от кол-ва групп
+    #     matrix = [
+    #         [DataFields.cross_group_star_matrix.value if i == 0 else f'|0{i}|' if i < 10 else f'|{i}|'
+    #          for i in range(num_groups)]
+    #     ]
+    #
+    #     for num_group, property_group in self.instance_data[DataFields.groups_property.value].items():
+    #         enemy_groups = property_group[DataFields.enemy_groups.value]
+    #         matrix.append(
+    #             self.create_row_in_matrix(num_groups, num_group, enemy_groups)
+    #         )
+    #     self.instance_data[DataFields.base_matrix.value] = matrix
+    #
+    # def create_row_in_matrix(self, num_groups, current_group: int, enemy_groups: Set) -> List:
+    #
+    #     g = f'|0{current_group}|' if current_group < 10 else f'|{current_group}|'
+    #     row = [
+    #         DataFields.cross_group_star_matrix.value if i == current_group else
+    #         DataFields.conflictK.value if i in enemy_groups else DataFields.no_conflictO.value if i > 0
+    #         else g for i in range(num_groups)
+    #     ]
+    #     return row
 
-    def create_row_in_matrix(self, num_groups, current_group: int, enemy_groups: Set) -> List:
-
-        g = f'|0{current_group}|' if current_group < 10 else f'|{current_group}|'
-        row = [
-            DataFields.curr_group_matrix.value if i == current_group else
-            DataFields.conflict.value if i in enemy_groups else DataFields.no_conflict.value if i > 0
-            else g for i in range(num_groups)
-        ]
-        return row
 
 class SwarcoConflicts(BaseConflicts):
     def __init__(self, raw_stages_data):
@@ -295,11 +412,12 @@ if __name__ == '__main__':
         '1': '1,4,2,3,5,5,5,5,3,4,2',
         '2': '1,6,7,7,3',
         '3': '9,10,8,13,3,10,',
-        '4': '5,6,4'
+        '4': '5.1,6,4'
     }
     start_time = time.time()
     obj = SwarcoConflicts(example)
     obj.calculate(create_json=True)
     print(f'ВРемя выполеения составило: {time.time() - start_time}')
-    for m in obj.instance_data[DataFields.base_matrix.value]:
-        print(m)
+    # print(obj)
+    # for m in obj.instance_data[DataFields.base_matrix.value]:
+    #     print(m)
