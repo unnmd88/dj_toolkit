@@ -16,7 +16,7 @@ from rest_framework.views import APIView
 from rest_framework import generics, viewsets
 from engineering_tools.settings import MEDIA_ROOT, MEDIA_URL, BASE_DIR
 from toolkit.models import SaveConfigFiles, SaveConflictsTXT, ControllerManagement, TrafficLightsObjects
-from toolkit.sdp_lib import conflicts
+from toolkit.sdp_lib import conflicts_old
 from toolkit.serializers import ControllerHostsSerializer, BaseTrafficLightsSerializer
 from . import services
 from .constants import RequestOptions, AvailableTypesRequest
@@ -559,7 +559,7 @@ def data_for_calc_conflicts(request):
 
     path_txt_conflict = f'{MEDIA_ROOT}/conflicts/txt/сalculated_conflicts {dt.now().strftime("%d %b %Y %H_%M_%S")}.txt'
 
-    obj = conflicts.Conflicts()
+    obj = conflicts_old.Conflicts()
     res, msg, *rest = obj.calculate_conflicts(
         input_stages=req_data.stages,
         controller_type=req_data.controller_type,

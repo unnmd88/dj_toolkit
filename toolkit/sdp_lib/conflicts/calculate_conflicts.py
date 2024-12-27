@@ -1,11 +1,11 @@
-import functools
+import itertools
 import json
-import pprint
 import time
 from enum import Enum
-from operator import add
-from typing import Dict, Set, Tuple, List
+from typing import Dict, Set, Tuple, List, Generator
 import logging
+
+import logging_config
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +26,8 @@ class DataFields(Enum):
     stages = 'stages'
     groups_property = 'groups_property'
     type_controller = 'type_controller'
-    conflictK = '| K|'
-    no_conflictO = '| O|'
+    conflict_K = '| K|'
+    no_conflict_O = '| O|'
     cross_group_star_matrix = '| *|'
     base_matrix = 'base_matrix'
     conflictF997 = '03.0;'
@@ -39,7 +39,11 @@ class DataFields(Enum):
 
 
 class DataBuilder:
-    def __init__(self):
+
+    matrix_output_content = ('*', 'K', 'O')
+
+    def __init__(self, data: Dict):
+        self.data = data
         self.output_matrix = None
         self.f997 = None
         self.numbers_conflicts_groups = None
@@ -54,58 +58,62 @@ class DataBuilder:
                 f'stages_bin_vals: {self.stages_bin_vals}\n'
                 f'sum_conflicts: {self.sum_conflicts}')
 
-    def _unpack_matrix(self, obj) -> str:
+    def _unpack_matrix(self, obj: List[List]) -> str:
         return '\n'.join((''.join(m) for m in obj)) + '\n'
 
+    def create_data(self):
 
-    def create_data(self, num_groups: int, groups_property: Dict) -> List:
+        num_groups = self.data[DataFields.number_of_groups.value]
+        groups_property = self.data[DataFields.groups_property.value]
+        all_numbers_groups = sorted(self.data[DataFields.all_num_groups.value])
+        create_bin_vals_stages = self.data[DataFields.allow_make_config.value]
 
-        self.output_matrix = [self.create_first_row_output_matrix(num_groups)]
+        self.output_matrix = [self.create_row_output_matrix(all_numbers_groups, first_row=True)]
         self.f997, self.numbers_conflicts_groups, self.stages_bin_vals = [], [], []
         self.sum_conflicts = 0
 
         for num_group, property_group in groups_property.items():
             enemy_groups = property_group[DataFields.enemy_groups.value]
-            stages = property_group[DataFields.stages.value]
-            self.output_matrix.append(self.create_row_output_matrix(num_groups, num_group, enemy_groups))
+            self.output_matrix.append(self.create_row_output_matrix(all_numbers_groups, num_group, enemy_groups))
             self.f997.append(self.create_row_f997(num_groups, num_group, enemy_groups))
             self.numbers_conflicts_groups.append(f"{';'.join(map(str, sorted(enemy_groups)))};")
             self.sum_conflicts += len(enemy_groups)
-            print(list(map(lambda x: 2**(x - 1), (int(s) for s in stages))))
-            if self.stages_bin_vals is not None:
-                if not all(g.isdigit() for g in stages):
-                    self.stages_bin_vals = None
-                bin_val = sum(map(lambda x: 2 ** x if x != 8 else 2 ** 0, (int(s) for s in stages)))
-                self.stages_bin_vals.append(f'{"0" *  (3 - len(str(bin_val)))}{bin_val}')
+            if create_bin_vals_stages:
+                self.stages_bin_vals.append(self.get_bin_val_stages(stages=property_group[DataFields.stages.value]))
 
+    def create_row_output_matrix(
+            self, all_numbers_groups: List, current_group: int = None, enemy_groups: Set = None, first_row=False
+    ) -> List[str]:
+        """
+        Формирует строку для матрицы в виде списка.
+        :param all_numbers_groups: Номер всех групп в запросе.
+        :param current_group: Номер группы, для которой будет сформирован список.
+        :param enemy_groups: Коллекция set из конфликтных групп для current_group.
+        :param first_row: Является ли строка первой строкой матрицы("шапка")
+        :return: Список-строка для матрицы конфликтов группы current_group, если first_row == False,
+                 иначе список-шапка матрицы
+        """
 
-
-
-
-
-
-
-        return
-
-    def create_first_row_output_matrix(self, num_groups: int) -> List[str]:
-        # формируется шапка матрицы(первая строка) вида:
-        # | *| |01| |02| |03| |04| |05| |06| |07| |08| |09| |10|... и т.д., в зависимости от кол-ва групп
-        row = [
-            DataFields.cross_group_star_matrix.value if i == 0 else f'|0{i}|' if i < 10 else f'|{i}|'
-            for i in range(num_groups + 1)
-        ]
-        return row
-
-    def create_row_output_matrix(self, num_groups, current_group: int, enemy_groups: Set) -> List[str]:
-        g = f'|0{current_group}|' if current_group < 10 else f'|{current_group}|'
-        row = [
-            DataFields.cross_group_star_matrix.value if i == current_group else
-            DataFields.conflictK.value if i in enemy_groups else DataFields.no_conflictO.value if i > 0
-            else g for i in range(num_groups + 1)
-        ]
+        if not first_row:
+            row = [f'|0{current_group}|' if len(str(current_group)) == 1 else f'|{current_group}|']
+            row += [
+                DataFields.no_conflict_O.value if gr not in enemy_groups else DataFields.conflict_K.value
+                for gr in all_numbers_groups
+            ]
+        else:
+            row = [DataFields.cross_group_star_matrix.value]
+            row += [f'|0{g}|' if len(str(g)) == 1 else f'|{g}|' for g in all_numbers_groups]
         return row
 
     def create_row_f997(self, num_groups, current_group: int, enemy_groups: Set[int]) -> List[str]:
+        """
+        Формирует строку матрицы для F997 конфигурации Swarco.
+        :param num_groups: Количетсво групп в запросе.
+        :param current_group: Номер группы, для которой будет сформирован список.
+        :param enemy_groups: Коллекция set из конфликтных групп для current_group.
+        :return: Список-строка для матрицы конфликтов группы current_group
+        """
+
         row = [
             DataFields.cross_group997.value if i + 1 == current_group else
             DataFields.conflictF997.value if i + 1 in enemy_groups else DataFields.no_conflictF997.value
@@ -113,27 +121,15 @@ class DataBuilder:
         ]
         return row
 
+    def get_bin_val_stages(self, stages: Set[int]) -> int:
+        """
+        Формирует бинарное значение всех фаз из коллекции.
+        :param stages: set с фазами, бинарное значение которых необходимо вычислить.
+        :return: Бинарное значение, представленное в виде целого натурального числа.
+        """
 
-
-class SwarcoDataBuilder(DataBuilder):
-    def create_matrix_F997(self, num_groups: int, groups_property: Dict) -> List:
-        matrix = []
-        for num_group, property_group in groups_property.items():
-            enemy_groups = property_group[DataFields.enemy_groups.value]
-            matrix.append(
-                self.create_row_output_matrix(num_groups, num_group, enemy_groups)
-            )
-        return matrix
-
-    def create_row_matrix_F997(self, num_groups, current_group: int, enemy_groups: Set):
-        row = [
-            DataFields.cross_group997.value if i == current_group + 1 else
-            DataFields.conflictF997.value if i + 1 in enemy_groups else DataFields.no_conflictF997.value
-            for i in range(num_groups)
-        ]
-        return row
-
-
+        return sum(map(lambda x: 2 ** x if x != 8 else 2 ** 0, (int(s) for s in stages)))
+        # self.stages_bin_vals.append(f'{"0" * (3 - len(str(bin_val)))}{bin_val}')
 
 
 class BaseConflicts:
@@ -150,7 +146,7 @@ class BaseConflicts:
             DataFields.always_red_groups.value: None,
             DataFields.groups_property.value: {},
             DataFields.sorted_all_num_groups.value: None,
-            DataFields.allow_make_config.value: None,
+            DataFields.allow_make_config.value: True,
             DataFields.errors.value: []
         }
 
@@ -267,10 +263,22 @@ class BaseConflicts:
         self.instance_data[DataFields.sorted_stages_data.value] = processed_stages
         self.instance_data[DataFields.all_num_groups.value] = unsorted_all_num_groups
         self.instance_data[DataFields.always_red_groups.value] = all_red_groups
-        self.instance_data[DataFields.allow_make_config.value] = all(
-            isinstance(g, int) for g in unsorted_all_num_groups)
-
+        self.instance_data[DataFields.allow_make_config.value] = self.make_config_allowed(processed_stages)
         self.instance_data[DataFields.sorted_all_num_groups.value] = sorted(unsorted_all_num_groups)
+
+    def make_config_allowed(self, processed_stages: Dict[str, Set]):
+        """
+        Проверят доступность создания конфигурационного файла .PTC2/.DAT
+        Если одно из направлений или одна из фаз не является целым числом, возвращает False, иначе True.
+        :param processed_stages: Словарь вида {фаза: направления}, например:
+                                 "1": {1, 2, 4, 5}, "2": {4, 5, 6}, "3": {6, 7, 8}
+        :return: True если все направления и фазы представлены в виде целым числом, иначе False
+        """
+
+        for stage, groups_in_stage in processed_stages.items():
+            if not stage.isdigit() or not all(isinstance(g, int) for g in groups_in_stage):
+                return False
+        return True
 
     def calculate_conflicts(self) -> None:
         """
@@ -351,40 +359,11 @@ class BaseConflicts:
         else:
             self.set_to_list(self.instance_data)
 
-        data = DataBuilder()
+        data = DataBuilder(self.instance_data)
         data.create_data(
-            self.instance_data[DataFields.number_of_groups.value], self.instance_data[DataFields.groups_property.value]
-        )
-        print('***************************************')
-        print(data)
-        #
-        # self.instance_data[DataFields.base_matrix.value] = data.output_matrix
 
-    # def create_matrix(self):
-    #     num_groups = self.instance_data[DataFields.number_of_groups.value] + 1
-    #     # При инициализации формируется шапка матрицы(первая строка) вида:
-    #     # | *| |01| |02| |03| |04| |05| |06| |07| |08| |09| |10|... и т.д., в зависимости от кол-ва групп
-    #     matrix = [
-    #         [DataFields.cross_group_star_matrix.value if i == 0 else f'|0{i}|' if i < 10 else f'|{i}|'
-    #          for i in range(num_groups)]
-    #     ]
-    #
-    #     for num_group, property_group in self.instance_data[DataFields.groups_property.value].items():
-    #         enemy_groups = property_group[DataFields.enemy_groups.value]
-    #         matrix.append(
-    #             self.create_row_in_matrix(num_groups, num_group, enemy_groups)
-    #         )
-    #     self.instance_data[DataFields.base_matrix.value] = matrix
-    #
-    # def create_row_in_matrix(self, num_groups, current_group: int, enemy_groups: Set) -> List:
-    #
-    #     g = f'|0{current_group}|' if current_group < 10 else f'|{current_group}|'
-    #     row = [
-    #         DataFields.cross_group_star_matrix.value if i == current_group else
-    #         DataFields.conflictK.value if i in enemy_groups else DataFields.no_conflictO.value if i > 0
-    #         else g for i in range(num_groups)
-    #     ]
-    #     return row
+        )
+        print(data)
 
 
 class SwarcoConflicts(BaseConflicts):
@@ -400,19 +379,20 @@ class SwarcoConflicts(BaseConflicts):
         """
 
         super().calculate(create_json=True)
+        logger.debug('DDD calculate')
 
     def stages_bin_val(self):
         pass
 
 
 if __name__ == '__main__':
-    from engineering_tools.settings import LOGGING
-
+    logger.debug('DDD')
+    logger.info('IIII')
     example = {
         '1': '1,4,2,3,5,5,5,5,3,4,2',
         '2': '1,6,7,7,3',
         '3': '9,10,8,13,3,10,',
-        '4': '5.1,6,4'
+        '4': '5,6,4'
     }
     start_time = time.time()
     obj = SwarcoConflicts(example)
