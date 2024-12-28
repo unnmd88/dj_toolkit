@@ -1,5 +1,5 @@
 from unittest import TestCase, main
-from toolkit.sdp_lib.conflicts.calculate_conflicts import BaseConflicts, DataFields
+from toolkit.sdp_lib.conflicts.calculate_conflicts import BaseConflictsAndStages, DataFields
 
 
 class TestConflicts(TestCase):
@@ -10,8 +10,8 @@ class TestConflicts(TestCase):
             '3': '9,10,8,13,3,10,',
             '4': '5,6,4'
         }
-        self.current_calculation = BaseConflicts(raw_data_stages)
-        self.current_calculation.calculate()
+        self.current_calculation = BaseConflictsAndStages(raw_data_stages)
+        self.current_calculation.build_data()
 
     def test_no_duplicates_and_sorted(self):
         """
@@ -63,8 +63,8 @@ class TestConflicts(TestCase):
             '2': '2,5,6',
             '3': '4.1,4.2,8,9'
         }
-        curr_calc = BaseConflicts(raw_stages)
-        curr_calc.calculate()
+        curr_calc = BaseConflictsAndStages(raw_stages)
+        curr_calc.build_data()
         self.assertTrue(
             self.current_calculation.instance_data[DataFields.allow_make_config.value], False
         )

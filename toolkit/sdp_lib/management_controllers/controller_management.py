@@ -1668,10 +1668,10 @@ class PeekUG405(BaseUG405):
             self.scn = await self.get_scn()
 
         if value.lower() in {'0', 'локал', 'false', 'сброс', 'reset'}:
-            oids = (
+            oids = [
                 (Oids.utcType2OperationMode.value, Integer32(1)),
                 (Oids.utcControlTO.value + self.scn, Integer32(0)),
-            )
+            ]
             return await self.set_request_base(
                 self.ip_adress, self.community_write, oids, timeout=timeout, retries=retries
             )
@@ -1683,12 +1683,12 @@ class PeekUG405(BaseUG405):
             await self.set_operation_mode('2')
             await self.set_operation_mode('3')
 
-        oids = (
+        oids = [
             (Oids.utcType2OperationModeTimeout.value, Integer32(90)),
             (Oids.utcType2OperationMode.value, Integer32(3)),
             (Oids.utcControlTO.value + self.scn, Integer32(1)),
             (Oids.utcControlFn.value + self.scn, OctetString(hexValue=converted_val)),
-        )
+        ]
         return await self.set_request_base(self.ip_adress, self.community_write, oids, timeout=timeout, retries=retries)
 
     async def set_flash(self, value='0', timeout=1, retries=1):

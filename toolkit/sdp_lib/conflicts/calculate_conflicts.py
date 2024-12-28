@@ -1,10 +1,10 @@
-import itertools
 import json
 import time
 from enum import Enum
-from typing import Dict, Set, Tuple, List, Generator
+from typing import Dict, Set, Tuple, List
 import logging
 
+from toolkit.sdp_lib.common import set_curr_datetime
 import logging_config
 
 logger = logging.getLogger(__name__)
@@ -39,8 +39,6 @@ class DataFields(Enum):
 
 
 class DataBuilder:
-
-    matrix_output_content = ('*', 'K', 'O')
 
     def __init__(self, data: Dict):
         self.data = data
@@ -132,7 +130,7 @@ class DataBuilder:
         # self.stages_bin_vals.append(f'{"0" * (3 - len(str(bin_val)))}{bin_val}')
 
 
-class BaseConflicts:
+class BaseConflictsAndStages:
 
     def __init__(self, raw_stages_data: Dict):
 
@@ -342,7 +340,7 @@ class BaseConflicts:
                 enemy_groups.add(group)
         return enemy_groups
 
-    def calculate(self, create_json=False):
+    def build_data(self, create_json=False):
         """
         Последовательное выполнений методов, приводящее к формированию полного результата расчёта
         конфликтов и остальных свойств.
@@ -360,29 +358,37 @@ class BaseConflicts:
             self.set_to_list(self.instance_data)
 
         data = DataBuilder(self.instance_data)
-        data.create_data(
-
-        )
+        data.create_data()
+        self.instance_data
         print(data)
 
 
-class SwarcoConflicts(BaseConflicts):
-    def __init__(self, raw_stages_data):
+class SwarcoConflictsAndStagesAndStages(BaseConflictsAndStages):
+    def __init__(self, raw_stages_data, path_to_src_config=None, prefix_new_config='new_'):
         super().__init__(raw_stages_data)
         self.instance_data[DataFields.type_controller.value] = 'Swarco'
+        self.path_to_src_config = path_to_src_config
+        self.prefix_new_config = prefix_new_config
 
-    def calculate(self, create_json=False):
-        """
-        Последовательное выполнений методов, приводящее к формированию полного результата расчёта
-        конфликтов и остальных свойств.
-        :return:
-        """
+    def create_ptc2_config(self):
+        path_to_new_PTC2 = f'{self.prefix_new_config}{self.path_to_src_config}'
+        conflicts_f997 = 'NewSheet693  : Work.997'
+        conflicts_f992 = 'NewSheet693  : Work.992'
+        with open(self.path_to_src_config) as src, open(path_to_new_PTC2, 'w') as new_file:
+            for line in src:
+                if conflicts_f997 in line:
+                    for matrix_line in self.instance_data[DataFields.matrix_F997.value]:
+                        new_file.write(f'{"".join(matrix_line)}\n')
+                    while 'NeXt' not in line:
+                        next(src)
+                    new_file.write('NeXt')
 
-        super().calculate(create_json=True)
-        logger.debug('DDD calculate')
 
-    def stages_bin_val(self):
-        pass
+
+class PeekConflictsAndStagesAndStages(BaseConflictsAndStages):
+    def __init__(self, raw_stages_data):
+        super().__init__(raw_stages_data)
+        self.instance_data[DataFields.type_controller.value] = 'Peek'
 
 
 if __name__ == '__main__':
@@ -395,8 +401,12 @@ if __name__ == '__main__':
         '4': '5,6,4'
     }
     start_time = time.time()
-    obj = SwarcoConflicts(example)
-    obj.calculate(create_json=True)
+    obj = SwarcoConflictsAndStagesAndStages(example, path_to_src_config='pyatnickoe_sh_47-post_dps_rojdestveno-va_ot_tz_916_2021-2024-08-24-xx.PTC2')
+    obj.build_data(create_json=True)
+    obj.create_ptc2_config()
+
+    # obj2 = PeekConflictsAndStagesAndStages(example)
+    # obj2.build_data(create_json=True)
     print(f'ВРемя выполеения составило: {time.time() - start_time}')
     # print(obj)
     # for m in obj.instance_data[DataFields.base_matrix.value]:
