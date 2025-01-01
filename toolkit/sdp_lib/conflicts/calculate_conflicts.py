@@ -1,10 +1,10 @@
 import json
 import time
 from enum import Enum
-from typing import Dict, Set, Tuple, List
+from typing import Dict, Set, Tuple, List, Iterator, TextIO
 import logging
 
-from toolkit.sdp_lib.common import set_curr_datetime
+from toolkit.sdp_lib.utils import set_curr_datetime
 import logging_config
 
 logger = logging.getLogger(__name__)
@@ -29,19 +29,22 @@ class DataFields(Enum):
     conflict_K = '| K|'
     no_conflict_O = '| O|'
     cross_group_star_matrix = '| *|'
-    base_matrix = 'base_matrix'
+    output_matrix = 'base_matrix'
     conflictF997 = '03.0;'
     no_conflictF997 = '  . ;'
     cross_group997 = 'X;'
     matrix_F997 = 'matrix_F997'
+    numbers_conflicts_groups = 'numbers_conflicts_groups'
+    stages_bin_vals = 'stages_bin_vals'
+    sum_conflicts = 'sum_conflicts'
     swarco = 'Swarco'
     peek = 'Peek'
 
 
 class DataBuilder:
 
-    def __init__(self, data: Dict):
-        self.data = data
+    def __init__(self, source_data: Dict):
+        self.source_data = source_data
         self.output_matrix = None
         self.f997 = None
         self.numbers_conflicts_groups = None
@@ -61,10 +64,10 @@ class DataBuilder:
 
     def create_data(self):
 
-        num_groups = self.data[DataFields.number_of_groups.value]
-        groups_property = self.data[DataFields.groups_property.value]
-        all_numbers_groups = sorted(self.data[DataFields.all_num_groups.value])
-        create_bin_vals_stages = self.data[DataFields.allow_make_config.value]
+        num_groups = self.source_data[DataFields.number_of_groups.value]
+        groups_property = self.source_data[DataFields.groups_property.value]
+        all_numbers_groups = sorted(self.source_data[DataFields.all_num_groups.value])
+        create_bin_vals_stages = self.source_data[DataFields.allow_make_config.value]
 
         self.output_matrix = [self.create_row_output_matrix(all_numbers_groups, first_row=True)]
         self.f997, self.numbers_conflicts_groups, self.stages_bin_vals = [], [], []
@@ -359,7 +362,12 @@ class BaseConflictsAndStages:
 
         data = DataBuilder(self.instance_data)
         data.create_data()
-        self.instance_data
+        self.instance_data[DataFields.output_matrix.value] = data.output_matrix
+        self.instance_data[DataFields.matrix_F997.value] = data.f997
+        self.instance_data[DataFields.numbers_conflicts_groups.value] = data.numbers_conflicts_groups
+        self.instance_data[DataFields.stages_bin_vals.value] = data.stages_bin_vals
+        self.instance_data[DataFields.sum_conflicts.value] = data.sum_conflicts
+
         print(data)
 
 
@@ -374,15 +382,59 @@ class SwarcoConflictsAndStagesAndStages(BaseConflictsAndStages):
         path_to_new_PTC2 = f'{self.prefix_new_config}{self.path_to_src_config}'
         conflicts_f997 = 'NewSheet693  : Work.997'
         conflicts_f992 = 'NewSheet693  : Work.992'
+        conflicts_f006 = 'NewSheet693  : Work.006'
+        stage_bin_vals_f009 = 'NewSheet693  : Work.009'
+
         with open(self.path_to_src_config) as src, open(path_to_new_PTC2, 'w') as new_file:
             for line in src:
-                if conflicts_f997 in line:
-                    for matrix_line in self.instance_data[DataFields.matrix_F997.value]:
-                        new_file.write(f'{"".join(matrix_line)}\n')
-                    while 'NeXt' not in line:
-                        next(src)
-                    new_file.write('NeXt')
+                if conflicts_f997 in line or conflicts_f992 in line:
+                    self.write_data_to_file(
+                        file_for_write=new_file,
+                        file_for_read=src,
+                        curr_line_from_file_for_write=line,
+                        matrix=self.instance_data[DataFields.matrix_F997.value]
+                    )
+                elif conflicts_f006 in line:
+                    self.write_data_to_file(
+                        file_for_write=new_file,
+                        file_for_read=src,
+                        curr_line_from_file_for_write=line
+                    )
+                elif stage_bin_vals_f009 in line:
+                    self.write_data_to_file(
+                        file_for_write=new_file,
+                        file_for_read=src,
+                        curr_line_from_file_for_write=line,
+                        stages_bin_vals=self.instance_data[DataFields.stages_bin_vals.value]
+                    )
+                else:
+                    new_file.write(line)
 
+    def write_data_to_file(
+            self,
+            file_for_write: TextIO,
+            file_for_read: Iterator,
+            curr_line_from_file_for_write: str,
+            matrix=None,
+            stages_bin_vals=None
+    ):
+        file_for_write.write(f'{curr_line_from_file_for_write}')
+        if matrix is not None:
+            for matrix_line in matrix:
+                file_for_write.write(f'{"".join(matrix_line)}\n')
+        elif stages_bin_vals is not None:
+            for val in stages_bin_vals:
+                zeros = f'{"0" * 1 * (3 - len(str(val)))}'
+                file_for_write.write(f';{zeros}{val};;1;\n')
+        while 'NeXt' not in curr_line_from_file_for_write:
+            curr_line_from_file_for_write = next(file_for_read)
+        file_for_write.write(curr_line_from_file_for_write)
+
+    def build_data(self, create_json=False):
+        super().build_data(create_json)
+        if self.path_to_src_config is not None:
+            self.create_ptc2_config()
+        self.save_json_to_file(self.instance_data)
 
 
 class PeekConflictsAndStagesAndStages(BaseConflictsAndStages):
@@ -401,9 +453,9 @@ if __name__ == '__main__':
         '4': '5,6,4'
     }
     start_time = time.time()
-    obj = SwarcoConflictsAndStagesAndStages(example, path_to_src_config='pyatnickoe_sh_47-post_dps_rojdestveno-va_ot_tz_916_2021-2024-08-24-xx.PTC2')
-    obj.build_data(create_json=True)
-    obj.create_ptc2_config()
+    obj = SwarcoConflictsAndStagesAndStages(example, path_to_src_config='stripes_67_pokrovskie_vorotl_pokrovka_17_va_ot_2022_12_31_xx_JNx7t0U.PTC2')
+    obj.build_data()
+
 
     # obj2 = PeekConflictsAndStagesAndStages(example)
     # obj2.build_data(create_json=True)

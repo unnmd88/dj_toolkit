@@ -33,9 +33,9 @@ class TrafficLightTestCase(APITestCase):
 
         url = '/api/v1/traffilight_objects/'
         response = self.client.get(url)
-        serializer_data = TrafficLightsSerializer([obj1, obj2], many=True).data
+        serializer_data = TrafficLightsSerializer([obj1, obj2], many=True).source_data
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(serializer_data, list(reversed(response.data)))
+        self.assertEqual(serializer_data, list(reversed(response.source_data)))
 
 # class LogicTestCase(TestCase):
 #     print(f'LogicTestCase: LogicTestCase')

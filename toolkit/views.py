@@ -139,7 +139,7 @@ class ControllerManagementAPI(APIView):
     def post(self, request):
 
         start_time = time.time()
-        data_body = request.data
+        data_body = request.source_data
         logger.debug(data_body)
         data_hosts_body, type_req, req_from_telegramm, chat_id, search_in_db = (
             data_body.get(RequestOptions.hosts.value),
@@ -213,8 +213,8 @@ class DownloadFileFromControllerAPI(APIView):
     def post(self, request):
 
         start_time = time.time()
-        logger.debug(request.data)
-        data_body = request.data
+        logger.debug(request.source_data)
+        data_body = request.source_data
         data_hosts_body, type_req, req_from_telegramm, chat_id, search_in_db = (
             data_body.get(RequestOptions.hosts.value),
             data_body.get(RequestOptions.type_request.value),
@@ -283,7 +283,7 @@ class CompareGroupsAPI(APIView):
     def post(self, request):
 
         start_time = time.time()
-        data_body = request.data
+        data_body = request.source_data
         options = data_body.get('options', [])
         logger.debug(data_body)
         manager = services.PassportProcessing(
@@ -318,7 +318,7 @@ class PotokTrafficLightsConfiguratorAPI(APIView):
 
     def post(self, request):
         start_time = time.time()
-        data_body = request.data
+        data_body = request.source_data
         condition = data_body.get(self.condition)
         options = data_body.get('options')
         if options is None:
