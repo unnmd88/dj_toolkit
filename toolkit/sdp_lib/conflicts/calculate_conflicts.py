@@ -1,4 +1,6 @@
 import json
+import random
+import string
 import time
 from enum import Enum
 from typing import Dict, Set, Tuple, List, Iterator, TextIO
@@ -57,19 +59,12 @@ class BaseConflictsAndStages:
             DataFields.sorted_all_num_groups.value: None,
             DataFields.allow_make_config.value: True,
             DataFields.errors.value: [],
-
             DataFields.output_matrix.value: None,
             DataFields.matrix_F997.value: None,
             DataFields.numbers_conflicts_groups.value: None,
             DataFields.stages_bin_vals.value: None,
             DataFields.sum_conflicts.value: None
         }
-
-        # self.output_matrix = None
-        # self.f997 = None
-        # self.numbers_conflicts_groups = None
-        # self.stages_bin_vals = None
-        # self.sum_conflicts = None
 
     def get_all_data_curr_calculate(self):
         return json.dumps(self.instance_data, indent=4)
@@ -354,6 +349,33 @@ class OutputData(BaseConflictsAndStages):
 
 class CommonConflictsAndStagesAPI(OutputData):
 
+    def __init__(self, raw_stages_data: Dict, create_txt: bool = False):
+        super().__init__(raw_stages_data)
+        self.instance_data[DataFields.type_controller.value] = 'Общий'
+        self.create_txt = create_txt
+
+    def create_txt_file(self):
+        path_to_txt = f"calculated_data_{''.join(random.choices(string.ascii_letters, k=6))}"
+
+        with open(path_to_txt, 'w') as f:
+            logger.debug(self.instance_data[DataFields.sorted_stages_data.value])
+            for stage, groups_in_stage in self.instance_data[DataFields.sorted_stages_data.value].items():
+                f.write(
+                    f'Фаза {stage}: {",".join(map(str, groups_in_stage))}\n'
+                )
+            f.write(f'Количество направлений: {self.instance_data[DataFields.number_of_groups.value]}\n\n')
+            f.write('Матрица конфликтов общая:\n')
+            f.write(f'{self._unpack_matrix(self.instance_data[DataFields.output_matrix.value])}\n')
+            f.write('Матрица конфликтов F997 Swarco:\n')
+            f.write(f'{self._unpack_matrix(self.instance_data[DataFields.matrix_F997.value])}\n')
+            f.write('Конфликтные направления F994 Swarco:\n')
+            f.write(f'{self._unpack_matrix(self.instance_data[DataFields.numbers_conflicts_groups.value])}\n')
+            f.write('Бинарные значения фаз F009 Swarco:\n')
+            for val in self.instance_data[DataFields.stages_bin_vals.value]:
+                zeros = f'{"0" * 1 * (3 - len(str(val)))}'
+                f.write(f'{zeros}{val};')
+
+
     def build_data(self, create_json=False):
         """
         Последовательное выполнений методов, приводящее к формированию полного результата расчёта
@@ -372,11 +394,14 @@ class CommonConflictsAndStagesAPI(OutputData):
             self.save_json_to_file(self.instance_data)
         else:
             self.set_to_list(self.instance_data)
+        if self.create_txt:
+            self.create_txt_file()
 
 
 class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
-    def __init__(self, raw_stages_data: Dict, path_to_src_config: str = None, prefix_new_config: str = 'new_'):
-        super().__init__(raw_stages_data)
+
+    def __init__(self, raw_stages_data: Dict, create_txt=False, path_to_src_config: str = None, prefix_new_config: str = 'new_'):
+        super().__init__(raw_stages_data, create_txt)
         self.instance_data[DataFields.type_controller.value] = 'Swarco'
         self.path_to_src_config = path_to_src_config
         self.prefix_new_config = prefix_new_config
@@ -456,10 +481,13 @@ if __name__ == '__main__':
         '4': '5,6,4'
     }
     start_time = time.time()
-    obj = SwarcoConflictsAndStagesAPI(example,
+    obj = SwarcoConflictsAndStagesAPI(example, create_txt=True,
                                       path_to_src_config='stripes_67_pokrovskie_vorotl_pokrovka_17_va_ot_2022_12_31_xx_JNx7t0U.PTC2')
     obj.build_data()
     print(obj)
+
+    # obj2 = CommonConflictsAndStagesAPI(example, create_txt=True)
+    # obj2.build_data()
 
     print(f'ВРемя выполеения составило: {time.time() - start_time}')
     # print(obj)
