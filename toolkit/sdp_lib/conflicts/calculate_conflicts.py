@@ -41,98 +41,6 @@ class DataFields(Enum):
     peek = 'Peek'
 
 
-class DataBuilder:
-
-    def __init__(self, source_data: Dict):
-        self.source_data = source_data
-        self.output_matrix = None
-        self.f997 = None
-        self.numbers_conflicts_groups = None
-        self.stages_bin_vals = None
-        self.sum_conflicts = None
-
-    def __repr__(self):
-
-        return (f'output_matrix:\n{self._unpack_matrix(self.output_matrix)}'
-                f'f997: \n{self._unpack_matrix(self.f997)}\n'
-                f'f994: \n{self.numbers_conflicts_groups}\n'
-                f'stages_bin_vals: {self.stages_bin_vals}\n'
-                f'sum_conflicts: {self.sum_conflicts}')
-
-    def _unpack_matrix(self, obj: List[List]) -> str:
-        return '\n'.join((''.join(m) for m in obj)) + '\n'
-
-    def create_data(self):
-
-        num_groups = self.source_data[DataFields.number_of_groups.value]
-        groups_property = self.source_data[DataFields.groups_property.value]
-        all_numbers_groups = sorted(self.source_data[DataFields.all_num_groups.value])
-        create_bin_vals_stages = self.source_data[DataFields.allow_make_config.value]
-
-        self.output_matrix = [self.create_row_output_matrix(all_numbers_groups, first_row=True)]
-        self.f997, self.numbers_conflicts_groups, self.stages_bin_vals = [], [], []
-        self.sum_conflicts = 0
-
-        for num_group, property_group in groups_property.items():
-            enemy_groups = property_group[DataFields.enemy_groups.value]
-            self.output_matrix.append(self.create_row_output_matrix(all_numbers_groups, num_group, enemy_groups))
-            self.f997.append(self.create_row_f997(num_groups, num_group, enemy_groups))
-            self.numbers_conflicts_groups.append(f"{';'.join(map(str, sorted(enemy_groups)))};")
-            self.sum_conflicts += len(enemy_groups)
-            if create_bin_vals_stages:
-                self.stages_bin_vals.append(self.get_bin_val_stages(stages=property_group[DataFields.stages.value]))
-
-    def create_row_output_matrix(
-            self, all_numbers_groups: List, current_group: int = None, enemy_groups: Set = None, first_row=False
-    ) -> List[str]:
-        """
-        Формирует строку для матрицы в виде списка.
-        :param all_numbers_groups: Номер всех групп в запросе.
-        :param current_group: Номер группы, для которой будет сформирован список.
-        :param enemy_groups: Коллекция set из конфликтных групп для current_group.
-        :param first_row: Является ли строка первой строкой матрицы("шапка")
-        :return: Список-строка для матрицы конфликтов группы current_group, если first_row == False,
-                 иначе список-шапка матрицы
-        """
-
-        if not first_row:
-            row = [f'|0{current_group}|' if len(str(current_group)) == 1 else f'|{current_group}|']
-            row += [
-                DataFields.no_conflict_O.value if gr not in enemy_groups else DataFields.conflict_K.value
-                for gr in all_numbers_groups
-            ]
-        else:
-            row = [DataFields.cross_group_star_matrix.value]
-            row += [f'|0{g}|' if len(str(g)) == 1 else f'|{g}|' for g in all_numbers_groups]
-        return row
-
-    def create_row_f997(self, num_groups, current_group: int, enemy_groups: Set[int]) -> List[str]:
-        """
-        Формирует строку матрицы для F997 конфигурации Swarco.
-        :param num_groups: Количетсво групп в запросе.
-        :param current_group: Номер группы, для которой будет сформирован список.
-        :param enemy_groups: Коллекция set из конфликтных групп для current_group.
-        :return: Список-строка для матрицы конфликтов группы current_group
-        """
-
-        row = [
-            DataFields.cross_group997.value if i + 1 == current_group else
-            DataFields.conflictF997.value if i + 1 in enemy_groups else DataFields.no_conflictF997.value
-            for i in range(num_groups)
-        ]
-        return row
-
-    def get_bin_val_stages(self, stages: Set[int]) -> int:
-        """
-        Формирует бинарное значение всех фаз из коллекции.
-        :param stages: set с фазами, бинарное значение которых необходимо вычислить.
-        :return: Бинарное значение, представленное в виде целого натурального числа.
-        """
-
-        return sum(map(lambda x: 2 ** x if x != 8 else 2 ** 0, (int(s) for s in stages)))
-        # self.stages_bin_vals.append(f'{"0" * (3 - len(str(bin_val)))}{bin_val}')
-
-
 class BaseConflictsAndStages:
 
     def __init__(self, raw_stages_data: Dict):
@@ -148,10 +56,22 @@ class BaseConflictsAndStages:
             DataFields.groups_property.value: {},
             DataFields.sorted_all_num_groups.value: None,
             DataFields.allow_make_config.value: True,
-            DataFields.errors.value: []
+            DataFields.errors.value: [],
+
+            DataFields.output_matrix.value: None,
+            DataFields.matrix_F997.value: None,
+            DataFields.numbers_conflicts_groups.value: None,
+            DataFields.stages_bin_vals.value: None,
+            DataFields.sum_conflicts.value: None
         }
 
-    def __repr__(self):
+        # self.output_matrix = None
+        # self.f997 = None
+        # self.numbers_conflicts_groups = None
+        # self.stages_bin_vals = None
+        # self.sum_conflicts = None
+
+    def get_all_data_curr_calculate(self):
         return json.dumps(self.instance_data, indent=4)
 
     def save_json_to_file(self, json_data, file_name='conflicts.json', mode: str = 'w') -> None:
@@ -182,7 +102,7 @@ class BaseConflictsAndStages:
             elif isinstance(v, set):
                 target[k] = sorted(v)
 
-    def create_data_for_calculate_conflicts(self, separator: str = ','):
+    def _processing_data_for_calculation(self, separator: str = ','):
         """
         Формирует данные для расчёта конфликтов. Определяет возможность формирования конфига .PTC2 или .DAT
         по следующему правилу: если все группы представляют собой однозначные целые числа int, то
@@ -206,15 +126,15 @@ class BaseConflictsAndStages:
                 f'{stage}: {str(err).split(":")[-1].replace(" ", "")}, должен быть числом'
             )
 
-        if not self.check_data_for_calculate_is_valid(max(unsorted_num_groups), len(processed_stages.keys())):
+        if not self._check_data_for_calculate_is_valid(max(unsorted_num_groups), len(processed_stages.keys())):
             return
 
-        unsorted_all_num_groups, always_red_groups = self.get_always_red_and_all_unsorted_groups(unsorted_num_groups)
-        self.add_data_to_instance_data_dict_for_calc_conflicts(
+        unsorted_all_num_groups, always_red_groups = self._get_always_red_and_all_unsorted_groups(unsorted_num_groups)
+        self._add_data_to_instance_data_dict_for_calc_conflicts(
             processed_stages, unsorted_all_num_groups, always_red_groups
         )
 
-    def check_data_for_calculate_is_valid(self, num_groups: int, num_stages: int):
+    def _check_data_for_calculate_is_valid(self, num_groups: int, num_stages: int):
         """
         Проверяет валидное количество направлений и фаз. Если передано недопустимое количество фаз
         и направлений, добавляет сообщение об ошибке в self.instance_data[DataFields.number_of_stages.value] и
@@ -236,7 +156,7 @@ class BaseConflictsAndStages:
             )
         return not bool(self.instance_data[DataFields.errors.value])
 
-    def get_always_red_and_all_unsorted_groups(self, unsorted_all_num_groups: Set) -> Tuple[Set, Set]:
+    def _get_always_red_and_all_unsorted_groups(self, unsorted_all_num_groups: Set) -> Tuple[Set, Set]:
         """
         Определяет для общее количество групп в виде set и группы, являющиеся "постоянно красными" в вид set
         :param unsorted_all_num_groups: set из групп, которые учатсвуют хотя бы в одной фазе.
@@ -251,7 +171,7 @@ class BaseConflictsAndStages:
                 unsorted_all_num_groups.add(group)
         return unsorted_all_num_groups, always_red_groups
 
-    def add_data_to_instance_data_dict_for_calc_conflicts(
+    def _add_data_to_instance_data_dict_for_calc_conflicts(
             self, processed_stages: Dict, unsorted_all_num_groups: Set, all_red_groups: Set
     ):
         """
@@ -264,10 +184,10 @@ class BaseConflictsAndStages:
         self.instance_data[DataFields.sorted_stages_data.value] = processed_stages
         self.instance_data[DataFields.all_num_groups.value] = unsorted_all_num_groups
         self.instance_data[DataFields.always_red_groups.value] = all_red_groups
-        self.instance_data[DataFields.allow_make_config.value] = self.make_config_allowed(processed_stages)
+        self.instance_data[DataFields.allow_make_config.value] = self._make_config_allowed(processed_stages)
         self.instance_data[DataFields.sorted_all_num_groups.value] = sorted(unsorted_all_num_groups)
 
-    def make_config_allowed(self, processed_stages: Dict[str, Set]):
+    def _make_config_allowed(self, processed_stages: Dict[str, Set]):
         """
         Проверят доступность создания конфигурационного файла .PTC2/.DAT
         Если одно из направлений или одна из фаз не является целым числом, возвращает False, иначе True.
@@ -281,7 +201,7 @@ class BaseConflictsAndStages:
                 return False
         return True
 
-    def calculate_conflicts(self) -> None:
+    def _calculate_conflicts_and_stages(self) -> None:
         """
         Формирует словарь для всех групп с данными о группе: конфликтами и фазами, в которых участвует направеление
         :return: None
@@ -289,9 +209,9 @@ class BaseConflictsAndStages:
 
         groups_prop = self.instance_data[DataFields.groups_property.value]
         for group in self.instance_data.get(DataFields.sorted_all_num_groups.value):
-            groups_prop[group] = self.get_conflicts_and_stages_properties_for_group(group)
+            groups_prop[group] = self._get_conflicts_and_stages_properties_for_group(group)
 
-    def get_conflicts_and_stages_properties_for_group(self, num_group: int):
+    def _get_conflicts_and_stages_properties_for_group(self, num_group: int):
         """
         Формирует конфликты для группы.
         :param num_group: Номер группы, для котороый будут сформированы конфликты в виде set
@@ -310,7 +230,7 @@ class BaseConflictsAndStages:
                 group_in_stages.add(stage)
                 for g in groups_in_stage:
                     conflict_groups.discard(g)
-        assert conflict_groups == self.supervisor_conflicts(num_group)
+        assert conflict_groups == self._supervisor_conflicts(num_group)
         is_always_red: bool = False if group_in_stages else True
         is_always_green: bool = group_in_stages == set(self.instance_data[DataFields.sorted_stages_data.value].keys())
         assert not ((is_always_red is True) and (is_always_green is True))
@@ -322,7 +242,7 @@ class BaseConflictsAndStages:
         }
         return data
 
-    def supervisor_conflicts(self, num_group: int) -> Set:
+    def _supervisor_conflicts(self, num_group: int) -> Set:
         """
         Метод формирует set из групп, с которыми есть конфликт у группы num_group. Является проверкой
         корректности формирования конфликтных групп метода self.get_conflicts_and_stages_for_group.
@@ -343,6 +263,97 @@ class BaseConflictsAndStages:
                 enemy_groups.add(group)
         return enemy_groups
 
+
+class OutputData(BaseConflictsAndStages):
+
+    def __repr__(self):
+        return (f'output_matrix:\n{self._unpack_matrix(self.instance_data[DataFields.output_matrix.value])}'
+                f'f997: \n{self._unpack_matrix(self.instance_data[DataFields.matrix_F997.value])}\n'
+                f'f994: \n{self.instance_data[DataFields.numbers_conflicts_groups.value]}\n'
+                f'stages_bin_vals: {self.instance_data[DataFields.stages_bin_vals.value]}\n'
+                f'sum_conflicts: {self.instance_data[DataFields.sum_conflicts.value]}')
+
+    def _unpack_matrix(self, matrix: List[List]) -> str:
+        return '\n'.join((''.join(m) for m in matrix)) + '\n'
+
+    def _create_row_output_matrix(
+            self, all_numbers_groups: List, current_group: int = None, enemy_groups: Set = None, first_row=False
+    ) -> List[str]:
+        """
+        Формирует строку для матрицы в виде списка.
+        :param all_numbers_groups: Номер всех групп в запросе.
+        :param current_group: Номер группы, для которой будет сформирован список.
+        :param enemy_groups: Коллекция set из конфликтных групп для current_group.
+        :param first_row: Является ли строка первой строкой матрицы("шапка")
+        :return: Список-строка для матрицы конфликтов группы current_group, если first_row == False,
+                 иначе список-шапка матрицы
+        """
+
+        if not first_row:
+            row = [f'|0{current_group}|' if len(str(current_group)) == 1 else f'|{current_group}|']
+            row += [
+                DataFields.no_conflict_O.value if gr not in enemy_groups else DataFields.conflict_K.value
+                for gr in all_numbers_groups
+            ]
+        else:
+            row = [DataFields.cross_group_star_matrix.value]
+            row += [f'|0{g}|' if len(str(g)) == 1 else f'|{g}|' for g in all_numbers_groups]
+        return row
+
+    def _create_row_f997(self, num_groups, current_group: int, enemy_groups: Set[int]) -> List[str]:
+        """
+        Формирует строку матрицы для F997 конфигурации Swarco.
+        :param num_groups: Количетсво групп в запросе.
+        :param current_group: Номер группы, для которой будет сформирован список.
+        :param enemy_groups: Коллекция set из конфликтных групп для current_group.
+        :return: Список-строка для матрицы конфликтов группы current_group
+        """
+
+        row = [
+            DataFields.cross_group997.value if i + 1 == current_group else
+            DataFields.conflictF997.value if i + 1 in enemy_groups else DataFields.no_conflictF997.value
+            for i in range(num_groups)
+        ]
+        return row
+
+    def _get_bin_val_stages(self, stages: Set[int]) -> int:
+        """
+        Формирует бинарное значение всех фаз из коллекции.
+        :param stages: set с фазами, бинарное значение которых необходимо вычислить.
+        :return: Бинарное значение, представленное в виде целого натурального числа.
+        """
+
+        return sum(map(lambda x: 2 ** x if x != 8 else 2 ** 0, (int(s) for s in stages)))
+
+    def create_data_for_output(self):
+
+        num_groups = self.instance_data[DataFields.number_of_groups.value]
+        groups_property = self.instance_data[DataFields.groups_property.value]
+        all_numbers_groups = sorted(self.instance_data[DataFields.all_num_groups.value])
+        create_bin_vals_stages = self.instance_data[DataFields.allow_make_config.value]
+
+        output_matrix = [self._create_row_output_matrix(all_numbers_groups, first_row=True)]
+        f997, numbers_conflicts_groups, stages_bin_vals = [], [], []
+        sum_conflicts = 0
+
+        for num_group, property_group in groups_property.items():
+            enemy_groups = property_group[DataFields.enemy_groups.value]
+            output_matrix.append(self._create_row_output_matrix(all_numbers_groups, num_group, enemy_groups))
+            f997.append(self._create_row_f997(num_groups, num_group, enemy_groups))
+            numbers_conflicts_groups.append(f"{';'.join(map(str, sorted(enemy_groups)))};")
+            sum_conflicts += len(enemy_groups)
+            if create_bin_vals_stages:
+                stages_bin_vals.append(self._get_bin_val_stages(stages=property_group[DataFields.stages.value]))
+
+        self.instance_data[DataFields.output_matrix.value] = output_matrix
+        self.instance_data[DataFields.matrix_F997.value] = f997
+        self.instance_data[DataFields.numbers_conflicts_groups.value] = numbers_conflicts_groups
+        self.instance_data[DataFields.stages_bin_vals.value] = stages_bin_vals
+        self.instance_data[DataFields.sum_conflicts.value] = sum_conflicts
+
+
+class CommonConflictsAndStagesOutput(OutputData):
+
     def build_data(self, create_json=False):
         """
         Последовательное выполнений методов, приводящее к формированию полного результата расчёта
@@ -350,7 +361,9 @@ class BaseConflictsAndStages:
         :return:
         """
 
-        functions: tuple = self.create_data_for_calculate_conflicts, self.calculate_conflicts
+        functions: tuple = (
+            self._processing_data_for_calculation, self._calculate_conflicts_and_stages, self.create_data_for_output
+        )
         for func in functions:
             if self.instance_data[DataFields.errors.value]:
                 break
@@ -360,19 +373,9 @@ class BaseConflictsAndStages:
         else:
             self.set_to_list(self.instance_data)
 
-        data = DataBuilder(self.instance_data)
-        data.create_data()
-        self.instance_data[DataFields.output_matrix.value] = data.output_matrix
-        self.instance_data[DataFields.matrix_F997.value] = data.f997
-        self.instance_data[DataFields.numbers_conflicts_groups.value] = data.numbers_conflicts_groups
-        self.instance_data[DataFields.stages_bin_vals.value] = data.stages_bin_vals
-        self.instance_data[DataFields.sum_conflicts.value] = data.sum_conflicts
 
-        print(data)
-
-
-class SwarcoConflictsAndStagesAndStages(BaseConflictsAndStages):
-    def __init__(self, raw_stages_data, path_to_src_config=None, prefix_new_config='new_'):
+class SwarcoConflictsAndStagesAndStagesOutput(CommonConflictsAndStagesOutput):
+    def __init__(self, raw_stages_data: Dict, path_to_src_config: str = None, prefix_new_config: str = 'new_'):
         super().__init__(raw_stages_data)
         self.instance_data[DataFields.type_controller.value] = 'Swarco'
         self.path_to_src_config = path_to_src_config
@@ -437,7 +440,7 @@ class SwarcoConflictsAndStagesAndStages(BaseConflictsAndStages):
         self.save_json_to_file(self.instance_data)
 
 
-class PeekConflictsAndStagesAndStages(BaseConflictsAndStages):
+class PeekConflictsAndStagesAndStages(CommonConflictsAndStagesOutput):
     def __init__(self, raw_stages_data):
         super().__init__(raw_stages_data)
         self.instance_data[DataFields.type_controller.value] = 'Peek'
@@ -453,12 +456,11 @@ if __name__ == '__main__':
         '4': '5,6,4'
     }
     start_time = time.time()
-    obj = SwarcoConflictsAndStagesAndStages(example, path_to_src_config='stripes_67_pokrovskie_vorotl_pokrovka_17_va_ot_2022_12_31_xx_JNx7t0U.PTC2')
+    obj = SwarcoConflictsAndStagesAndStagesOutput(example,
+                                                  path_to_src_config='stripes_67_pokrovskie_vorotl_pokrovka_17_va_ot_2022_12_31_xx_JNx7t0U.PTC2')
     obj.build_data()
+    print(obj)
 
-
-    # obj2 = PeekConflictsAndStagesAndStages(example)
-    # obj2.build_data(create_json=True)
     print(f'ВРемя выполеения составило: {time.time() - start_time}')
     # print(obj)
     # for m in obj.instance_data[DataFields.base_matrix.value]:
