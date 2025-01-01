@@ -352,7 +352,7 @@ class OutputData(BaseConflictsAndStages):
         self.instance_data[DataFields.sum_conflicts.value] = sum_conflicts
 
 
-class CommonConflictsAndStagesOutput(OutputData):
+class CommonConflictsAndStagesAPI(OutputData):
 
     def build_data(self, create_json=False):
         """
@@ -374,7 +374,7 @@ class CommonConflictsAndStagesOutput(OutputData):
             self.set_to_list(self.instance_data)
 
 
-class SwarcoConflictsAndStagesAndStagesOutput(CommonConflictsAndStagesOutput):
+class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
     def __init__(self, raw_stages_data: Dict, path_to_src_config: str = None, prefix_new_config: str = 'new_'):
         super().__init__(raw_stages_data)
         self.instance_data[DataFields.type_controller.value] = 'Swarco'
@@ -440,7 +440,7 @@ class SwarcoConflictsAndStagesAndStagesOutput(CommonConflictsAndStagesOutput):
         self.save_json_to_file(self.instance_data)
 
 
-class PeekConflictsAndStagesAndStages(CommonConflictsAndStagesOutput):
+class PeekConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
     def __init__(self, raw_stages_data):
         super().__init__(raw_stages_data)
         self.instance_data[DataFields.type_controller.value] = 'Peek'
@@ -456,8 +456,8 @@ if __name__ == '__main__':
         '4': '5,6,4'
     }
     start_time = time.time()
-    obj = SwarcoConflictsAndStagesAndStagesOutput(example,
-                                                  path_to_src_config='stripes_67_pokrovskie_vorotl_pokrovka_17_va_ot_2022_12_31_xx_JNx7t0U.PTC2')
+    obj = SwarcoConflictsAndStagesAPI(example,
+                                      path_to_src_config='stripes_67_pokrovskie_vorotl_pokrovka_17_va_ot_2022_12_31_xx_JNx7t0U.PTC2')
     obj.build_data()
     print(obj)
 
