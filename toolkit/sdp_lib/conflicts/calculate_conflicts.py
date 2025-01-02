@@ -354,6 +354,10 @@ class OutputData(BaseConflictsAndStages):
 
 
 class CommonConflictsAndStagesAPI(OutputData):
+    """
+    API для получения свойств и данных после различных расчетов, таких как конфликты, направления в фазах, матрицы
+    и т.д, а также формирования текстового файла с учётом рассчитанных даных
+    """
 
     def __init__(self, raw_stages_data: Dict, create_txt: bool = False):
         super().__init__(raw_stages_data)
@@ -446,7 +450,7 @@ class CommonConflictsAndStagesAPI(OutputData):
 class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
     """
     API для получения свойств и данных после различных расчетов, таких как конфликты, направления в фазах, матрицы
-    и т.д.
+    и т.д, а также формирования конфигурационного файла .PTC с учётом рассчитанных даных
     """
 
     def __init__(
@@ -573,12 +577,9 @@ if __name__ == '__main__':
     }
     start_time = time.time()
     obj = SwarcoConflictsAndStagesAPI(example, create_txt=True,
-                                      path_to_src_config='stripes_67_pokrovskie_vorotl_pokrovka_17_va_ot_2022_12_31_xx_JNx7t0U.PTC2')
+                                      )
     obj.build_data()
     print(obj)
-
-    # obj2 = CommonConflictsAndStagesAPI(example, create_txt=True)
-    # obj2.build_data()
 
     print(f'ВРемя выполеения составило: {time.time() - start_time}')
     # print(obj)
