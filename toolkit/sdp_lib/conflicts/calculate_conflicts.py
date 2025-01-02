@@ -1,8 +1,10 @@
 import json
+import os.path
 import random
 import string
 import time
 from enum import Enum
+from pathlib import Path
 from typing import Dict, Set, Tuple, List, Iterator, TextIO
 import logging
 
@@ -39,6 +41,10 @@ class DataFields(Enum):
     numbers_conflicts_groups = 'numbers_conflicts_groups'
     stages_bin_vals = 'stages_bin_vals'
     sum_conflicts = 'sum_conflicts'
+    txt_file = 'txt_file'
+    config_file = 'config_file'
+    path_to_file = 'path_to_file'
+    created = 'created'
     swarco = 'Swarco'
     peek = 'Peek'
 
@@ -354,32 +360,71 @@ class CommonConflictsAndStagesAPI(OutputData):
         self.instance_data[DataFields.type_controller.value] = 'Общий'
         self.create_txt = create_txt
 
+    def get_bin_vals_stages_for_write_to_txt(self) -> str:
+        """
+        Получает строку привязки направлений к фазам бинарных значений.
+        :return: строка привязки напрвлий к фазе. Пример:
+                 '006;002;014;018;018;020;004;008;008;008;000;000;008;'
+        """
+        data = ''
+        for val in self.instance_data[DataFields.stages_bin_vals.value]:
+            zeros = f'{"0" * 1 * (3 - len(str(val)))}'
+            data += f'{zeros}{val};'
+        return data
+
+    def get_binding_stage_groups(self) -> str:
+        """
+        Получает строку привязки направлений к фазам.
+        :return: строка привязки напрвлий к фазе. Пример:
+                 'Фаза 1: 1,2,3,4,5\nФаза 2: 1,3,6,7\nФаза 3: 3,8,9,10,13\nФаза 4: 4,5,6\n'
+        """
+
+        data = ''
+        for stage, groups_in_stage in self.instance_data[DataFields.sorted_stages_data.value].items():
+            data += f'Фаза {stage}: {",".join(map(str, groups_in_stage))}\n'
+        return data
+
     def create_txt_file(self):
+        """
+        Создает текстовый файл с различными расчётами: фазы, направления, матрицы конфликтов и т.д.
+        :return:
+        """
+
         path_to_txt = f"calculated_data_{''.join(random.choices(string.ascii_letters, k=6))}"
 
         with open(path_to_txt, 'w') as f:
             logger.debug(self.instance_data[DataFields.sorted_stages_data.value])
-            for stage, groups_in_stage in self.instance_data[DataFields.sorted_stages_data.value].items():
-                f.write(
-                    f'Фаза {stage}: {",".join(map(str, groups_in_stage))}\n'
-                )
-            f.write(f'Количество направлений: {self.instance_data[DataFields.number_of_groups.value]}\n\n')
-            f.write('Матрица конфликтов общая:\n')
-            f.write(f'{self._unpack_matrix(self.instance_data[DataFields.output_matrix.value])}\n')
-            f.write('Матрица конфликтов F997 Swarco:\n')
-            f.write(f'{self._unpack_matrix(self.instance_data[DataFields.matrix_F997.value])}\n')
-            f.write('Конфликтные направления F994 Swarco:\n')
-            f.write(f'{self._unpack_matrix(self.instance_data[DataFields.numbers_conflicts_groups.value])}\n')
-            f.write('Бинарные значения фаз F009 Swarco:\n')
-            for val in self.instance_data[DataFields.stages_bin_vals.value]:
-                zeros = f'{"0" * 1 * (3 - len(str(val)))}'
-                f.write(f'{zeros}{val};')
+            write_data = ''
+            write_data += self.get_binding_stage_groups()
+            write_data += (
+                f'Количество направлений: {self.instance_data[DataFields.number_of_groups.value]}\n\n'
+                f'Матрица конфликтов общая:\n'
+                f'{self._unpack_matrix(self.instance_data[DataFields.output_matrix.value])}\n'
+                f'Матрица конфликтов F997 Swarco:\n'
+                f'{self._unpack_matrix(self.instance_data[DataFields.matrix_F997.value])}\n'
+                f'Конфликтные направления F994 Swarco:\n'
+                f'{self._unpack_matrix(self.instance_data[DataFields.numbers_conflicts_groups.value])}\n'
+                f'Бинарные значения фаз F009 Swarco:\n'
+            )
+            write_data += self.get_bin_vals_stages_for_write_to_txt()
+            f.write(write_data)
 
+        try:
+            os.path.exists(path_to_txt)
+            err = None
+        except FileExistsError:
+            err = f'Ошибка при создании файла с расчитанными данными'
+
+        self.instance_data[DataFields.txt_file.value] = {
+            DataFields.errors.value: err,
+            DataFields.path_to_file.value: None if err else str(Path(path_to_txt).absolute()),
+            DataFields.created.value: True if err is None else False
+        }
 
     def build_data(self, create_json=False):
         """
-        Последовательное выполнений методов, приводящее к формированию полного результата расчёта
-        конфликтов и остальных свойств.
+        Основной метод для получения данных по расчетам конфликтов, привзяки фаз и прочих значений.
+        :param create_json: формирует файл .json с данными, полученными в результате расчетов(self.instance_data)
         :return:
         """
 
@@ -399,14 +444,32 @@ class CommonConflictsAndStagesAPI(OutputData):
 
 
 class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
+    """
+    API для получения свойств и данных после различных расчетов, таких как конфликты, направления в фазах, матрицы
+    и т.д.
+    """
 
-    def __init__(self, raw_stages_data: Dict, create_txt=False, path_to_src_config: str = None, prefix_new_config: str = 'new_'):
+    def __init__(
+            self, raw_stages_data: Dict,
+            create_txt: bool = False,
+            path_to_src_config: str = None,
+            prefix_new_config: str = 'new_'
+    ):
         super().__init__(raw_stages_data, create_txt)
         self.instance_data[DataFields.type_controller.value] = 'Swarco'
         self.path_to_src_config = path_to_src_config
         self.prefix_new_config = prefix_new_config
 
     def create_ptc2_config(self):
+        """
+        Создает .PTC2 файл конфигурации с учетов произведённых расчетов конфликтов и бинарных значений фаз.
+        Алгоритм:
+                 исходный файл конфига .PTC2 читается построчно. Каждая прочитанная строчка записывается в
+                 новый файл, кроме строк, принадлежащих функциям F994, F997, F006, F009. Строки для
+                 этих функций будут взяты из self.instance_data
+        :return:
+        """
+
         path_to_new_PTC2 = f'{self.prefix_new_config}{self.path_to_src_config}'
         conflicts_f997 = 'NewSheet693  : Work.997'
         conflicts_f992 = 'NewSheet693  : Work.992'
@@ -438,6 +501,18 @@ class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
                 else:
                     new_file.write(line)
 
+        try:
+            os.path.exists(path_to_new_PTC2)
+            err = None
+        except FileExistsError:
+            err = f'Ошибка при создании файла с расчитанными данными'
+
+        self.instance_data[DataFields.config_file.value] = {
+            DataFields.errors.value: err,
+            DataFields.path_to_file.value: None if err else str(Path(path_to_new_PTC2).absolute()),
+            DataFields.created.value: True if err is None else False
+        }
+
     def write_data_to_file(
             self,
             file_for_write: TextIO,
@@ -446,6 +521,16 @@ class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
             matrix=None,
             stages_bin_vals=None
     ):
+        """
+        Записывает данные в файл конфигурации .PTC2
+        :param file_for_write: Файл, в который будут записаны данные
+        :param file_for_read: Файл, из которого читаются данные
+        :param curr_line_from_file_for_write: текущая прочитанная строка из file_for_read
+        :param matrix: матрица в виде двумерного списка. Если не None, будет записана в файл для F994, F997, F006
+        :param stages_bin_vals: список с бинарныт значениями  принадлжености направлений в фазам дл F009
+        :return:
+        """
+
         file_for_write.write(f'{curr_line_from_file_for_write}')
         if matrix is not None:
             for matrix_line in matrix:
@@ -459,6 +544,12 @@ class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
         file_for_write.write(curr_line_from_file_for_write)
 
     def build_data(self, create_json=False):
+        """
+        Основной метод для получения данных по расчетам конфликтов, привзяки фаз и прочих значений.
+        :param create_json: формирует файл .json с данными, полученными в результате расчетов(self.instance_data)
+        :return:
+        """
+
         super().build_data(create_json)
         if self.path_to_src_config is not None:
             self.create_ptc2_config()
