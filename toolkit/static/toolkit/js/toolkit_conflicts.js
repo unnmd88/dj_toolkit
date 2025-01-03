@@ -1,4 +1,13 @@
 'use strict';
+// home
+const TOKEN = '7174fa6f9d0f954a92d2a5852a7fc3bcaace7578';
+
+const textAreaStagesGroups = document.querySelector('#stages_from_area');
+
+
+//work
+// const TOKEN = 'a090474ab50a6ec440eef021295d5f0e750afa00';
+// const TOKEN = 'fb682e5942fa8ce5c26ab8cd3e8eaba41c4cd961'; shared_desktop
 
 // Ловим событие изменения состояния radio типов дк
 $('input[type=radio][name=controller_type]').change(function() {
@@ -44,17 +53,20 @@ $('#config_file').click( function (){
 
 
 // Проверка валидности введенных/заполненных данных
-$("form").submit(function () {
+$("#send_conflicts_data").click(function () {
   const text_area = {
     text: $('#stages_from_area').val(),
     lines: $('#stages_from_area').val().split('\n'),
     num_lines: $('#stages_from_area').val().split('\n').length,
   };
 
+  sendRequestToCalculate();
   console.log(`text_area: <${text_area}>`)
   console.log(`text_area.text: <${text_area.text}>`)
   console.log(`text_area.lines: <${text_area.lines}>`)
   console.log(`text_area.num_lines: <${text_area.num_lines}>`)
+
+  return;
 
   if (text_area.num_lines < 2) {
     alert('Количество фаз не может быть менее 2');
@@ -138,3 +150,53 @@ function check_string (stage_string, num_string, sep1=':', sep2=',') {
   }
   return true;
 }
+
+
+async function sendRequestToCalculate(event) {
+  const f = document.querySelector('#config_file').files;
+  console.log('config_file');
+  // console.log(file.files[0]);
+  const form_data = new FormData();
+
+
+  const data = {
+    stages: textAreaStagesGroups.value,
+    stages2: 'ssss'
+  }
+
+  form_data.append('data', JSON.stringify(data));
+
+  if (f.length) {
+    form_data.append('file', f[0]);
+  }
+  // else {
+  //     return false;
+  // }
+
+  const csrfToken = $("input[name=csrfmiddlewaretoken]").val();
+  try {
+      const responce = await axios.post('/api/v1/conflicts/', 
+        form_data,
+        {
+          headers: {
+              "X-CSRFToken": csrfToken, 
+              "Content-Type": "multipart/form-data",
+              "Authorization": `Bearer ${TOKEN}`,
+          }
+      });
+      console.log(responce.data);
+  } catch (error) {
+      if (error.response) { // get response with a status code not in range 2xx
+        console.log(error.response.data);
+        console.log(error.response.status);
+        console.log(error.response.headers);
+      } else if (error.request) { // no response
+        console.log(error.request);
+      } else { // Something wrong in setting up the request
+        console.log('Error', error.message);
+      }
+      console.log(error.config); 
+    }
+    f.value = null;
+    
+  }

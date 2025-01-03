@@ -9,7 +9,7 @@ from typing import Dict, Set, Tuple, List, Iterator, TextIO
 import logging
 
 from toolkit.sdp_lib.utils import set_curr_datetime
-import logging_config
+
 
 logger = logging.getLogger(__name__)
 
@@ -49,12 +49,53 @@ class DataFields(Enum):
     peek = 'Peek'
 
 
-class BaseConflictsAndStages:
+class Utils:
 
-    def __init__(self, raw_stages_data: Dict):
+    @classmethod
+    def unpack_matrix(cls, matrix: List[List]) -> str:
+        return '\n'.join((''.join(m) for m in matrix)) + '\n'
+
+    @classmethod
+    def set_to_list(cls, target: Dict):
+        """
+        Рекурсивно превращает множества set в список list значения словаря target.
+        :param target: словарь, в котом значения set необходмио заменить на list
+        :return:
+        """
+
+        for k, v in target.items():
+            if isinstance(v, dict):
+                cls.set_to_list(v)
+            elif isinstance(v, set):
+                target[k] = sorted(v)
+
+    @classmethod
+    def save_json_to_file(cls, json_data, file_name='conflicts.json', mode: str = 'w') -> None:
+        """
+        Формирует json и записывает в файл
+        :param json_data: словарь, который будет записан как json
+        :param file_name: путь к файлу
+        :param mode: режим записи в файл
+        :return:
+        """
+
+        cls.set_to_list(json_data)
+
+        with open(file_name, mode, encoding='utf-8') as f:
+            json.dump(json_data, f, ensure_ascii=False, indent=4)
+            f.write('\n\n')
+
+    @classmethod
+    def stages_to_dict(self, stages_groups: str) -> Dict:
+        return {str(i): groups for i, groups in enumerate(stages_groups.split('\n'), 1)}
+
+
+class BaseConflictsAndStagesCalculations:
+
+    def __init__(self, stages_groups_data: Dict):
 
         self.instance_data = {
-            'raw_stages_data': raw_stages_data,
+            'raw_stages_data': stages_groups_data,
             DataFields.sorted_stages_data.value: None,
             DataFields.type_controller.value: None,
             DataFields.number_of_groups.value: None,
@@ -72,38 +113,38 @@ class BaseConflictsAndStages:
             DataFields.sum_conflicts.value: None
         }
 
-    def get_all_data_curr_calculate(self):
+    def _get_all_data_curr_calculate(self):
         return json.dumps(self.instance_data, indent=4)
 
-    def save_json_to_file(self, json_data, file_name='conflicts.json', mode: str = 'w') -> None:
-        """
-        Формирует json и записывает в файл
-        :param json_data: словарь, который будет записан как json
-        :param file_name: путь к файлу
-        :param mode: режим записи в файл
-        :return:
-        """
+    # def save_json_to_file(self, json_data, file_name='conflicts.json', mode: str = 'w') -> None:
+    #     """
+    #     Формирует json и записывает в файл
+    #     :param json_data: словарь, который будет записан как json
+    #     :param file_name: путь к файлу
+    #     :param mode: режим записи в файл
+    #     :return:
+    #     """
+    #
+    #     self.set_to_list(json_data)
+    #
+    #     with open(file_name, mode, encoding='utf-8') as f:
+    #         json.dump(json_data, f, ensure_ascii=False, indent=4)
+    #         f.write('\n\n')
+    #
+    # def set_to_list(self, target: Dict):
+    #     """
+    #     Рекурсивно превращает множества set в список list значения словаря target.
+    #     :param target: словарь, в котом значения set необходмио заменить на list
+    #     :return:
+    #     """
+    #
+    #     for k, v in target.items():
+    #         if isinstance(v, dict):
+    #             self.set_to_list(v)
+    #         elif isinstance(v, set):
+    #             target[k] = sorted(v)
 
-        self.set_to_list(json_data)
-
-        with open(file_name, mode, encoding='utf-8') as f:
-            json.dump(json_data, f, ensure_ascii=False, indent=4)
-            f.write('\n\n')
-
-    def set_to_list(self, target: Dict):
-        """
-        Рекурсивно превращает множества set в список list значения словаря target.
-        :param target: словарь, в котом значения set необходмио заменить на list
-        :return:
-        """
-
-        for k, v in target.items():
-            if isinstance(v, dict):
-                self.set_to_list(v)
-            elif isinstance(v, set):
-                target[k] = sorted(v)
-
-    def _processing_data_for_calculation(self, separator: str = ','):
+    def processing_data_for_calculation(self, separator: str = ','):
         """
         Формирует данные для расчёта конфликтов. Определяет возможность формирования конфига .PTC2 или .DAT
         по следующему правилу: если все группы представляют собой однозначные целые числа int, то
@@ -202,7 +243,7 @@ class BaseConflictsAndStages:
                 return False
         return True
 
-    def _calculate_conflicts_and_stages(self) -> None:
+    def calculate_conflicts_and_stages(self) -> None:
         """
         Формирует словарь для всех групп с данными о группе: конфликтами и фазами, в которых участвует направеление
         :return: None
@@ -265,7 +306,7 @@ class BaseConflictsAndStages:
         return enemy_groups
 
 
-class OutputData(BaseConflictsAndStages):
+class OutputDataCalculations(BaseConflictsAndStagesCalculations):
 
     def __repr__(self):
         return (f'output_matrix:\n{self._unpack_matrix(self.instance_data[DataFields.output_matrix.value])}'
@@ -353,18 +394,19 @@ class OutputData(BaseConflictsAndStages):
         self.instance_data[DataFields.sum_conflicts.value] = sum_conflicts
 
 
-class CommonConflictsAndStagesAPI(OutputData):
+class CommonConflictsAndStagesAPI(OutputDataCalculations):
     """
     API для получения свойств и данных после различных расчетов, таких как конфликты, направления в фазах, матрицы
     и т.д, а также формирования текстового файла с учётом рассчитанных даных
     """
 
-    def __init__(self, raw_stages_data: Dict, create_txt: bool = False):
-        super().__init__(raw_stages_data)
+    def __init__(self, stages_groups_data: Dict, create_txt: bool = False, path_to_save_txt: str = None):
+        super().__init__(stages_groups_data)
         self.instance_data[DataFields.type_controller.value] = 'Общий'
         self.create_txt = create_txt
+        self.path_to_save_txt = path_to_save_txt
 
-    def get_bin_vals_stages_for_write_to_txt(self) -> str:
+    def _get_bin_vals_stages_for_write_to_txt(self) -> str:
         """
         Получает строку привязки направлений к фазам бинарных значений.
         :return: строка привязки напрвлий к фазе. Пример:
@@ -376,7 +418,7 @@ class CommonConflictsAndStagesAPI(OutputData):
             data += f'{zeros}{val};'
         return data
 
-    def get_binding_stage_groups(self) -> str:
+    def _get_binding_stage_groups(self) -> str:
         """
         Получает строку привязки направлений к фазам.
         :return: строка привязки напрвлий к фазе. Пример:
@@ -388,18 +430,18 @@ class CommonConflictsAndStagesAPI(OutputData):
             data += f'Фаза {stage}: {",".join(map(str, groups_in_stage))}\n'
         return data
 
-    def create_txt_file(self):
+    def _create_txt_file(self):
         """
         Создает текстовый файл с различными расчётами: фазы, направления, матрицы конфликтов и т.д.
         :return:
         """
 
-        path_to_txt = f"calculated_data_{''.join(random.choices(string.ascii_letters, k=6))}"
+        self.path_to_save_txt = self.path_to_save_txt or f"calculated_data_{''.join(random.choices(string.ascii_letters, k=6))}"
 
-        with open(path_to_txt, 'w') as f:
+        with open(self.path_to_save_txt, 'w') as f:
             logger.debug(self.instance_data[DataFields.sorted_stages_data.value])
             write_data = ''
-            write_data += self.get_binding_stage_groups()
+            write_data += self._get_binding_stage_groups()
             write_data += (
                 f'Количество направлений: {self.instance_data[DataFields.number_of_groups.value]}\n\n'
                 f'Матрица конфликтов общая:\n'
@@ -410,18 +452,18 @@ class CommonConflictsAndStagesAPI(OutputData):
                 f'{self._unpack_matrix(self.instance_data[DataFields.numbers_conflicts_groups.value])}\n'
                 f'Бинарные значения фаз F009 Swarco:\n'
             )
-            write_data += self.get_bin_vals_stages_for_write_to_txt()
+            write_data += self._get_bin_vals_stages_for_write_to_txt()
             f.write(write_data)
 
         try:
-            os.path.exists(path_to_txt)
+            os.path.exists(self.path_to_save_txt)
             err = None
         except FileExistsError:
             err = f'Ошибка при создании файла с расчитанными данными'
 
         self.instance_data[DataFields.txt_file.value] = {
             DataFields.errors.value: err,
-            DataFields.path_to_file.value: None if err else str(Path(path_to_txt).absolute()),
+            DataFields.path_to_file.value: None if err else str(Path(self.path_to_save_txt).absolute()),
             DataFields.created.value: True if err is None else False
         }
 
@@ -433,18 +475,18 @@ class CommonConflictsAndStagesAPI(OutputData):
         """
 
         functions: tuple = (
-            self._processing_data_for_calculation, self._calculate_conflicts_and_stages, self.create_data_for_output
+            self.processing_data_for_calculation, self.calculate_conflicts_and_stages, self.create_data_for_output
         )
         for func in functions:
             if self.instance_data[DataFields.errors.value]:
                 break
             func()
         if create_json:
-            self.save_json_to_file(self.instance_data)
+            Utils.save_json_to_file(self.instance_data)
         else:
-            self.set_to_list(self.instance_data)
+            Utils.set_to_list(self.instance_data)
         if self.create_txt:
-            self.create_txt_file()
+            self._create_txt_file()
 
 
 class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
@@ -454,12 +496,12 @@ class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
     """
 
     def __init__(
-            self, raw_stages_data: Dict,
+            self, stages_groups_data: Dict,
             create_txt: bool = False,
             path_to_src_config: str = None,
             prefix_new_config: str = 'new_'
     ):
-        super().__init__(raw_stages_data, create_txt)
+        super().__init__(stages_groups_data, create_txt)
         self.instance_data[DataFields.type_controller.value] = 'Swarco'
         self.path_to_src_config = path_to_src_config
         self.prefix_new_config = prefix_new_config
@@ -557,21 +599,22 @@ class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
         super().build_data(create_json)
         if self.path_to_src_config is not None:
             self.create_ptc2_config()
-        self.save_json_to_file(self.instance_data)
+        Utils.save_json_to_file(self.instance_data)
 
 
 class PeekConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
-    def __init__(self, raw_stages_data):
-        super().__init__(raw_stages_data)
+    def __init__(self, stages_groups_data):
+        super().__init__(stages_groups_data)
         self.instance_data[DataFields.type_controller.value] = 'Peek'
 
 
 if __name__ == '__main__':
+    import logging_config
     logger.debug('DDD')
     logger.info('IIII')
     example = {
         '1': '1,4,2,3,5,5,5,5,3,4,2',
-        '2': '1,6,7,7,3',
+        '2': '',
         '3': '9,10,8,13,3,10,',
         '4': '5,6,4'
     }
@@ -580,6 +623,7 @@ if __name__ == '__main__':
                                       )
     obj.build_data()
     print(obj)
+
 
     print(f'ВРемя выполеения составило: {time.time() - start_time}')
     # print(obj)

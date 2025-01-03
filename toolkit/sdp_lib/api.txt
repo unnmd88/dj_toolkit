@@ -42,8 +42,7 @@ Postman:
         "num_hosts_in_request": 2, "search_in_db": true, "type_request": "get_state"
 }
 
-http://178.176.93.18:28080/
-http://178.176.93.18:27080/
+
 
 
 
@@ -93,3 +92,59 @@ get_state:
 {'10.179.16.121': {'host_id': '2390', 'protocol': 'http', 'valid_data_request': True, 'request_entity': ['get_state'], 'request_errors': None, 'request_time': '2024-11-11 17:47:01', 'responce_entity': {'raw_data': {'current_states': {'basic': {'current_plan': '003', 'current_parameter_plan': '003', 'current_time': '2024-11-11 17:46:31', 'current_errors': 'SDET', 'streams': 2, 'stream_info': {'1': {'current_mode': 'FT', 'current_stage': '4', 'current_state': 'УПРАВЛЕНИЕ'}, '2': {'current_mode': 'FT', 'current_stage': '6', 'current_state': 'УПРАВЛЕНИЕ'}}}}}}, 'type': None, 'type_controller': 'Peek', 'address': 'Зеленоград г. Панфиловский (пр.пр. 648) пр-т - Андреевка (пр.пр. 647) ул. (САО-7)', 'request_execution_time': '0 seconds'}}
 
 
+
+request get_config(from frontend):
+
+{
+    "host_id": "11",
+    "request_entity": [
+        "get_config"
+    ],
+    "type_controller": "Swarco",
+    "address": "Бережковская наб. д.22, 24    ЗАО (ЗАО-9)"
+}
+
+
+responce get_config(from backend):
+
+
+{
+    "host_id": "11",
+    "protocol": null,
+    "valid_data_request": true,
+    "request_entity": [
+        "get_config"
+    ],
+    "request_errors": null,
+    "request_time": null,
+    "responce_entity": {
+        "raw_data": {
+            "groups": "16",
+            "detectors": "000",
+            "special-detectors": "00",
+            "detector-logics": "100",
+            "control-blocks": "032",
+            "priority-logics": "00",
+            "emergency-logics": "00",
+            "restart-count": "2",
+            "base-cycle-sync": "0",
+            "fixed-control": "0-000",
+            "door-open": "00-000-000",
+            "intersection": "berezhkovskaya _nab ",
+            "owner": "d22_ 24             ",
+            "controller-id": "va_ot_vdp           ",
+            "backplane-id": "13703",
+            "term-setting": "00000-0",
+            "ws-timeout": "000",
+            "sv-timeout": "00-00",
+            "logic-address": "00000"
+        },
+        "url_to_archive": {
+            "10.179.28.9_11_Swarco.zip": "/media/uploaded_configs/10.179.28.9/2024-11-19%2013-36-48/10.179.28.9_11_Swarco.zip"
+        }
+    },
+    "type": null,
+    "type_controller": "Swarco",
+    "address": null,
+    "request_execution_time": "6 seconds"
+}

@@ -14,6 +14,7 @@ from typing import Coroutine, Dict, Tuple, List
 from collections.abc import Callable
 from dotenv import load_dotenv
 import logging
+from datetime import datetime as dt
 
 import _asyncio
 import aiohttp
@@ -37,6 +38,8 @@ from .constants import (
     AvailableTypesRequest
 )
 from toolkit.sdp_lib.potok_controller import potok_user_api
+from toolkit.sdp_lib.conflicts import calculate_conflicts
+from toolkit.sdp_lib import utils as sdp_utils
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -1570,3 +1573,53 @@ class GetResultCondition(TrafficLightConfiguratorPotok):
             result_condition_value=self.current_result,
             errors=', '.join(e for e in self.errors) if self.errors else ''
         )
+
+
+class ConflictsAndStagesBase:
+    def __init__(self, raw_data_stages_groups: str):
+        self.errors = []
+        self.raw_data_stages_groups = raw_data_stages_groups
+        self.stages_groups = self.get_data_stages_groups_dict(raw_data_stages_groups)
+        self.instance_data = None
+
+    def get_data_stages_groups_dict(self, data_stages_groups: str | Dict) -> Dict:
+        if isinstance(self.raw_data_stages_groups, str):
+            return calculate_conflicts.Utils.stages_to_dict(data_stages_groups)
+        elif isinstance(self.raw_data_stages_groups, dict):
+            return data_stages_groups
+        else:
+            self.errors.append('Предоставлены некорректные данные для расчёта')
+
+
+
+
+class ConflictsAndStagesCommon(ConflictsAndStagesBase):
+    def __init__(self, raw_data_stages_groups: str, create_txt: bool = False):
+        super().__init__(raw_data_stages_groups)
+        self.create_txt = create_txt
+        self.path_to_save_txt = self.get_path_to_save_txt_file() if create_txt else None
+
+    def calculate_conflicts_and_stages(self):
+        builder = calculate_conflicts.CommonConflictsAndStagesAPI(
+            self.stages_groups, self.create_txt, self.path_to_save_txt
+        )
+        builder.build_data()
+        self.instance_data = builder.instance_data
+
+        if self.create_txt and self.instance_data.get('path_to_file'):
+            assert self.path_to_save_txt == self.instance_data.get('path_to_file')
+
+    def get_path_to_save_txt_file(self) -> str:
+        return f'{MEDIA_ROOT}/conflicts/txt/сalculated_conflicts {dt.now().strftime("%d %b %Y %H_%M_%S")}.txt'
+
+    def save_file_to_db(self, path, controller_type, source='created',):
+        f = SaveConfigFiles(
+            source=source,
+            file=path,
+            controller_type=controller_type
+        )
+        f.file.name = correct_path_for_db(f.file.path)
+        f.save()
+
+class ConflictsAndStagesSwarco:
+    pass

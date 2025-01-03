@@ -9,7 +9,7 @@ from .views import (
     ControllerManagementHostsConfigurationViewSetAPI,
     SearchByNumberTrafficLightsAPIView,
     ControllerManagementAPI,
-    TrafficLightsUpdate, CompareGroups, CompareGroupsAPI, PotokTrafficLightsConfiguratorAPI
+    TrafficLightsUpdate, CompareGroups, CompareGroupsAPI, PotokTrafficLightsConfiguratorAPI, ConflictsAndStagesAPI
 )
 
 
@@ -31,6 +31,8 @@ urlpatterns = [
     path("calc_cyc/", views.calc_cyc, name='calc_cyc'),
 
     path("calc_conflicts/", views.data_for_calc_conflicts, name='calc_conflicts'),
+
+
     path("manage_controllers/", views.ManageControllers.as_view(), name='manage_controllers'),
     path("download_config/", views.DownloadConfig.as_view(), name='download_config'),
     path("compare_groups/", views.CompareGroups.as_view(), name='compare_groups'),
@@ -40,6 +42,7 @@ urlpatterns = [
     path("api/v1/manage-controller/", ControllerManagementAPI.as_view()),
 
     path("api/v1/download-config/", ControllerManagementAPI.as_view()),
+    path("api/v1/conflicts/", ConflictsAndStagesAPI.as_view()),
     # path("api/v1/download-config-web/", DownloadFileFromControllerAPI.as_view()),
 
     path("api/v1/compare-groups/", CompareGroupsAPI.as_view()),

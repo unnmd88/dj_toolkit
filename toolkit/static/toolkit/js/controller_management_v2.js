@@ -1188,7 +1188,13 @@ async function updateTrafficlights(event) {
                 "Content-Type": "multipart/form-data",
                 "Authorization": `Bearer ${TOKEN}`,
             }
-        });
+            
+        },
+        {
+            data: {fff: 'ffffff'},
+        }
+    
+    );
         console.log(responce);
     } catch (error) {
         if (error.response) { // get response with a status code not in range 2xx

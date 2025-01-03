@@ -1,3 +1,4 @@
+import json
 from io import BytesIO
 import logging
 import time
@@ -20,6 +21,7 @@ from toolkit.sdp_lib import conflicts_old
 from toolkit.serializers import ControllerHostsSerializer, BaseTrafficLightsSerializer
 from . import services
 from .constants import RequestOptions, AvailableTypesRequest
+
 
 logger = logging.getLogger(__name__)
 
@@ -348,6 +350,32 @@ class PotokTrafficLightsConfiguratorAPI(APIView):
         print(f'Время выполения запроса составило {time.time() - start_time}')
         return Response(responce)
 
+
+class ConflictsAndStagesAPI(APIView):
+    """
+    Управление/получение данных/загрузка конфига с контроллеров
+    """
+
+    # permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+
+        start_time = time.time()
+        logger.debug(request.data)
+        logger.debug(request.FILES)
+        logger.debug(request.data['data'])
+        logger.debug(json.loads(request.data['data']))
+        logger.debug(json.loads(request.data['data'])['stages'])
+
+        data = services.ConflictsAndStagesCommon(json.loads(request.data['data'])['stages'], create_txt=True)
+        if data.errors:
+            return Response({'detail': data.errors})
+        data.calculate_conflicts_and_stages()
+        logger.debug(data.instance_data)
+
+
+        logger.debug(f'Время выполнения запроса: {time.time() - start_time}')
+        return Response(data.instance_data)
 
 """ CONFLICTS(UNSORTING...)  """
 

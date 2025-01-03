@@ -8,46 +8,44 @@
 <br><br>
 
 
-<form class="calc_conflicts" action="" method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
-    <div class="calc_conflicts" id="controllers">
-        <label class="calc_conflicts_controllers" id="testtt"> Тип ДК: </label>
-        <input type="radio" value="undefind" name="controller_type" checked id="undefind"> Без типа
-        <input type="radio" value="swarco" name="controller_type" id="swarco"> Swarco
-        <input type="radio" value="peek" name="controller_type" id="peek"> Peek    
+{% csrf_token %}
+<div class="calc_conflicts" id="controllers">
+    <label class="calc_conflicts_controllers" id="testtt"> Тип ДК: </label>
+    <input type="radio" value="undefind" name="controller_type" checked id="undefind"> Без типа
+    <input type="radio" value="swarco" name="controller_type" id="swarco"> Swarco
+    <input type="radio" value="peek" name="controller_type" id="peek"> Peek    
+</div>
+<br><br>
+
+<fieldset>
+    <legend> Опции </legend>
+    <div>           
+        <input type="checkbox" name="create_txt" id="create_txt">
+        <label class="calc_conflicts_optinos" for="create_txt"> Создать txt файл с конфликтами: </label>
     </div>
-    <br><br>
+    <div>
+        <input type="checkbox" name="binval_swarco" id="binval_swarco" disabled>
+        <label class="calc_conflicts_optinos" for="binval_swarco"> Матрица конфликтов и бинарные значения фаз для swarco</label>            
+    </div>
+    <div>
+        <input type="checkbox" name="make_config" id="make_config" disabled>
+        <label class="calc_conflicts_optinos" for="make_config"> Создать файл конфигурации: </label>
+        <input type="file" id="config_file" name="upload_config_file" multiple disabled>            
+    </div>
+</fieldset>
+<br>
+{% if render_conflicts_data and create_link_config %}
+<a href="{{ config_file.file.url }}"> Скачать конфиг </a><br>
+{% endif %}
 
-    <fieldset>
-        <legend> Опции </legend>
-        <div>           
-            <input type="checkbox" name="create_txt" id="create_txt">
-            <label class="calc_conflicts_optinos" for="create_txt"> Создать txt файл с конфликтами: </label>
-        </div>
-        <div>
-            <input type="checkbox" name="binval_swarco" id="binval_swarco" disabled>
-            <label class="calc_conflicts_optinos" for="binval_swarco"> Матрица конфликтов и бинарные значения фаз для swarco</label>            
-        </div>
-        <div>
-            <input type="checkbox" name="make_config" id="make_config" disabled>
-            <label class="calc_conflicts_optinos" for="make_config"> Создать файл конфигурации: </label>
-            <input type="file" id="config_file" name="upload_config_file" multiple disabled>            
-        </div>
-    </fieldset>
-    <br><br>
-    {% if render_conflicts_data and create_link_config %}
-    <a href="{{ config_file.file.url }}"> Скачать конфиг </a><br>
-    {% endif %}
+{% if render_conflicts_data and create_link_txt_conflicts %}
+<a href="{{ txt_conflict_file.file.url }}" download> Скачать текстовый файл конфликтов </a><br>
+{% endif %}
 
-    {% if render_conflicts_data and create_link_txt_conflicts %}
-    <a href="{{ txt_conflict_file.file.url }}" download> Скачать текстовый файл конфликтов </a><br>
-    {% endif %}
-
-    <p> Фазы-направления </p>
-    <textarea required rows="8" cols="20" minlength="4" maxlength="600" name="table_stages" id="stages_from_area"></textarea>
-    <p></p>
-    <button type="submit" id="send_conflicts_data"> Отправить </button>
-</form>
+<p> Фазы-направления </p>
+<textarea required rows="8" cols="20" minlength="4" maxlength="600" name="table_stages" id="stages_from_area"></textarea>
+<p></p>
+<button id="send_conflicts_data"> Отправить </button>
 
 
 
@@ -130,6 +128,7 @@
 <br>
 
 {% endif %}
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script src="{% static 'toolkit/js/toolkit_conflicts.js'%}"></script>
 {% endblock %}
