@@ -1576,6 +1576,53 @@ class GetResultCondition(TrafficLightConfiguratorPotok):
         )
 
 
+class ConflictsAndStages:
+    matches = {
+        (AvailableControllers.SWARCO.value, 'create_config'): calculate_conflicts.SwarcoConflictsAndStagesAPI,
+        (AvailableControllers.PEEK.value, 'create_config'): calculate_conflicts.SwarcoConflictsAndStagesAPI,
+        'Common': calculate_conflicts.SwarcoConflictsAndStagesAPI,
+    }
+
+
+    def __init__(self, raw_stages_groups, type_controller, create_txt = False, create_config = False):
+        self.errors = []
+        self.raw_data_stages_groups = raw_stages_groups
+        self.stages_groups = self.get_data_stages_groups_dict(raw_stages_groups)
+        self.type_controller = type_controller
+        self.create_txt = create_txt
+        self.create_config = create_config
+        self.api_class = None
+
+    def get_api_class(self, matching_data, *args):
+        m = self.matches.get(matching_data)
+        if self.api_class is None:
+            self.errors.append('Данные для расчёта не валидны')
+        self.api_class = m(*args)
+
+    def get_data_stages_groups_dict(self, data_stages_groups: str | Dict) -> Dict:
+        if isinstance(self.raw_data_stages_groups, str):
+            return calculate_conflicts.Utils.stages_to_dict(data_stages_groups)
+        elif isinstance(self.raw_data_stages_groups, dict):
+            return data_stages_groups
+        else:
+            self.errors.append('Предоставлены некорректные данные для расчёта')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+################################
+
+
 class ConflictsAndStagesBase:
     def __init__(self, raw_data_stages_groups: str):
         self.errors = []
@@ -1622,5 +1669,10 @@ class ConflictsAndStagesCommon(ConflictsAndStagesBase):
         f.save()
         return f
 
-class ConflictsAndStagesSwarco:
-    pass
+
+class ConflictsAndStagesConfig(ConflictsAndStagesCommon):
+    def calculate_conflicts_and_stages(self):
+        super().calculate_conflicts_and_stages()
+
+
+
