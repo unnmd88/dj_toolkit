@@ -22,7 +22,8 @@ import asyncio
 import ipaddress
 from asgiref.sync import sync_to_async
 from django.forms import model_to_dict
-from toolkit.models import TrafficLightsObjects, SaveConfigFiles, TelegrammUsers, TrafficLightConfigurator
+from toolkit.models import TrafficLightsObjects, SaveConfigFiles, TelegrammUsers, TrafficLightConfigurator, \
+    SaveConflictsTXT
 from engineering_tools.settings import MEDIA_ROOT
 
 from .sdp_lib.swarco_controller import ITC_PC_config
@@ -1591,13 +1592,11 @@ class ConflictsAndStagesBase:
             self.errors.append('Предоставлены некорректные данные для расчёта')
 
 
-
-
 class ConflictsAndStagesCommon(ConflictsAndStagesBase):
     def __init__(self, raw_data_stages_groups: str, create_txt: bool = False):
         super().__init__(raw_data_stages_groups)
         self.create_txt = create_txt
-        self.path_to_save_txt = self.get_path_to_save_txt_file() if create_txt else None
+        self.path_to_save_txt = str(pathlib.Path(self.get_path_to_save_txt_file())) if create_txt else None
 
     def calculate_conflicts_and_stages(self):
         builder = calculate_conflicts.CommonConflictsAndStagesAPI(
@@ -1606,20 +1605,22 @@ class ConflictsAndStagesCommon(ConflictsAndStagesBase):
         builder.build_data()
         self.instance_data = builder.instance_data
 
-        if self.create_txt and self.instance_data.get('path_to_file'):
-            assert self.path_to_save_txt == self.instance_data.get('path_to_file')
+        txt_property = self.instance_data.get(calculate_conflicts.DataFields.txt_file.value)
+        if self.create_txt and txt_property and txt_property.get(calculate_conflicts.DataFields.errors.value) is None:
+            path_to_txt_from_calculate = txt_property.pop(calculate_conflicts.DataFields.path_to_file.value)
+            file = self.save_txt_file_to_db(path_to_txt_from_calculate)
+            self.instance_data[calculate_conflicts.DataFields.txt_file.value]['url_download'] = file.file.url
 
     def get_path_to_save_txt_file(self) -> str:
         return f'{MEDIA_ROOT}/conflicts/txt/сalculated_conflicts {dt.now().strftime("%d %b %Y %H_%M_%S")}.txt'
 
-    def save_file_to_db(self, path, controller_type, source='created',):
-        f = SaveConfigFiles(
-            source=source,
-            file=path,
-            controller_type=controller_type
-        )
+    def save_txt_file_to_db(
+            self, path_to_file: str, source: str = 'created', description: str = 'конфликты и фазы txt'
+    ) -> SaveConfigFiles:
+        f = SaveConfigFiles(source=source, file=path_to_file, description=description)
         f.file.name = correct_path_for_db(f.file.path)
         f.save()
+        return f
 
 class ConflictsAndStagesSwarco:
     pass
