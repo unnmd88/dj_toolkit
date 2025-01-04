@@ -12,6 +12,8 @@ import zipfile
 import time
 from typing import Coroutine, Dict, Tuple, List
 from collections.abc import Callable
+
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from dotenv import load_dotenv
 import logging
 from datetime import datetime as dt
@@ -1576,28 +1578,61 @@ class GetResultCondition(TrafficLightConfiguratorPotok):
         )
 
 
+class DatabaseAPI:
+
+    def save_txt_conflicts(
+            self, path_to_file: str, source: str = 'created', description: str = 'конфликты и фазы txt'
+    ) -> SaveConfigFiles:
+        f = SaveConfigFiles(source=source, file=path_to_file, description=description)
+        f.file.name = correct_path_for_db(f.file.path)
+        f.save()
+        return f
+
+    @classmethod
+    def save_config(
+            cls,
+            file: str | InMemoryUploadedFile,
+            controller_type: str,
+            source: str,
+            description: str = None,
+            address: str = None,
+            ip_adress: str = None,
+            number: str = None
+    ) -> SaveConfigFiles:
+
+        f = SaveConfigFiles(
+            source=source,
+            file=file,
+            controller_type=controller_type,
+            description=description,
+            address=address,
+            ip_adress=ip_adress,
+            number=number
+        )
+        f.file.name = correct_path_for_db(f.file.path)
+        f.save()
+        return f
+
+
 class ConflictsAndStages:
-    matches = {
-        (AvailableControllers.SWARCO.value, 'create_config'): calculate_conflicts.SwarcoConflictsAndStagesAPI,
-        (AvailableControllers.PEEK.value, 'create_config'): calculate_conflicts.SwarcoConflictsAndStagesAPI,
-        'Common': calculate_conflicts.SwarcoConflictsAndStagesAPI,
-    }
 
-
-    def __init__(self, raw_stages_groups, type_controller, create_txt = False, create_config = False):
+    def __init__(self, raw_stages_groups: str | Dict, type_controller: str, create_txt=False, create_config=None):
         self.errors = []
         self.raw_data_stages_groups = raw_stages_groups
         self.stages_groups = self.get_data_stages_groups_dict(raw_stages_groups)
         self.type_controller = type_controller
         self.create_txt = create_txt
-        self.create_config = create_config
+        self.create_config: SaveConfigFiles | None = self.save_config_to_db(create_config)
         self.api_class = None
+        self.instance_data = None
 
-    def get_api_class(self, matching_data, *args):
-        m = self.matches.get(matching_data)
-        if self.api_class is None:
-            self.errors.append('Данные для расчёта не валидны')
-        self.api_class = m(*args)
+    def get_api_class(self, matching_data: str):
+        matches_aclass = {
+            AvailableControllers.SWARCO.value.lower(): calculate_conflicts.SwarcoConflictsAndStagesAPI,
+            AvailableControllers.PEEK.value.lower(): calculate_conflicts.PeekConflictsAndStagesAPI,
+            'common': calculate_conflicts.CommonConflictsAndStagesAPI,
+        }
+        return matches_aclass.get(matching_data)
 
     def get_data_stages_groups_dict(self, data_stages_groups: str | Dict) -> Dict:
         if isinstance(self.raw_data_stages_groups, str):
@@ -1607,16 +1642,49 @@ class ConflictsAndStages:
         else:
             self.errors.append('Предоставлены некорректные данные для расчёта')
 
+    def calculate(self):
+        a_class = self.get_api_class(self.type_controller)
+        # if obj is None:
+        #     self.errors.append('Данные для расчёта не валидны')
+        #     return
+
+        path_to_original_config = None
+        if isinstance(self.create_config, SaveConfigFiles):
+            path_to_original_config = str(self.create_config.file.path)
+
+        print(f'self.create_txt: {self.create_txt}')
+        print(f'type.a_class: {type(a_class)}')
+        print(f'a_class: {a_class}')
+        if issubclass(calculate_conflicts.CommonConflictsAndStagesAPI, a_class):
+            obj = a_class(
+                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self.get_path_to_save_txt_file()
+            )
+        elif issubclass(calculate_conflicts.SwarcoConflictsAndStagesAPI, a_class):
+            obj = a_class(
+                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self.get_path_to_save_txt_file(),
+                path_to_src_config=path_to_original_config
+            )
+        else:
+            self.errors.append('Данные для расчёта не валидны')
+            return
+
+        obj.build_data()
+        self.instance_data = obj.instance_data
+        print(obj.instance_data)
 
 
+    def get_path_to_save_txt_file(self) -> str:
+        return f'{MEDIA_ROOT}/conflicts/txt/сalculated_conflicts {dt.now().strftime("%d %b %Y %H_%M_%S")}.txt'
 
-
-
-
-
-
-
-
+    def save_config_to_db(self, config: InMemoryUploadedFile | str) -> SaveConfigFiles | None:
+        if isinstance(config, (InMemoryUploadedFile, str)):
+            f = DatabaseAPI.save_config(
+                file=config,
+                controller_type=self.type_controller,
+                source='uploaded',
+                description='загружен для формирования конфига с расчётами конфликтов и фаз'
+            )
+            return f
 
 
 

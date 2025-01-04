@@ -6,6 +6,7 @@ from datetime import datetime as dt
 
 import asyncio
 import openpyxl
+from django.core.files.uploadedfile import InMemoryUploadedFile
 
 from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render, get_object_or_404
@@ -361,17 +362,34 @@ class ConflictsAndStagesAPI(APIView):
     def post(self, request):
 
         start_time = time.time()
-        logger.debug(request.data)
         logger.debug(request.FILES)
-        logger.debug(request.data['data'])
-        logger.debug(json.loads(request.data['data']))
-        logger.debug(json.loads(request.data['data'])['stages'])
+        file: InMemoryUploadedFile = request.FILES.get('file')
+        logger.debug(file)
+        logger.debug(type(file))
+        try:
+            entity_req_data = json.loads(request.data['data'])
+            stages = entity_req_data['stages']
+            type_controller = entity_req_data['type_controller']
+            create_txt = entity_req_data['create_txt']
+            create_config = entity_req_data['create_config']
+            swarco_vals = entity_req_data['swarco_vals']
 
-        data = services.ConflictsAndStagesCommon(json.loads(request.data['data'])['stages'], create_txt=True)
+            logger.debug(entity_req_data)
+            logger.debug(stages)
+            logger.debug(type_controller)
+            logger.debug(create_txt)
+            logger.debug(swarco_vals)
+            logger.debug(create_config)
+        except KeyError:
+            return Response({'detail': 'Предоставлены некорректные данные для запроса'})
+
+        # data = services.ConflictsAndStagesCommon(entity_req_data['stages'], create_txt=True)
+        data = services.ConflictsAndStages(raw_stages_groups=stages, type_controller=type_controller, create_txt=create_txt, create_config=create_config)
         if data.errors:
             return Response({'detail': data.errors})
-        data.calculate_conflicts_and_stages()
+        data.calculate()
         logger.debug(data.instance_data)
+        logger.debug(data.errors)
 
 
         logger.debug(f'Время выполнения запроса: {time.time() - start_time}')

@@ -430,7 +430,7 @@ class CommonConflictsAndStagesAPI(OutputDataCalculations):
             data += f'Фаза {stage}: {",".join(map(str, groups_in_stage))}\n'
         return data
 
-    def _create_txt_file(self):
+    def create_txt_file(self):
         """
         Создает текстовый файл с различными расчётами: фазы, направления, матрицы конфликтов и т.д.
         :return:
@@ -486,7 +486,7 @@ class CommonConflictsAndStagesAPI(OutputDataCalculations):
         else:
             Utils.set_to_list(self.instance_data)
         if self.create_txt:
-            self._create_txt_file()
+            self.create_txt_file()
 
 
 class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
@@ -498,10 +498,11 @@ class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
     def __init__(
             self, stages_groups_data: Dict,
             create_txt: bool = False,
+            path_to_save_txt: str = None,
             path_to_src_config: str = None,
             prefix_new_config: str = 'new_'
     ):
-        super().__init__(stages_groups_data, create_txt)
+        super().__init__(stages_groups_data, create_txt, path_to_save_txt)
         self.instance_data[DataFields.type_controller.value] = 'Swarco'
         self.path_to_src_config = path_to_src_config
         self.prefix_new_config = prefix_new_config

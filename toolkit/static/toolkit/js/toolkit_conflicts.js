@@ -155,23 +155,25 @@ function check_string (stage_string, num_string, sep1=':', sep2=',') {
 async function sendRequestToCalculate(event) {
   const f = document.querySelector('#config_file').files;
   console.log('config_file');
-  // console.log(file.files[0]);
+
+  let create_config;
   const form_data = new FormData();
-
-
-  const data = {
-    stages: textAreaStagesGroups.value,
-    stages2: 'ssss'
-  }
-
-  form_data.append('data', JSON.stringify(data));
-
   if (f.length) {
     form_data.append('file', f[0]);
+    create_config = true;
   }
-  // else {
-  //     return false;
-  // }
+  else {
+    create_config = false;
+  }
+  
+  const data = {
+    stages: textAreaStagesGroups.value,
+    type_controller: document.querySelector('input[name="controller_type"]:checked').value,
+    create_config: create_config,
+    create_txt: document.querySelector('#create_txt').checked,
+    swarco_vals: document.querySelector('#binval_swarco').checked,
+  }
+  form_data.append('data', JSON.stringify(data));
 
   const csrfToken = $("input[name=csrfmiddlewaretoken]").val();
   try {
