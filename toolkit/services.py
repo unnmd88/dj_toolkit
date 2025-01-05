@@ -1627,6 +1627,12 @@ class ConflictsAndStages:
         self.instance_data = None
 
     def get_api_class(self, matching_data: str):
+        """
+        Возвращает необходимый класс для расчёта конфликтов и фаз на основе переданных типа контроллера
+        :param matching_data: Словаорь с соответствиями типа контроллера классу для расчётов.
+        :return: Необходимый для расчётов класс
+        """
+
         matches_aclass = {
             AvailableControllers.SWARCO.value.lower(): calculate_conflicts.SwarcoConflictsAndStagesAPI,
             AvailableControllers.PEEK.value.lower(): calculate_conflicts.PeekConflictsAndStagesAPI,
@@ -1635,6 +1641,14 @@ class ConflictsAndStages:
         return matches_aclass.get(matching_data)
 
     def get_data_stages_groups_dict(self, data_stages_groups: str | Dict) -> Dict:
+        """
+        Конвертирует данные "фаза: направления" из str в dict. Если data_stages_groups является str,
+        например: '1,5\n3,4\n\n6,9,10', то будет сконвертирована: {'1': '1,5', '2': '3,4', '3': '', '4': '6,9,10'}.
+        Если data_stages_groups является dict, то просто возвращает себя.
+        :param data_stages_groups: Строка или словарь с привязкой фаза: направления
+        :return: Словарь с привязкой фаза: направления
+        """
+
         if isinstance(self.raw_data_stages_groups, str):
             return calculate_conflicts.Utils.stages_to_dict(data_stages_groups)
         elif isinstance(self.raw_data_stages_groups, dict):
@@ -1643,9 +1657,20 @@ class ConflictsAndStages:
             self.errors.append('Предоставлены некорректные данные для расчёта')
 
     def get_path_to_save_txt_file(self) -> str:
+        """
+        Формирует путь для сохранения txt файла с расчитанными конфликтами и фазами
+        :return:
+        """
+
         return f'{MEDIA_ROOT}/conflicts/txt/сalculated_conflicts {dt.now().strftime("%d %b %Y %H_%M_%S")}.txt'
 
     def save_config_to_db(self, config: InMemoryUploadedFile | str) -> SaveConfigFiles | None:
+        """
+        Сохраняет загруженный файл в БД
+        :param config: Конфигурационный файл
+        :return: Сохранённый экземпляр модели SaveConfigFiles
+        """
+
         if isinstance(config, (InMemoryUploadedFile, str)):
             f = DatabaseAPI.save_config(
                 file=config,
@@ -1655,29 +1680,12 @@ class ConflictsAndStages:
             )
             return f
 
-    def calculate(self):
-        a_class = self.get_api_class(self.type_controller)
-        path_to_original_config = None
-        if isinstance(self.uploaded_file_obj, SaveConfigFiles):
-            path_to_original_config = str(self.uploaded_file_obj.file.path)
-        if issubclass(calculate_conflicts.CommonConflictsAndStagesAPI, a_class):
-            obj = a_class(
-                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self.get_path_to_save_txt_file()
-            )
-        elif issubclass(calculate_conflicts.SwarcoConflictsAndStagesAPI, a_class):
-            obj = a_class(
-                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self.get_path_to_save_txt_file(),
-                path_to_src_config=path_to_original_config
-            )
-        else:
-            self.errors.append('Данные для расчёта не валидны')
-            return
-        obj.build_data()
-        self.instance_data = obj.instance_data
-        self.covert_path_to_url_for_download()
-        print(obj.instance_data)
-
-    def covert_path_to_url_for_download(self):
+    def convert_path_to_url_for_download(self):
+        """
+        Сохраняет в БД файл конфига/txt с расчитанными конфликтами и фазами, а также меняет в
+        self.instance_data path к файлу на url для скачивания
+        :return:
+        """
 
         txt = self.instance_data.get(calculate_conflicts.DataFields.txt_file.value)
         config = self.instance_data.get(calculate_conflicts.DataFields.config_file.value)
@@ -1696,7 +1704,32 @@ class ConflictsAndStages:
             )
             self.instance_data[calculate_conflicts.DataFields.config_file.value]['path_to_file'] = f_config.file.url
 
+    def calculate(self):
+        """
+        Алгоритм получения расчётов конфликтов и фаз, а также формирования txt-файла и/или конфигуационного
+        фала контроллера Peek или Swarco.
+        :return:
+        """
 
+        a_class = self.get_api_class(self.type_controller)
+        path_to_original_config = None
+        if isinstance(self.uploaded_file_obj, SaveConfigFiles):
+            path_to_original_config = str(self.uploaded_file_obj.file.path)
+        if issubclass(calculate_conflicts.CommonConflictsAndStagesAPI, a_class):
+            obj = a_class(
+                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self.get_path_to_save_txt_file()
+            )
+        elif issubclass(calculate_conflicts.SwarcoConflictsAndStagesAPI, a_class):
+            obj = a_class(
+                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self.get_path_to_save_txt_file(),
+                path_to_src_config=path_to_original_config
+            )
+        else:
+            self.errors.append('Данные для расчёта не валидны')
+            return
+        obj.build_data()
+        self.instance_data = obj.instance_data
+        self.convert_path_to_url_for_download()
 
 
 
