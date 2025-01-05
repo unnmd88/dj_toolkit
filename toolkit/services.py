@@ -1580,8 +1580,9 @@ class GetResultCondition(TrafficLightConfiguratorPotok):
 
 class DatabaseAPI:
 
+    @classmethod
     def save_txt_conflicts(
-            self, path_to_file: str, source: str = 'created', description: str = 'конфликты и фазы txt'
+            cls, path_to_file: str, source: str = 'created', description: str = 'конфликты и фазы txt'
     ) -> SaveConfigFiles:
         f = SaveConfigFiles(source=source, file=path_to_file, description=description)
         f.file.name = correct_path_for_db(f.file.path)
@@ -1616,14 +1617,13 @@ class DatabaseAPI:
 
 class ConflictsAndStages:
 
-    def __init__(self, raw_stages_groups: str | Dict, type_controller: str, create_txt=False, create_config=None):
+    def __init__(self, raw_stages_groups: str | Dict, type_controller: str, create_txt=False, scr_original_config=None):
         self.errors = []
         self.raw_data_stages_groups = raw_stages_groups
         self.stages_groups = self.get_data_stages_groups_dict(raw_stages_groups)
         self.type_controller = type_controller
         self.create_txt = create_txt
-        self.create_config: SaveConfigFiles | None = self.save_config_to_db(create_config)
-        self.api_class = None
+        self.uploaded_file_obj = self.save_config_to_db(scr_original_config)
         self.instance_data = None
 
     def get_api_class(self, matching_data: str):
@@ -1642,37 +1642,6 @@ class ConflictsAndStages:
         else:
             self.errors.append('Предоставлены некорректные данные для расчёта')
 
-    def calculate(self):
-        a_class = self.get_api_class(self.type_controller)
-        # if obj is None:
-        #     self.errors.append('Данные для расчёта не валидны')
-        #     return
-
-        path_to_original_config = None
-        if isinstance(self.create_config, SaveConfigFiles):
-            path_to_original_config = str(self.create_config.file.path)
-
-        print(f'self.create_txt: {self.create_txt}')
-        print(f'type.a_class: {type(a_class)}')
-        print(f'a_class: {a_class}')
-        if issubclass(calculate_conflicts.CommonConflictsAndStagesAPI, a_class):
-            obj = a_class(
-                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self.get_path_to_save_txt_file()
-            )
-        elif issubclass(calculate_conflicts.SwarcoConflictsAndStagesAPI, a_class):
-            obj = a_class(
-                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self.get_path_to_save_txt_file(),
-                path_to_src_config=path_to_original_config
-            )
-        else:
-            self.errors.append('Данные для расчёта не валидны')
-            return
-
-        obj.build_data()
-        self.instance_data = obj.instance_data
-        print(obj.instance_data)
-
-
     def get_path_to_save_txt_file(self) -> str:
         return f'{MEDIA_ROOT}/conflicts/txt/сalculated_conflicts {dt.now().strftime("%d %b %Y %H_%M_%S")}.txt'
 
@@ -1685,6 +1654,51 @@ class ConflictsAndStages:
                 description='загружен для формирования конфига с расчётами конфликтов и фаз'
             )
             return f
+
+    def calculate(self):
+        a_class = self.get_api_class(self.type_controller)
+        path_to_original_config = None
+        if isinstance(self.uploaded_file_obj, SaveConfigFiles):
+            path_to_original_config = str(self.uploaded_file_obj.file.path)
+        if issubclass(calculate_conflicts.CommonConflictsAndStagesAPI, a_class):
+            obj = a_class(
+                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self.get_path_to_save_txt_file()
+            )
+        elif issubclass(calculate_conflicts.SwarcoConflictsAndStagesAPI, a_class):
+            obj = a_class(
+                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self.get_path_to_save_txt_file(),
+                path_to_src_config=path_to_original_config
+            )
+        else:
+            self.errors.append('Данные для расчёта не валидны')
+            return
+        obj.build_data()
+        self.instance_data = obj.instance_data
+        self.covert_path_to_url_for_download()
+        print(obj.instance_data)
+
+    def covert_path_to_url_for_download(self):
+
+        txt = self.instance_data.get(calculate_conflicts.DataFields.txt_file.value)
+        config = self.instance_data.get(calculate_conflicts.DataFields.config_file.value)
+
+        if txt is not None:
+            path = txt.pop('path_to_file')
+            f_txt = DatabaseAPI.save_txt_conflicts(path_to_file=path)
+            self.instance_data[calculate_conflicts.DataFields.txt_file.value]['path_to_file'] = f_txt.file.url
+        if config is not None:
+            path = config.pop('path_to_file')
+            f_config = DatabaseAPI.save_config(
+                file=path,
+                controller_type=self.instance_data[calculate_conflicts.DataFields.type_controller.value],
+                source='created',
+                description='создан с расчитанными конфликтами и фазами'
+            )
+            self.instance_data[calculate_conflicts.DataFields.config_file.value]['path_to_file'] = f_config.file.url
+
+
+
+
 
 
 

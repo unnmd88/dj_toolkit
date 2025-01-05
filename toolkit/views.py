@@ -363,9 +363,9 @@ class ConflictsAndStagesAPI(APIView):
 
         start_time = time.time()
         logger.debug(request.FILES)
-        file: InMemoryUploadedFile = request.FILES.get('file')
-        logger.debug(file)
-        logger.debug(type(file))
+
+
+
         try:
             entity_req_data = json.loads(request.data['data'])
             stages = entity_req_data['stages']
@@ -373,7 +373,10 @@ class ConflictsAndStagesAPI(APIView):
             create_txt = entity_req_data['create_txt']
             create_config = entity_req_data['create_config']
             swarco_vals = entity_req_data['swarco_vals']
+            file: InMemoryUploadedFile | None = request.FILES.get('file')
 
+            logger.debug(file)
+            logger.debug(type(file))
             logger.debug(entity_req_data)
             logger.debug(stages)
             logger.debug(type_controller)
@@ -383,8 +386,18 @@ class ConflictsAndStagesAPI(APIView):
         except KeyError:
             return Response({'detail': 'Предоставлены некорректные данные для запроса'})
 
-        # data = services.ConflictsAndStagesCommon(entity_req_data['stages'], create_txt=True)
-        data = services.ConflictsAndStages(raw_stages_groups=stages, type_controller=type_controller, create_txt=create_txt, create_config=create_config)
+        # if isinstance(file, InMemoryUploadedFile):
+        #     file_obj = services.DatabaseAPI.save_config(
+        #         file=request.FILES.get('file'),
+        #         controller_type=type_controller,
+        #         source='uploaded',
+        #         description='загружен для формирования конфига с расчётами конфликтов и фаз'
+        #     )
+        # else:
+        #     file_obj = None
+        # print(file_obj)
+
+        data = services.ConflictsAndStages(raw_stages_groups=stages, type_controller=type_controller, create_txt=create_txt, scr_original_config=file)
         if data.errors:
             return Response({'detail': data.errors})
         data.calculate()

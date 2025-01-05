@@ -1,5 +1,6 @@
 import json
 import os.path
+import pathlib
 import random
 import string
 import time
@@ -517,7 +518,8 @@ class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
         :return:
         """
 
-        path_to_new_PTC2 = f'{self.prefix_new_config}{self.path_to_src_config}'
+        p = pathlib.Path(self.path_to_src_config)
+        path_to_new_PTC2 = p.parent / f'{self.prefix_new_config}{p.name}'
         conflicts_f997 = 'NewSheet693  : Work.997'
         conflicts_f992 = 'NewSheet693  : Work.992'
         conflicts_f006 = 'NewSheet693  : Work.006'
