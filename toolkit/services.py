@@ -1579,11 +1579,22 @@ class GetResultCondition(TrafficLightConfiguratorPotok):
 
 
 class DatabaseAPI:
+    """
+    API базы данных
+    """
 
     @classmethod
     def save_txt_conflicts(
             cls, path_to_file: str, source: str = 'created', description: str = 'конфликты и фазы txt'
     ) -> SaveConfigFiles:
+        """
+        Сохраняет запись в бд модели SaveConfigFiles о созданном txt-файле с расчётами конфликтов и фаз.
+        :param path_to_file: Путь к txt фазйлу.
+        :param source: Контент поля source для txt-файла модели SaveConfigFiles .
+        :param description: Контент поля description модели SaveConfigFiles
+        :return: Экземпляр сохранённой записи
+        """
+
         f = SaveConfigFiles(source=source, file=path_to_file, description=description)
         f.file.name = correct_path_for_db(f.file.path)
         f.save()
@@ -1600,6 +1611,16 @@ class DatabaseAPI:
             ip_adress: str = None,
             number: str = None
     ) -> SaveConfigFiles:
+        """
+        Сохраняет запись в бд модели SaveConfigFiles о созданном конфигурационном файле/архиве.
+        :param source: Контент поля source для txt-файла модели SaveConfigFiles.
+        :param file: Путь к txt файлу.
+        :param description: Контент поля description модели SaveConfigFiles.
+        :param address: Контент поля address модели SaveConfigFiles.
+        :param ip_adress: Контент поля ip_adress модели SaveConfigFiles.
+        :param number: Контент поля number модели SaveConfigFiles.
+        :return: Экземпляр сохранённой записи.
+        """
 
         f = SaveConfigFiles(
             source=source,
