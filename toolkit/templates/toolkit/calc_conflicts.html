@@ -11,9 +11,12 @@
 {% csrf_token %}
 <div class="calc_conflicts" id="controllers">
     <label class="calc_conflicts_controllers" id="testtt"> Тип ДК: </label>
-    <input type="radio" value="common" name="controller_type" checked id="common"> Общий
-    <input type="radio" value="swarco" name="controller_type" id="swarco"> Swarco
-    <input type="radio" value="peek" name="controller_type" id="peek"> Peek    
+    <input type="radio" value="common" name="controller_type" checked id="common">
+    <label for="common">Общий</label>
+    <input type="radio" value="swarco" name="controller_type" id="swarco">
+    <label for="swarco">Swarco</label>
+    <input type="radio" value="peek" name="controller_type" id="peek"> 
+    <label for="peek">Peek</label>
 </div>
 <br><br>
 
@@ -30,7 +33,7 @@
     <div>
         <input type="checkbox" name="make_config" id="make_config" disabled>
         <label class="calc_conflicts_optinos" for="make_config"> Создать файл конфигурации: </label>
-        <input type="file" id="config_file" name="upload_config_file" multiple disabled>            
+        <input type="file" id="config_file" name="upload_config_file" multiple disabled>
     </div>
 </fieldset>
 <br>
@@ -46,6 +49,10 @@
 <textarea required rows="8" cols="20" minlength="4" maxlength="600" name="table_stages" id="stages_from_area"></textarea>
 <p></p>
 <button id="send_conflicts_data"> Отправить </button>
+
+<div id="calculated_content">
+
+</div>
 
 
 

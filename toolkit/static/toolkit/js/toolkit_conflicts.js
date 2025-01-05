@@ -3,6 +3,11 @@
 const TOKEN = '7174fa6f9d0f954a92d2a5852a7fc3bcaace7578';
 
 const textAreaStagesGroups = document.querySelector('#stages_from_area');
+const chkbxCreateTxt = document.querySelector('#create_txt');
+const chkbxMatrixAndBinValsSwarco = document.querySelector('#binval_swarco');
+const fileInput = document.querySelector('#config_file');
+const btnSendRequest = document.querySelector('#send_conflicts_data');
+const divCalculatedContent = document.querySelector('#calculated_content');
 
 
 //work
@@ -53,70 +58,72 @@ $('#config_file').click( function (){
 
 
 // Проверка валидности введенных/заполненных данных
-$("#send_conflicts_data").click(function () {
-  const text_area = {
-    text: $('#stages_from_area').val(),
-    lines: $('#stages_from_area').val().split('\n'),
-    num_lines: $('#stages_from_area').val().split('\n').length,
-  };
+// $("#send_conflicts_data").click(function () {
+//   const text_area = {
+//     text: $('#stages_from_area').val(),
+//     lines: $('#stages_from_area').val().split('\n'),
+//     num_lines: $('#stages_from_area').val().split('\n').length,
+//   };
 
-  sendRequestToCalculate();
-  console.log(`text_area: <${text_area}>`)
-  console.log(`text_area.text: <${text_area.text}>`)
-  console.log(`text_area.lines: <${text_area.lines}>`)
-  console.log(`text_area.num_lines: <${text_area.num_lines}>`)
+//   sendRequestToCalculate();
+//   console.log(`text_area: <${text_area}>`)
+//   console.log(`text_area.text: <${text_area.text}>`)
+//   console.log(`text_area.lines: <${text_area.lines}>`)
+//   console.log(`text_area.num_lines: <${text_area.num_lines}>`)
 
-  return;
+//   return;
 
-  if (text_area.num_lines < 2) {
-    alert('Количество фаз не может быть менее 2');
-    return false;
-  }
+//   if (text_area.num_lines < 2) {
+//     alert('Количество фаз не может быть менее 2');
+//     return false;
+//   }
 
-  // Проверка на корректность символов
-  if (!check_text_area(text_area.lines)){
-    return false;
-  }
+//   // Проверка на корректность символов
+//   if (!check_text_area(text_area.lines)){
+//     return false;
+//   }
  
-  // Проверка на количество фаз
-  if (($('#swarco').is(':checked') && text_area.num_lines > 8)) {
-    alert(`Количество фаз для Swarco не должно превышать 8. Вы ввели: ${text_area.num_lines}`);
-    return false;
-  }
-  else if (($('#peek').is(':checked') && text_area.num_lines > 32)) {
-    alert(`Количество фаз для Peek не должно превышать 32. Вы ввели: ${text_area.num_lines}`);
-    return false;
-  }
+//   // Проверка на количество фаз
+//   if (($('#swarco').is(':checked') && text_area.num_lines > 8)) {
+//     alert(`Количество фаз для Swarco не должно превышать 8. Вы ввели: ${text_area.num_lines}`);
+//     return false;
+//   }
+//   else if (($('#peek').is(':checked') && text_area.num_lines > 32)) {
+//     alert(`Количество фаз для Peek не должно превышать 32. Вы ввели: ${text_area.num_lines}`);
+//     return false;
+//   }
 
-  else if (text_area.num_lines > 128) {
-    alert(`Количество фаз для неопределённого типа ДК не должно превышать 128. Вы ввели: ${text_area.num_lines}`);
-    return false;
-  }
+//   else if (text_area.num_lines > 128) {
+//     alert(`Количество фаз для неопределённого типа ДК не должно превышать 128. Вы ввели: ${text_area.num_lines}`);
+//     return false;
+//   }
 
-  // Проверка валидности данных при условии что выбран чекбокс "Создать файл конфигурации"
-  if ($('#make_config').is(':checked')) {
-    // Проверка на наличие файла
-    if ($('#config_file')[0].files.length < 1) {
-      alert('Вы не выбрали файл конфигурации');
-      return false;
-    }
-    // Проверка на корректное расширение файла для каждого типа ДК
-    let file_name = $('#config_file')[0].files[0].name;
-    if ($('#swarco').is(':checked') && file_name.slice(-5).toUpperCase() != '.PTC2'){
-      alert('Вы выбрали неверный формат файла конфигурации для Swarco. Выберите файл с раширением .PTC2');
-      return false;
-    }
-    else if ($('#peek').is(':checked') && file_name.slice(-4).toUpperCase() != '.DAT'){
-      alert('Вы выбрали неверный формат файла конфигурации для Peek. Выберите файл с раширением .DAT');
-      return false;
-    }
-  }
+//   // Проверка валидности данных при условии что выбран чекбокс "Создать файл конфигурации"
+//   if ($('#make_config').is(':checked')) {
+//     // Проверка на наличие файла
+//     if ($('#config_file')[0].files.length < 1) {
+//       alert('Вы не выбрали файл конфигурации');
+//       return false;
+//     }
+//     // Проверка на корректное расширение файла для каждого типа ДК
+//     let file_name = $('#config_file')[0].files[0].name;
+//     if ($('#swarco').is(':checked') && file_name.slice(-5).toUpperCase() != '.PTC2'){
+//       alert('Вы выбрали неверный формат файла конфигурации для Swarco. Выберите файл с раширением .PTC2');
+//       return false;
+//     }
+//     else if ($('#peek').is(':checked') && file_name.slice(-4).toUpperCase() != '.DAT'){
+//       alert('Вы выбрали неверный формат файла конфигурации для Peek. Выберите файл с раширением .DAT');
+//       return false;
+//     }
+//   }
   
-});
+// });
 
 
 
 // Проверка всего поля text_area на валидные символы
+
+
 function check_text_area (stages) {
   for (let i = 0; i < stages.length; i++) {
     if (!check_string(stages[i], i + 1)) {
@@ -152,14 +159,14 @@ function check_string (stage_string, num_string, sep1=':', sep2=',') {
 }
 
 
+btnSendRequest.addEventListener('click', sendRequestToCalculate);
 async function sendRequestToCalculate(event) {
-  const f = document.querySelector('#config_file').files;
+  // const fileInput = document.querySelector('#config_file').files;
   console.log('config_file');
-
   let create_config;
   const form_data = new FormData();
-  if (f.length) {
-    form_data.append('file', f[0]);
+  if (fileInput.files.length) {
+    form_data.append('file', fileInput.files[0]);
     create_config = true;
   }
   else {
@@ -170,8 +177,8 @@ async function sendRequestToCalculate(event) {
     stages: textAreaStagesGroups.value,
     type_controller: document.querySelector('input[name="controller_type"]:checked').value,
     create_config: create_config,
-    create_txt: document.querySelector('#create_txt').checked,
-    swarco_vals: document.querySelector('#binval_swarco').checked,
+    create_txt: chkbxCreateTxt.checked,
+    swarco_vals: chkbxMatrixAndBinValsSwarco.checked,
   }
   form_data.append('data', JSON.stringify(data));
 
@@ -187,6 +194,7 @@ async function sendRequestToCalculate(event) {
           }
       });
       console.log(responce.data);
+      writeCalculatedContent(responce.data);
   } catch (error) {
       if (error.response) { // get response with a status code not in range 2xx
         console.log(error.response.data);
@@ -199,6 +207,22 @@ async function sendRequestToCalculate(event) {
       }
       console.log(error.config); 
     }
-    f.value = null;
+    fileInput.value = null;
     
+}
+
+function writeCalculatedContent (responce) {
+  addUrlsforDownload(responce);
+}
+
+function addUrlsforDownload (responce) {
+  if (responce.txt_file != 'undefined') {
+    const p = document.createElement('p');
+    const link = document.createElement('a');
+    link.setAttribute('href', responce.txt_file.url_to_file);
+    link.setAttribute('download', '');
+    link.textContent = `Скачать текстовый файл с расчётами`;
+    divCalculatedContent.append(p);
+    divCalculatedContent.append(link);
   }
+}

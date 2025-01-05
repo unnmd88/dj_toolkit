@@ -1714,7 +1714,7 @@ class ConflictsAndStages:
         if txt is not None:
             path = txt.pop('path_to_file')
             f_txt = DatabaseAPI.save_txt_conflicts(path_to_file=path)
-            self.instance_data[calculate_conflicts.DataFields.txt_file.value]['path_to_file'] = f_txt.file.url
+            self.instance_data[calculate_conflicts.DataFields.txt_file.value]['url_to_file'] = f_txt.file.url
         if config is not None:
             path = config.pop('path_to_file')
             f_config = DatabaseAPI.save_config(
@@ -1723,7 +1723,7 @@ class ConflictsAndStages:
                 source='created',
                 description='создан с расчитанными конфликтами и фазами'
             )
-            self.instance_data[calculate_conflicts.DataFields.config_file.value]['path_to_file'] = f_config.file.url
+            self.instance_data[calculate_conflicts.DataFields.config_file.value]['url_to_file'] = f_config.file.url
 
     def calculate(self):
         """
