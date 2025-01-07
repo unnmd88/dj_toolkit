@@ -384,7 +384,7 @@ class OutputDataCalculations(BaseConflictsAndStagesCalculations):
         # если бинарное значение фазы "16", то добавляем один ноль, чтобы получилось "016" и т.д
         # Пример возвращаемой строки для десяти групп: "002;002;002;004;004;000;004;000;016;016", где каждое
         # значение соответсвует номеру группы(начало отсчёта с 1 группы)
-        return ";".join((f'{"0" * 1 * (3 - len(str(val)))}{val}' for val in bin_vals))
+        return "".join((f'{"0" * 1 * (3 - len(str(val)))}{val};' for val in bin_vals))
 
     def create_data_for_output(self):
 

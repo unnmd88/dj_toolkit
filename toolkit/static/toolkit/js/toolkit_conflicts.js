@@ -222,6 +222,7 @@ function writeCalculatedContent (responce) {
 
   divCalculatedContent.append(createMatrixF997(responce.matrix_F997));
   divCalculatedContent.append(createMatrixF994(responce.numbers_conflicts_groups));
+  divCalculatedContent.append(createStagesBinValsF009(responce.stages_bin_vals_f009));
 }
 
 function addUrlsforDownload (responce) {
@@ -304,5 +305,12 @@ function createMatrixF994 (matrix) {
   matrix.forEach((row_matrix, i, arr) => {
     el.innerHTML += `<br>${row_matrix}`; 
   });
+  return el;
+}
+
+function createStagesBinValsF009 (values) {
+  const el = document.createElement('div');
+  el.innerHTML += '<b> Бинарные значения фаз для F009 конфига Swarco:</b>'
+  el.innerHTML += `<br>${values}`;
   return el;
 }
