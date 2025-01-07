@@ -218,6 +218,10 @@ function writeCalculatedContent (responce) {
 
   
   divCalculatedContent.append(createTableOutputMatrix(responce.base_matrix));
+
+
+  divCalculatedContent.append(createMatrixF997(responce.matrix_F997));
+  divCalculatedContent.append(createMatrixF994(responce.numbers_conflicts_groups));
 }
 
 function addUrlsforDownload (responce) {
@@ -283,4 +287,22 @@ function createCellMatrixOutput(obj) {
   }
   element.textContent = content
   return element;
+}
+
+function createMatrixF997 (matrix) {
+  const el = document.createElement('div');
+  el.innerHTML += '<b> Матрица конфликтов для F997 конфига Swarco:</b>'
+  matrix.forEach((row_matrix, i, arr) => {
+    el.innerHTML += `<br>${row_matrix.join("")}`; 
+  });
+  return el;
+}
+
+function createMatrixF994 (matrix) {
+  const el = document.createElement('div');
+  el.innerHTML += '<b> Матрица конфликтных направления для F992 конфига Swarco:</b>'
+  matrix.forEach((row_matrix, i, arr) => {
+    el.innerHTML += `<br>${row_matrix}`; 
+  });
+  return el;
 }

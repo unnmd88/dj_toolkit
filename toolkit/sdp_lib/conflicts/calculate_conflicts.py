@@ -41,6 +41,7 @@ class DataFields(Enum):
     matrix_F997 = 'matrix_F997'
     numbers_conflicts_groups = 'numbers_conflicts_groups'
     stages_bin_vals = 'stages_bin_vals'
+    stages_bin_vals_f009 = 'stages_bin_vals_f009'
     sum_conflicts = 'sum_conflicts'
     txt_file = 'txt_file'
     config_file = 'config_file'
@@ -369,6 +370,22 @@ class OutputDataCalculations(BaseConflictsAndStagesCalculations):
 
         return sum(map(lambda x: 2 ** x if x != 8 else 2 ** 0, (int(s) for s in stages)))
 
+    def _get_bin_vals_stages_for_swarco_f009(self, bin_vals: list[int] = None) -> str | None:
+        """
+        Получает строку привязки направлений к фазам бинарных значений.
+        :return: строка привязки напрвлий к фазе. Пример:
+                 '006;002;014;018;018;020;004;008;008;008;000;000;008;'
+        """
+        bin_vals = bin_vals or self.instance_data[DataFields.stages_bin_vals.value]
+        if bin_vals is None:
+            return
+        # Добавить нули перед значением. Значение всегда состоит из 3 символов.
+        # Например: если бинарное значение фазы "2", то добавляем два нуля, чтобы получилось "002"
+        # если бинарное значение фазы "16", то добавляем один ноль, чтобы получилось "016" и т.д
+        # Пример возвращаемой строки для десяти групп: "002;002;002;004;004;000;004;000;016;016", где каждое
+        # значение соответсвует номеру группы(начало отсчёта с 1 группы)
+        return ";".join((f'{"0" * 1 * (3 - len(str(val)))}{val}' for val in bin_vals))
+
     def create_data_for_output(self):
 
         num_groups = self.instance_data[DataFields.number_of_groups.value]
@@ -393,6 +410,7 @@ class OutputDataCalculations(BaseConflictsAndStagesCalculations):
         self.instance_data[DataFields.matrix_F997.value] = f997
         self.instance_data[DataFields.numbers_conflicts_groups.value] = numbers_conflicts_groups
         self.instance_data[DataFields.stages_bin_vals.value] = stages_bin_vals
+        self.instance_data[DataFields.stages_bin_vals_f009.value] = self._get_bin_vals_stages_for_swarco_f009()
         self.instance_data[DataFields.sum_conflicts.value] = sum_conflicts
 
 
