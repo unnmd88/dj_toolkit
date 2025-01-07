@@ -261,10 +261,10 @@ function createTableOutputMatrix(matrix) {
   return table;
   
 }
+
 // Устанавливает значение и bg-color для td таблицы-матрицы конфликтов 
 function createCellMatrixOutput(obj) {
   let value, element, content;
-  // value = obj.value;
   element = obj.element;
   value = obj.value.replaceAll("|", "");
   if (value.includes('K')) {

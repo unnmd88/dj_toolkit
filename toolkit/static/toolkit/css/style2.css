@@ -106,6 +106,7 @@ order: 0;
   height: 100%;
 }
 
+/* Cравнение групп, работа с паспортом */
 .compare_groups {
   padding: 10px;
   max-height: 600px;
@@ -118,6 +119,7 @@ order: 0;
   height: 400px;
   resize: vertical;
 }
+
 #textarea_result_calc_groups_in_stages {
   padding: 10px;
   max-height: 600px;
@@ -157,18 +159,19 @@ order: 0;
   text-align: center;
 }
 
+/* Проверка условия traffic light configurator Поток */
 #condition {
   width: 800px;
   height: 25px;
 }
 
+/*Конфликты*/
 #output_matrix td, th{
   padding: 8;
   border: 1px solid;
   text-align: center; 
   vertical-align: middle;
 }
-
 
 #output_matrix {
   border: solid;
