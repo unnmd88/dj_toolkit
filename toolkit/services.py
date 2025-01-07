@@ -1641,13 +1641,13 @@ class ConflictsAndStages:
     def __init__(self, raw_stages_groups: str | Dict, type_controller: str, create_txt=False, scr_original_config=None):
         self.errors = []
         self.raw_data_stages_groups = raw_stages_groups
-        self.stages_groups = self.get_data_stages_groups_dict(raw_stages_groups)
+        self.stages_groups = self._get_data_stages_groups_dict(raw_stages_groups)
         self.type_controller = type_controller
         self.create_txt = create_txt
-        self.uploaded_file_obj = self.save_config_to_db(scr_original_config)
+        self.uploaded_file_obj = self._save_config_to_db(scr_original_config)
         self.instance_data = None
 
-    def get_api_class(self, matching_data: str):
+    def _get_api_class(self, matching_data: str):
         """
         Возвращает необходимый класс для расчёта конфликтов и фаз на основе переданных типа контроллера
         :param matching_data: Словаорь с соответствиями типа контроллера классу для расчётов.
@@ -1661,7 +1661,7 @@ class ConflictsAndStages:
         }
         return matches_aclass.get(matching_data)
 
-    def get_data_stages_groups_dict(self, data_stages_groups: str | Dict) -> Dict:
+    def _get_data_stages_groups_dict(self, data_stages_groups: str | Dict) -> Dict:
         """
         Конвертирует данные "фаза: направления" из str в dict. Если data_stages_groups является str,
         например: '1,5\n3,4\n\n6,9,10', то будет сконвертирована: {'1': '1,5', '2': '3,4', '3': '', '4': '6,9,10'}.
@@ -1677,7 +1677,7 @@ class ConflictsAndStages:
         else:
             self.errors.append('Предоставлены некорректные данные для расчёта')
 
-    def get_path_to_save_txt_file(self) -> str:
+    def _get_path_to_save_txt_file(self) -> str:
         """
         Формирует путь для сохранения txt файла с расчитанными конфликтами и фазами
         :return:
@@ -1685,7 +1685,7 @@ class ConflictsAndStages:
 
         return f'{MEDIA_ROOT}/conflicts/txt/сalculated_conflicts {dt.now().strftime("%d %b %Y %H_%M_%S")}.txt'
 
-    def save_config_to_db(self, config: InMemoryUploadedFile | str) -> SaveConfigFiles | None:
+    def _save_config_to_db(self, config: InMemoryUploadedFile | str) -> SaveConfigFiles | None:
         """
         Сохраняет загруженный файл в БД
         :param config: Конфигурационный файл
@@ -1701,7 +1701,7 @@ class ConflictsAndStages:
             )
             return f
 
-    def convert_path_to_url_for_download(self):
+    def _convert_path_to_url_for_download(self):
         """
         Сохраняет в БД файл конфига/txt с расчитанными конфликтами и фазами, а также меняет в
         self.instance_data path к файлу на url для скачивания
@@ -1732,17 +1732,17 @@ class ConflictsAndStages:
         :return:
         """
 
-        a_class = self.get_api_class(self.type_controller)
+        a_class = self._get_api_class(self.type_controller)
         path_to_original_config = None
         if isinstance(self.uploaded_file_obj, SaveConfigFiles):
             path_to_original_config = str(self.uploaded_file_obj.file.path)
         if issubclass(calculate_conflicts.CommonConflictsAndStagesAPI, a_class):
             obj = a_class(
-                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self.get_path_to_save_txt_file()
+                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self._get_path_to_save_txt_file()
             )
         elif issubclass(calculate_conflicts.SwarcoConflictsAndStagesAPI, a_class):
             obj = a_class(
-                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self.get_path_to_save_txt_file(),
+                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self._get_path_to_save_txt_file(),
                 path_to_src_config=path_to_original_config
             )
         else:
@@ -1750,7 +1750,7 @@ class ConflictsAndStages:
             return
         obj.build_data()
         self.instance_data = obj.instance_data
-        self.convert_path_to_url_for_download()
+        self._convert_path_to_url_for_download()
 
 
 

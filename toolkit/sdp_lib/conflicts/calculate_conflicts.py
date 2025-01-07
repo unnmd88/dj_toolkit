@@ -338,6 +338,7 @@ class OutputDataCalculations(BaseConflictsAndStagesCalculations):
                 DataFields.no_conflict_O.value if gr not in enemy_groups else DataFields.conflict_K.value
                 for gr in all_numbers_groups
             ]
+            row[current_group] = DataFields.cross_group_star_matrix.value
         else:
             row = [DataFields.cross_group_star_matrix.value]
             row += [f'|0{g}|' if len(str(g)) == 1 else f'|{g}|' for g in all_numbers_groups]

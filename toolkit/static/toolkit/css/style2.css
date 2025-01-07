@@ -162,4 +162,18 @@ order: 0;
   height: 25px;
 }
 
+#output_matrix td, th{
+  padding: 8;
+  border: 1px solid;
+  text-align: center; 
+  vertical-align: middle;
+}
+
+
+#output_matrix {
+  border: solid;
+  background-color: #C0C0C0;
+  table-layout: fixed;
+
+}
 

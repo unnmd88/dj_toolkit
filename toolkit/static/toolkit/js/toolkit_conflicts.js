@@ -212,7 +212,12 @@ async function sendRequestToCalculate(event) {
 }
 
 function writeCalculatedContent (responce) {
-  addUrlsforDownload(responce);
+  clearElement(divCalculatedContent);
+
+  // addUrlsforDownload(responce);
+
+  
+  divCalculatedContent.append(createTableOutputMatrix(responce.base_matrix));
 }
 
 function addUrlsforDownload (responce) {
@@ -225,4 +230,57 @@ function addUrlsforDownload (responce) {
     divCalculatedContent.append(p);
     divCalculatedContent.append(link);
   }
+}
+
+function clearElement(element) {
+  element.innerHTML = "";
+}
+
+// Формирует table(#output_matrix) матрицу конфликтов общего вида
+function createTableOutputMatrix(matrix) {
+  const table = document.createElement('table');
+  table.setAttribute('id', 'output_matrix');
+  let tr, cell;
+  matrix.forEach((line_matrix, ind, arr) => {
+    tr = document.createElement('tr');
+    line_matrix.forEach((el, i, arr) => {
+      if (ind === 0) {
+        cell = document.createElement('th');
+      }
+      else {
+        cell = (i > 0) ? document.createElement('td') : document.createElement('th');
+      }
+      cell = createCellMatrixOutput({
+        value: el,
+        element: cell,
+      });
+      tr.append(cell);
+    });
+    table.append(tr);
+  });
+  return table;
+  
+}
+// Устанавливает значение и bg-color для td таблицы-матрицы конфликтов 
+function createCellMatrixOutput(obj) {
+  let value, element, content;
+  // value = obj.value;
+  element = obj.element;
+  value = obj.value.replaceAll("|", "");
+  if (value.includes('K')) {
+    content = 'K';
+    element.style.backgroundColor  = 'red';
+  }
+  else if (value.includes('O')) {
+    content = 'O';
+    element.style.backgroundColor  = 'green';
+  }
+  else if (Number.isInteger(+value)) {
+    content = value;
+  }
+  else {
+    content = '*';
+  }
+  element.textContent = content
+  return element;
 }
