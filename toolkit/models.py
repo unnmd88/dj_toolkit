@@ -8,7 +8,7 @@ class SaveConfigFiles(models.Model):
     source = models.CharField(max_length=20)
     file = models.FileField(upload_to='conflicts/configs/', null=True, verbose_name='config_file')
     time_create = models.DateTimeField(default=timezone.now)
-    controller_type = models.CharField(max_length=20, db_index=True, default='undefind')
+    controller_type = models.CharField(max_length=20, db_index=True, default='undefined')
     description = models.TextField(null=True)
     number = models.CharField(max_length=100, null=True)
     ip_adress = models.CharField(max_length=20, null=True)
