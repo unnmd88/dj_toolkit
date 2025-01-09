@@ -642,91 +642,87 @@ class SwarcoConflictsAndStagesAPI(CreateConfigurationFileBase):
 class PeekConflictsAndStagesAPI(CreateConfigurationFileBase):
     controller_type = 'Peek'
 
+    def get_conflicts_for_write(self) -> str:
+
+        table_conflicts = f':TABLE "XSGSG",{str(self.instance_data[DataFields.sum_conflicts.value])},4,3,4,4,3\n'
+        for group, properties in self.instance_data[DataFields.groups_property.value].items():
+            for enemy_group in properties[DataFields.enemy_groups.value]:
+                table_conflicts += (
+                    f':RECORD\n'
+                    f'"Type",2\n'
+                    f'"Id1",{group}\n'
+                    f'"Id2",{str(enemy_group)}\n'
+                    f'"Time",30\n'
+                    f':END\n'
+                )
+        return f'{table_conflicts}:END\n'
+
+    def skipping_lines(self, file: Iterator, stopper: str) -> str:
+        """
+        Итерируется по строкам исходного DAT файла, которые не требуется записывать в новый файл DAT.
+        :param file: Исходный DAT файл.
+        :param stopper: Строка-стоппер, до которой будет вызываться next()
+        :return: Строка-стоппер
+        """
+
+        line = ''
+        while stopper not in line:
+            line = next(file)
+        return line
+
+    def get_ysrm_sa_stage_and_ysrm_uk_stage(self) -> Tuple[str, str]:
+        """
+        Аккумулирует строки таблиц :TABLE "YSRM_SA_STG" и :TABLE "YSRM_UK_STAGE" для записи в новый DAT файл.
+        :return: Кортеж из двух строк ysrm_sa_stage и ysrm_uk_stage для записи в новый DAT файл.
+        """
+
+        sum_stages = str(self.instance_data[DataFields.number_of_stages.value])
+        ysrm_sa_stage = f':TABLE "YSRM_SA_STG",{sum_stages},2,4,10\n'
+        ysrm_uk_stage = f':TABLE "YSRM_UK_STAGE",{sum_stages},4,4,4,1,10\n'
+
+        for stage, groups_in_stage in self.instance_data[DataFields.sorted_stages_data.value].items():
+            groups_in_stage = f"{','.join(map(str, groups_in_stage))}"
+            ysrm_sa_stage += (
+                f':RECORD\n'
+                f'"Id",{stage}\n'
+                f'"SGdef","{groups_in_stage}"\n'
+                f':END\n'
+            )
+            ysrm_uk_stage += (
+                f':RECORD\n'
+                f'"ProcessId",1\n'
+                f'"StageId",{stage}\n'
+                f'"StartUpStage",{str(True) if stage == "1" else str(False)}\n'
+                f'"SignalGroups",",{groups_in_stage},"\n'
+                f':END\n'
+            )
+        return f'{ysrm_sa_stage}:END\n', f'{ysrm_uk_stage}:END\n'
+
     def create_config(self):
 
         p = pathlib.Path(self.path_to_src_config)
         path_to_new_DAT = p.parent / f'{self.prefix_new_config}{p.name}'
-
-        sum_stages = self.instance_data[DataFields.number_of_stages.value]
-
-        table_conflicts = f':TABLE "XSGSG",{str(self.instance_data[DataFields.sum_conflicts.value])},4,3,4,4,3\n'
-        table_SA_STG = f':TABLE "YSRM_SA_STG",{str(sum_stages)},2,4,10\n'
-        table_UK_STAGE = f':TABLE "YSRM_UK_STAGE",{str(sum_stages)},4,4,4,1,10\n'
+        ysrm_sa_stage, ysrm_uk_stage = self.get_ysrm_sa_stage_and_ysrm_uk_stage()
 
         try:
             with (
                 open(self.path_to_src_config, 'r', encoding='utf-8') as file1,
                 open(path_to_new_DAT, 'w', encoding='utf-8') as file2
             ):
-
-                flag1 = flag2 = flag3 = False
-                count = 0
                 for line in file1:
-                    if flag1 and 'TABLE "YKLOK"' not in line:
-                        pass
-                    elif flag1 and 'TABLE "YKLOK"' in line:
-                        flag1 = False
-                        count += 1
-                        file2.write(':END\n')
-                        file2.write(line)
-                    elif ':TABLE "XSGSG"' in line:
-                        file2.write(table_conflicts)
-                        for num_group_from in range(len(self.conflict_groups_Peek)):
-                            for num_group_to in self.conflict_groups_Peek[num_group_from]:
-                                file2.write(f':RECORD\n'
-                                            f'"Type",2\n'
-                                            f'"Id1",{str(num_group_from + 1)}\n'
-                                            f'"Id2",{str(num_group_to)}\n'
-                                            f'"Time",30\n'
-                                            f':END\n')
-                        flag1 = True
-
-                    elif flag2 and ':TABLE "YSRM_STEP"' not in line:
-                        pass
-                    elif flag2 and ':TABLE "YSRM_STEP"' in line:
-                        flag2 = False
-                        count += 1
-                        file2.write(':END\n')
-                        file2.write(line)
+                    if ':TABLE "XSGSG"' in line:
+                        file2.write(self.get_conflicts_for_write())
+                        file2.write(self.skipping_lines(file1, ':TABLE "YKLOK"'))
                     elif ':TABLE "YSRM_SA_STG"' in line:
-                        file2.write(table_SA_STG)
-                        for num_stage in range(len(self.sorted_stages)):
-                            stage = ','.join(list(map(str, self.sorted_stages[num_stage])))
-                            file2.write(f':RECORD\n'
-                                        f'"Id",{str(num_stage + 1)}\n'
-                                        f'"SGdef","{stage}"\n'
-                                        f':END\n')
-                        flag2 = True
-
-                    elif flag3 and '"YSRM_UK_STAGE_TRANS"' not in line:
-                        pass
-                    elif flag3 and '"YSRM_UK_STAGE_TRANS"' in line:
-                        flag3 = False
-                        count += 1
-                        file2.write(':END\n')
-                        file2.write(line)
+                        file2.write(ysrm_sa_stage)
+                        file2.write(self.skipping_lines(file1, ':TABLE "YSRM_STEP"'))
                     elif ':TABLE "YSRM_UK_STAGE"' in line:
-                        file2.write(table_UK_STAGE)
-                        for num_stage in range(len(self.sorted_stages)):
-                            stage = ','.join(list(map(str, self.sorted_stages[num_stage])))
-                            file2.write(f':RECORD\n'
-                                        f'"ProcessId",1\n'
-                                        f'"StageId",{str(num_stage + 1)}\n'
-                                        f'"StartUpStage",{str(True) if num_stage == 0 else str(False)}\n'
-                                        f'"SignalGroups",",{stage},"\n'
-                                        f':END\n')
-                        flag3 = True
-
+                        file2.write(ysrm_uk_stage)
+                        file2.write(self.skipping_lines(file1, ':TABLE "YSRM_UK_STAGE_TRANS"'))
                     else:
                         file2.write(line)
-
-            if os.path.exists(path_to_new_DAT):
-                self.result_make_config = [True, self.msg_success_make_config, path_to_new_DAT]
-            else:
-                self.result_make_config = [False, self.msg_error_make_config]
-        except Exception as err:  # определить какую ошибку ловишь
-            pass  # что-то делать
-            return err  # например
+        except Exception as err:
+            print(err)
 
 
 if __name__ == '__main__':
@@ -734,15 +730,21 @@ if __name__ == '__main__':
 
     logger.debug('DDD')
     logger.info('IIII')
+    # example = {
+    #     '1': '1,4,2,3,5,5,5,5,3,4,2',
+    #     '2': '',
+    #     '3': '9,10,8,13,3,10,',
+    #     '4': '5,6,4'
+    # }
     example = {
-        '1': '1,4,2,3,5,5,5,5,3,4,2',
-        '2': '',
-        '3': '9,10,8,13,3,10,',
-        '4': '5,6,4'
+        '1': '1,2,3',
+        '2': '4,5,6',
+        '3': '7,8,9',
+        '4': '10'
     }
     start_time = time.time()
-    obj = SwarcoConflictsAndStagesAPI(example, create_txt=True,
-                                      )
+    obj = PeekConflictsAndStagesAPI(example, create_txt=True, path_to_src_config='CO3992.DAT')
+
     obj.build_data()
     print(obj)
 

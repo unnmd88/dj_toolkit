@@ -1745,6 +1745,11 @@ class ConflictsAndStages:
                 self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self._get_path_to_save_txt_file(),
                 path_to_src_config=path_to_original_config
             )
+        elif issubclass(calculate_conflicts.PeekConflictsAndStagesAPI, a_class):
+            obj = a_class(
+                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self._get_path_to_save_txt_file(),
+                path_to_src_config=path_to_original_config
+            )
         else:
             self.errors.append('Данные для расчёта не валидны')
             return
