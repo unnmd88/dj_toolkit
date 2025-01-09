@@ -549,7 +549,7 @@ class CreateConfigurationFileBase(CommonConflictsAndStagesAPI):
 class SwarcoConflictsAndStagesAPI(CreateConfigurationFileBase):
     """
     API для получения свойств и данных после различных расчетов, таких как конфликты, направления в фазах, матрицы
-    и т.д, а также формирования конфигурационного файла .PTC с учётом рассчитанных даных
+    и т.д, а также формирования конфигурационного файла .PTC с учётом рассчитанных даных для контроллера Swarco.
     """
 
     controller_type = 'Swarco'
@@ -640,9 +640,18 @@ class SwarcoConflictsAndStagesAPI(CreateConfigurationFileBase):
 
 
 class PeekConflictsAndStagesAPI(CreateConfigurationFileBase):
+    """
+    API для получения свойств и данных после различных расчетов, таких как конфликты, направления в фазах, матрицы
+    и т.д, а также формирования конфигурационного файла .DAT с учётом рассчитанных даных для контроллера Peek.
+    """
+
     controller_type = 'Peek'
 
     def get_conflicts_for_write(self) -> str:
+        """
+        Формирует строку :TABLE "XSGSG" для записи в новый DAT файл.
+        :return: строка :TABLE "XSGSG" для записи в новый DAT файл.
+        """
 
         table_conflicts = f':TABLE "XSGSG",{str(self.instance_data[DataFields.sum_conflicts.value])},4,3,4,4,3\n'
         for group, properties in self.instance_data[DataFields.groups_property.value].items():
@@ -699,6 +708,10 @@ class PeekConflictsAndStagesAPI(CreateConfigurationFileBase):
         return f'{ysrm_sa_stage}:END\n', f'{ysrm_uk_stage}:END\n'
 
     def create_config(self):
+        """
+        Формирует новый DAT файл конфигурации на основе расчётов.
+        :return:
+        """
 
         p = pathlib.Path(self.path_to_src_config)
         path_to_new_DAT = p.parent / f'{self.prefix_new_config}{p.name}'
