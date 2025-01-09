@@ -14,9 +14,14 @@ const divCalculatedContent = document.querySelector('#calculated_content');
 // const TOKEN = 'a090474ab50a6ec440eef021295d5f0e750afa00';
 // const TOKEN = 'fb682e5942fa8ce5c26ab8cd3e8eaba41c4cd961'; shared_desktop
 
+
+/*----------------------------------------------|
+|              Обработчики событий              |
+------------------------------------------------*/
+
 // Ловим событие изменения состояния radio типов дк
 $('input[type=radio][name=controller_type]').change(function() {
-  if ($('#undefind').is(':checked')) {
+  if ($('#common').is(':checked')) {
       $('#make_config').prop('checked', false);
       $('#binval_swarco').prop('checked', false);
       $('#binval_swarco').attr('disabled', true);
@@ -55,6 +60,58 @@ $('#config_file').click( function (){
   }
 
 });
+
+btnSendRequest.addEventListener('click', sendRequestToCalculate);
+async function sendRequestToCalculate(event) {
+  // const fileInput = document.querySelector('#config_file').files;
+  console.log('config_file');
+  let create_config;
+  const form_data = new FormData();
+  if (fileInput.files.length) {
+    form_data.append('file', fileInput.files[0]);
+    create_config = true;
+  }
+  else {
+    create_config = false;
+  }
+  
+  const userDataOptionsForCalculate = {
+    stages: textAreaStagesGroups.value,
+    type_controller: document.querySelector('input[name="controller_type"]:checked').value,
+    create_config: create_config,
+    create_txt: chkbxCreateTxt.checked,
+    swarco_vals: chkbxMatrixAndBinValsSwarco.checked,
+  }
+  form_data.append('data', JSON.stringify(userDataOptionsForCalculate));
+
+  const csrfToken = $("input[name=csrfmiddlewaretoken]").val();
+  try {
+      const responce = await axios.post('/api/v1/conflicts/', 
+        form_data,
+        {
+          headers: {
+              "X-CSRFToken": csrfToken, 
+              "Content-Type": "multipart/form-data",
+              "Authorization": `Bearer ${TOKEN}`,
+          }
+      });
+      console.log(responce.data);
+      writeCalculatedContent(responce.data, userDataOptionsForCalculate);
+  } catch (error) {
+      if (error.response) { // get response with a status code not in range 2xx
+        console.log(error.response.data);
+        console.log(error.response.status);
+        console.log(error.response.headers);
+      } else if (error.request) { // no response
+        console.log(error.request);
+      } else { // Something wrong in setting up the request
+        console.log('Error', error.message);
+      }
+      console.log(error.config); 
+    }
+    fileInput.value = null;
+    
+}
 
 
 // Проверка валидности введенных/заполненных данных
@@ -124,6 +181,19 @@ $('#config_file').click( function (){
 // Проверка всего поля text_area на валидные символы
 
 
+/*----------------------------------------------|
+|                    Общие                      |
+------------------------------------------------*/
+
+// Удаляет весь контент внутри element
+function clearElement(element) {
+  element.innerHTML = "";
+}
+
+/*----------------------------------------------|
+|    Проверка валидности отправляемых данных    |
+------------------------------------------------*/
+
 function check_text_area (stages) {
   for (let i = 0; i < stages.length; i++) {
     if (!check_string(stages[i], i + 1)) {
@@ -158,93 +228,67 @@ function check_string (stage_string, num_string, sep1=':', sep2=',') {
   return true;
 }
 
+/*----------------------------------------------|
+|    Наполенение страницы контентом расчётов    |
+------------------------------------------------*/
 
-btnSendRequest.addEventListener('click', sendRequestToCalculate);
-async function sendRequestToCalculate(event) {
-  // const fileInput = document.querySelector('#config_file').files;
-  console.log('config_file');
-  let create_config;
-  const form_data = new FormData();
-  if (fileInput.files.length) {
-    form_data.append('file', fileInput.files[0]);
-    create_config = true;
-  }
-  else {
-    create_config = false;
-  }
-  
-  const data = {
-    stages: textAreaStagesGroups.value,
-    type_controller: document.querySelector('input[name="controller_type"]:checked').value,
-    create_config: create_config,
-    create_txt: chkbxCreateTxt.checked,
-    swarco_vals: chkbxMatrixAndBinValsSwarco.checked,
-  }
-  form_data.append('data', JSON.stringify(data));
-
-  const csrfToken = $("input[name=csrfmiddlewaretoken]").val();
-  try {
-      const responce = await axios.post('/api/v1/conflicts/', 
-        form_data,
-        {
-          headers: {
-              "X-CSRFToken": csrfToken, 
-              "Content-Type": "multipart/form-data",
-              "Authorization": `Bearer ${TOKEN}`,
-          }
-      });
-      console.log(responce.data);
-      writeCalculatedContent(responce.data);
-  } catch (error) {
-      if (error.response) { // get response with a status code not in range 2xx
-        console.log(error.response.data);
-        console.log(error.response.status);
-        console.log(error.response.headers);
-      } else if (error.request) { // no response
-        console.log(error.request);
-      } else { // Something wrong in setting up the request
-        console.log('Error', error.message);
-      }
-      console.log(error.config); 
-    }
-    fileInput.value = null;
-    
-}
-
-function writeCalculatedContent (responce) {
+// Отображение информации после расчёта конфликтов и прочих значений, а также ссылок на загрузку файлов с расчётами
+function writeCalculatedContent (responce, userDataOptionsForCalculate) {
   clearElement(divCalculatedContent);
+  divCalculatedContent.append(createTag('h3', 'Данные расчётов:'));
 
-  // addUrlsforDownload(responce);
-
-  
+  addUrlsforDownload(responce);
   divCalculatedContent.append(createTableOutputMatrix(responce.base_matrix));
-
-
-  divCalculatedContent.append(createMatrixF997(responce.matrix_F997));
-  divCalculatedContent.append(createMatrixF994(responce.numbers_conflicts_groups));
-  divCalculatedContent.append(createStagesBinValsF009(responce.stages_bin_vals_f009));
-}
-
-function addUrlsforDownload (responce) {
-  if (responce.txt_file != 'undefined') {
-    const p = document.createElement('p');
-    const link = document.createElement('a');
-    link.setAttribute('href', responce.txt_file.url_to_file);
-    link.setAttribute('download', '');
-    link.textContent = `Скачать текстовый файл с расчётами`;
-    divCalculatedContent.append(p);
-    divCalculatedContent.append(link);
+  if (userDataOptionsForCalculate.swarco_vals) {
+    divCalculatedContent.append(createMatrixF997(responce.matrix_F997));
+    divCalculatedContent.append(createMatrixF994(responce.numbers_conflicts_groups));
+    divCalculatedContent.append(createStagesBinValsF009(responce.stages_bin_vals_f009));
   }
 }
 
-function clearElement(element) {
-  element.innerHTML = "";
+// Добавляет ссылки на загрузку файлов(тектовый, конфиг) после расчётов
+function addUrlsforDownload (responce) {
+  const url_txt = responce?.txt_file?.url_to_file;
+  const url_config = responce?.config_file?.url_to_file;
+  const urls = {
+    [url_txt]: 'Скачать текстовый файл с расчётами',
+    [url_config]: 'Скачать созданный конфигурауционный файл с расчитанными данными'
+  }
+  let hasLink = false;
+
+  for (let key in urls) {
+    if (key !== 'undefined') {
+      hasLink = true;
+      const link = createTag('a', urls[key]);
+      link.setAttribute('href', key);
+      link.setAttribute('download', '');
+      divCalculatedContent.append(createTag('br'));
+      divCalculatedContent.append(link);
+    }
+  }
+  if (hasLink) {
+    for (let i=0; i<=1; i++) {
+      divCalculatedContent.append(createTag('br'));
+    };
+  };
+}
+
+// Создает и возвращает элемент "tagName" с текстом text
+function createTag (tagName, text='') {
+  const elem = document.createElement(tagName);
+  if (text) {
+    elem.textContent = text
+  }
+  return elem;
 }
 
 // Формирует table(#output_matrix) матрицу конфликтов общего вида
 function createTableOutputMatrix(matrix) {
   const table = document.createElement('table');
   table.setAttribute('id', 'output_matrix');
+  const caption = document.createElement('caption');
+  caption.textContent = 'Матрица конфликтов:'
+  table.append(caption);
   let tr, cell;
   matrix.forEach((line_matrix, ind, arr) => {
     tr = document.createElement('tr');
