@@ -1,3 +1,4 @@
+import abc
 import json
 import os.path
 import pathlib
@@ -10,7 +11,6 @@ from typing import Dict, Set, Tuple, List, Iterator, TextIO
 import logging
 
 from toolkit.sdp_lib.utils import set_curr_datetime
-
 
 logger = logging.getLogger(__name__)
 
@@ -419,12 +419,17 @@ class CommonConflictsAndStagesAPI(OutputDataCalculations):
     API для получения свойств и данных после различных расчетов, таких как конфликты, направления в фазах, матрицы
     и т.д, а также формирования текстового файла с учётом рассчитанных даных
     """
+    controller_type = 'Общий'
 
     def __init__(self, stages_groups_data: Dict, create_txt: bool = False, path_to_save_txt: str = None):
         super().__init__(stages_groups_data)
-        self.instance_data[DataFields.type_controller.value] = 'Общий'
+        self.instance_data[DataFields.type_controller.value] = self.get_controller_type()
         self.create_txt = create_txt
         self.path_to_save_txt = path_to_save_txt
+
+    @classmethod
+    def get_controller_type(cls) -> str:
+        return cls.controller_type
 
     def _get_bin_vals_stages_for_write_to_txt(self) -> str:
         """
@@ -509,10 +514,9 @@ class CommonConflictsAndStagesAPI(OutputDataCalculations):
             self.create_txt_file()
 
 
-class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
+class CreateConfigurationFileBase(CommonConflictsAndStagesAPI):
     """
-    API для получения свойств и данных после различных расчетов, таких как конфликты, направления в фазах, матрицы
-    и т.д, а также формирования конфигурационного файла .PTC с учётом рассчитанных даных
+    Базовый класс для формирования конфигурационных файлов различных контроллеров.
     """
 
     def __init__(
@@ -523,11 +527,34 @@ class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
             prefix_new_config: str = 'new_'
     ):
         super().__init__(stages_groups_data, create_txt, path_to_save_txt)
-        self.instance_data[DataFields.type_controller.value] = 'Swarco'
         self.path_to_src_config = path_to_src_config
         self.prefix_new_config = prefix_new_config
 
-    def create_ptc2_config(self):
+    @abc.abstractmethod
+    def create_config(self):
+        ...
+
+    def build_data(self, create_json=False):
+        """
+        Основной метод для получения данных по расчетам конфликтов, привзяки фаз и прочих значений.
+        :param create_json: формирует файл .json с данными, полученными в результате расчетов(self.instance_data)
+        :return:
+        """
+
+        super().build_data(create_json)
+        self.create_config()
+        Utils.save_json_to_file(self.instance_data)
+
+
+class SwarcoConflictsAndStagesAPI(CreateConfigurationFileBase):
+    """
+    API для получения свойств и данных после различных расчетов, таких как конфликты, направления в фазах, матрицы
+    и т.д, а также формирования конфигурационного файла .PTC с учётом рассчитанных даных
+    """
+
+    controller_type = 'Swarco'
+
+    def create_config(self):
         """
         Создает .PTC2 файл конфигурации с учетов произведённых расчетов конфликтов и бинарных значений фаз.
         Алгоритм:
@@ -611,27 +638,100 @@ class SwarcoConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
             curr_line_from_file_for_write = next(file_for_read)
         file_for_write.write(curr_line_from_file_for_write)
 
-    def build_data(self, create_json=False):
-        """
-        Основной метод для получения данных по расчетам конфликтов, привзяки фаз и прочих значений.
-        :param create_json: формирует файл .json с данными, полученными в результате расчетов(self.instance_data)
-        :return:
-        """
 
-        super().build_data(create_json)
-        if self.path_to_src_config is not None:
-            self.create_ptc2_config()
-        Utils.save_json_to_file(self.instance_data)
+class PeekConflictsAndStagesAPI(CreateConfigurationFileBase):
+    controller_type = 'Peek'
 
+    def create_config(self):
 
-class PeekConflictsAndStagesAPI(CommonConflictsAndStagesAPI):
-    def __init__(self, stages_groups_data):
-        super().__init__(stages_groups_data)
-        self.instance_data[DataFields.type_controller.value] = 'Peek'
+        p = pathlib.Path(self.path_to_src_config)
+        path_to_new_DAT = p.parent / f'{self.prefix_new_config}{p.name}'
+
+        sum_stages = self.instance_data[DataFields.number_of_stages.value]
+
+        table_conflicts = f':TABLE "XSGSG",{str(self.instance_data[DataFields.sum_conflicts.value])},4,3,4,4,3\n'
+        table_SA_STG = f':TABLE "YSRM_SA_STG",{str(sum_stages)},2,4,10\n'
+        table_UK_STAGE = f':TABLE "YSRM_UK_STAGE",{str(sum_stages)},4,4,4,1,10\n'
+
+        try:
+            with (
+                open(self.path_to_src_config, 'r', encoding='utf-8') as file1,
+                open(path_to_new_DAT, 'w', encoding='utf-8') as file2
+            ):
+
+                flag1 = flag2 = flag3 = False
+                count = 0
+                for line in file1:
+                    if flag1 and 'TABLE "YKLOK"' not in line:
+                        pass
+                    elif flag1 and 'TABLE "YKLOK"' in line:
+                        flag1 = False
+                        count += 1
+                        file2.write(':END\n')
+                        file2.write(line)
+                    elif ':TABLE "XSGSG"' in line:
+                        file2.write(table_conflicts)
+                        for num_group_from in range(len(self.conflict_groups_Peek)):
+                            for num_group_to in self.conflict_groups_Peek[num_group_from]:
+                                file2.write(f':RECORD\n'
+                                            f'"Type",2\n'
+                                            f'"Id1",{str(num_group_from + 1)}\n'
+                                            f'"Id2",{str(num_group_to)}\n'
+                                            f'"Time",30\n'
+                                            f':END\n')
+                        flag1 = True
+
+                    elif flag2 and ':TABLE "YSRM_STEP"' not in line:
+                        pass
+                    elif flag2 and ':TABLE "YSRM_STEP"' in line:
+                        flag2 = False
+                        count += 1
+                        file2.write(':END\n')
+                        file2.write(line)
+                    elif ':TABLE "YSRM_SA_STG"' in line:
+                        file2.write(table_SA_STG)
+                        for num_stage in range(len(self.sorted_stages)):
+                            stage = ','.join(list(map(str, self.sorted_stages[num_stage])))
+                            file2.write(f':RECORD\n'
+                                        f'"Id",{str(num_stage + 1)}\n'
+                                        f'"SGdef","{stage}"\n'
+                                        f':END\n')
+                        flag2 = True
+
+                    elif flag3 and '"YSRM_UK_STAGE_TRANS"' not in line:
+                        pass
+                    elif flag3 and '"YSRM_UK_STAGE_TRANS"' in line:
+                        flag3 = False
+                        count += 1
+                        file2.write(':END\n')
+                        file2.write(line)
+                    elif ':TABLE "YSRM_UK_STAGE"' in line:
+                        file2.write(table_UK_STAGE)
+                        for num_stage in range(len(self.sorted_stages)):
+                            stage = ','.join(list(map(str, self.sorted_stages[num_stage])))
+                            file2.write(f':RECORD\n'
+                                        f'"ProcessId",1\n'
+                                        f'"StageId",{str(num_stage + 1)}\n'
+                                        f'"StartUpStage",{str(True) if num_stage == 0 else str(False)}\n'
+                                        f'"SignalGroups",",{stage},"\n'
+                                        f':END\n')
+                        flag3 = True
+
+                    else:
+                        file2.write(line)
+
+            if os.path.exists(path_to_new_DAT):
+                self.result_make_config = [True, self.msg_success_make_config, path_to_new_DAT]
+            else:
+                self.result_make_config = [False, self.msg_error_make_config]
+        except Exception as err:  # определить какую ошибку ловишь
+            pass  # что-то делать
+            return err  # например
 
 
 if __name__ == '__main__':
     import logging_config
+
     logger.debug('DDD')
     logger.info('IIII')
     example = {
@@ -645,7 +745,6 @@ if __name__ == '__main__':
                                       )
     obj.build_data()
     print(obj)
-
 
     print(f'ВРемя выполеения составило: {time.time() - start_time}')
     # print(obj)
