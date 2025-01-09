@@ -167,7 +167,7 @@ order: 0;
 
 /*Конфликты*/
 #output_matrix td, th{
-  padding: 8;
+  padding: 8px;
   border: 1px solid;
   text-align: center; 
   vertical-align: middle;
@@ -180,3 +180,6 @@ order: 0;
 
 }
 
+#output_matrix caption {
+  text-align: left;
+}

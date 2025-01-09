@@ -235,14 +235,23 @@ function check_string (stage_string, num_string, sep1=':', sep2=',') {
 // Отображение информации после расчёта конфликтов и прочих значений, а также ссылок на загрузку файлов с расчётами
 function writeCalculatedContent (responce, userDataOptionsForCalculate) {
   clearElement(divCalculatedContent);
+  divCalculatedContent.append(createTag('br'));
   divCalculatedContent.append(createTag('h3', 'Данные расчётов:'));
+  divCalculatedContent.append(createTag('br'));
 
-  addUrlsforDownload(responce);
+  const hasLink = addUrlsforDownload(responce);
+  if (hasLink) {
+    createBrTagToDivCalculatedContent(2);
+  }
   divCalculatedContent.append(createTableOutputMatrix(responce.base_matrix));
   if (userDataOptionsForCalculate.swarco_vals) {
+    createBrTagToDivCalculatedContent();
     divCalculatedContent.append(createMatrixF997(responce.matrix_F997));
+    createBrTagToDivCalculatedContent();
     divCalculatedContent.append(createMatrixF994(responce.numbers_conflicts_groups));
+    createBrTagToDivCalculatedContent();
     divCalculatedContent.append(createStagesBinValsF009(responce.stages_bin_vals_f009));
+    createBrTagToDivCalculatedContent();
   }
 }
 
@@ -255,6 +264,7 @@ function addUrlsforDownload (responce) {
     [url_config]: 'Скачать созданный конфигурауционный файл с расчитанными данными'
   }
   let hasLink = false;
+  let cntLinks = 0;
 
   for (let key in urls) {
     if (key !== 'undefined') {
@@ -262,15 +272,14 @@ function addUrlsforDownload (responce) {
       const link = createTag('a', urls[key]);
       link.setAttribute('href', key);
       link.setAttribute('download', '');
-      divCalculatedContent.append(createTag('br'));
+      if (cntLinks > 0) {
+        divCalculatedContent.append(createTag('br'));
+      }
       divCalculatedContent.append(link);
+      cntLinks++;
     }
   }
-  if (hasLink) {
-    for (let i=0; i<=1; i++) {
-      divCalculatedContent.append(createTag('br'));
-    };
-  };
+  return hasLink;
 }
 
 // Создает и возвращает элемент "tagName" с текстом text
@@ -280,6 +289,12 @@ function createTag (tagName, text='') {
     elem.textContent = text
   }
   return elem;
+}
+
+function createBrTagToDivCalculatedContent(count=1) {
+  for(let i=1; i<=count; i++) {
+    divCalculatedContent.append(createTag('br'));
+  }
 }
 
 // Формирует table(#output_matrix) матрицу конфликтов общего вида
@@ -358,3 +373,4 @@ function createStagesBinValsF009 (values) {
   el.innerHTML += `<br>${values}`;
   return el;
 }
+
