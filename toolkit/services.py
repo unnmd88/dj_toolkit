@@ -1638,7 +1638,12 @@ class DatabaseAPI:
 
 class ConflictsAndStages:
 
-    def __init__(self, raw_stages_groups: str | Dict, type_controller: str, create_txt=False, scr_original_config=None):
+    def __init__(
+            self,
+            raw_stages_groups: str | Dict, type_controller:
+            str, create_txt=False,
+            scr_original_config: InMemoryUploadedFile = None
+    ):
         self.errors = []
         self.raw_data_stages_groups = raw_stages_groups
         self.stages_groups = self._get_data_stages_groups_dict(raw_stages_groups)
@@ -1724,6 +1729,9 @@ class ConflictsAndStages:
                 description='создан с расчитанными конфликтами и фазами'
             )
             self.instance_data[calculate_conflicts.DataFields.config_file.value]['url_to_file'] = f_config.file.url
+
+    def validate_user_data(self):
+        pass
 
     def calculate(self):
         """

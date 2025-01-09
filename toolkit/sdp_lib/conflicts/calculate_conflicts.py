@@ -542,9 +542,28 @@ class CreateConfigurationFileBase(CommonConflictsAndStagesAPI):
         """
 
         super().build_data(create_json)
-        self.create_config()
+        if self.path_to_src_config is not None:
+            self.create_config()
         Utils.save_json_to_file(self.instance_data)
 
+    def push_result_to_instance_data(self, path_to_config: str | Path):
+        """
+        Проверяет результат формирования конфига и добавляет результат в self.instance_data.
+        :param path_to_config: Пусть к созданному конфигу
+        :return:
+        """
+
+        try:
+            os.path.exists(path_to_config)
+            err = None
+        except FileExistsError:
+            err = f'Ошибка при создании файла с расчитанными данными'
+
+        self.instance_data[DataFields.config_file.value] = {
+            DataFields.errors.value: err,
+            DataFields.path_to_file.value: None if err else str(Path(path_to_config).absolute()),
+            DataFields.created.value: True if err is None else False
+        }
 
 class SwarcoConflictsAndStagesAPI(CreateConfigurationFileBase):
     """
@@ -553,6 +572,36 @@ class SwarcoConflictsAndStagesAPI(CreateConfigurationFileBase):
     """
 
     controller_type = 'Swarco'
+
+    def write_data_to_file(
+            self,
+            file_for_write: TextIO,
+            file_for_read: Iterator,
+            curr_line_from_file_for_write: str,
+            matrix=None,
+            stages_bin_vals=None
+    ):
+        """
+        Записывает данные в файл конфигурации .PTC2
+        :param file_for_write: Файл, в который будут записаны данные
+        :param file_for_read: Файл, из которого читаются данные
+        :param curr_line_from_file_for_write: текущая прочитанная строка из file_for_read
+        :param matrix: матрица в виде двумерного списка. Если не None, будет записана в файл для F994, F997, F006
+        :param stages_bin_vals: список с бинарныт значениями  принадлжености направлений в фазам дл F009
+        :return:
+        """
+
+        file_for_write.write(f'{curr_line_from_file_for_write}')
+        if matrix is not None:
+            for matrix_line in matrix:
+                file_for_write.write(f'{"".join(matrix_line)}\n')
+        elif stages_bin_vals is not None:
+            for val in stages_bin_vals:
+                zeros = f'{"0" * 1 * (3 - len(str(val)))}'
+                file_for_write.write(f';{zeros}{val};;1;\n')
+        while 'NeXt' not in curr_line_from_file_for_write:
+            curr_line_from_file_for_write = next(file_for_read)
+        file_for_write.write(curr_line_from_file_for_write)
 
     def create_config(self):
         """
@@ -596,47 +645,7 @@ class SwarcoConflictsAndStagesAPI(CreateConfigurationFileBase):
                 else:
                     new_file.write(line)
 
-        try:
-            os.path.exists(path_to_new_PTC2)
-            err = None
-        except FileExistsError:
-            err = f'Ошибка при создании файла с расчитанными данными'
-
-        self.instance_data[DataFields.config_file.value] = {
-            DataFields.errors.value: err,
-            DataFields.path_to_file.value: None if err else str(Path(path_to_new_PTC2).absolute()),
-            DataFields.created.value: True if err is None else False
-        }
-
-    def write_data_to_file(
-            self,
-            file_for_write: TextIO,
-            file_for_read: Iterator,
-            curr_line_from_file_for_write: str,
-            matrix=None,
-            stages_bin_vals=None
-    ):
-        """
-        Записывает данные в файл конфигурации .PTC2
-        :param file_for_write: Файл, в который будут записаны данные
-        :param file_for_read: Файл, из которого читаются данные
-        :param curr_line_from_file_for_write: текущая прочитанная строка из file_for_read
-        :param matrix: матрица в виде двумерного списка. Если не None, будет записана в файл для F994, F997, F006
-        :param stages_bin_vals: список с бинарныт значениями  принадлжености направлений в фазам дл F009
-        :return:
-        """
-
-        file_for_write.write(f'{curr_line_from_file_for_write}')
-        if matrix is not None:
-            for matrix_line in matrix:
-                file_for_write.write(f'{"".join(matrix_line)}\n')
-        elif stages_bin_vals is not None:
-            for val in stages_bin_vals:
-                zeros = f'{"0" * 1 * (3 - len(str(val)))}'
-                file_for_write.write(f';{zeros}{val};;1;\n')
-        while 'NeXt' not in curr_line_from_file_for_write:
-            curr_line_from_file_for_write = next(file_for_read)
-        file_for_write.write(curr_line_from_file_for_write)
+        self.push_result_to_instance_data(path_to_new_PTC2)
 
 
 class PeekConflictsAndStagesAPI(CreateConfigurationFileBase):
@@ -666,19 +675,6 @@ class PeekConflictsAndStagesAPI(CreateConfigurationFileBase):
                 )
         return f'{table_conflicts}:END\n'
 
-    def skipping_lines(self, file: Iterator, stopper: str) -> str:
-        """
-        Итерируется по строкам исходного DAT файла, которые не требуется записывать в новый файл DAT.
-        :param file: Исходный DAT файл.
-        :param stopper: Строка-стоппер, до которой будет вызываться next()
-        :return: Строка-стоппер
-        """
-
-        line = ''
-        while stopper not in line:
-            line = next(file)
-        return line
-
     def get_ysrm_sa_stage_and_ysrm_uk_stage(self) -> Tuple[str, str]:
         """
         Аккумулирует строки таблиц :TABLE "YSRM_SA_STG" и :TABLE "YSRM_UK_STAGE" для записи в новый DAT файл.
@@ -707,6 +703,19 @@ class PeekConflictsAndStagesAPI(CreateConfigurationFileBase):
             )
         return f'{ysrm_sa_stage}:END\n', f'{ysrm_uk_stage}:END\n'
 
+    def skipping_lines(self, file: Iterator, stopper: str) -> str:
+        """
+        Итерируется по строкам исходного DAT файла, которые не требуется записывать в новый файл DAT.
+        :param file: Исходный DAT файл.
+        :param stopper: Строка-стоппер, до которой будет вызываться next()
+        :return: Строка-стоппер
+        """
+
+        line = ''
+        while stopper not in line:
+            line = next(file)
+        return line
+
     def create_config(self):
         """
         Формирует новый DAT файл конфигурации на основе расчётов.
@@ -717,25 +726,24 @@ class PeekConflictsAndStagesAPI(CreateConfigurationFileBase):
         path_to_new_DAT = p.parent / f'{self.prefix_new_config}{p.name}'
         ysrm_sa_stage, ysrm_uk_stage = self.get_ysrm_sa_stage_and_ysrm_uk_stage()
 
-        try:
-            with (
-                open(self.path_to_src_config, 'r', encoding='utf-8') as file1,
-                open(path_to_new_DAT, 'w', encoding='utf-8') as file2
-            ):
-                for line in file1:
-                    if ':TABLE "XSGSG"' in line:
-                        file2.write(self.get_conflicts_for_write())
-                        file2.write(self.skipping_lines(file1, ':TABLE "YKLOK"'))
-                    elif ':TABLE "YSRM_SA_STG"' in line:
-                        file2.write(ysrm_sa_stage)
-                        file2.write(self.skipping_lines(file1, ':TABLE "YSRM_STEP"'))
-                    elif ':TABLE "YSRM_UK_STAGE"' in line:
-                        file2.write(ysrm_uk_stage)
-                        file2.write(self.skipping_lines(file1, ':TABLE "YSRM_UK_STAGE_TRANS"'))
-                    else:
-                        file2.write(line)
-        except Exception as err:
-            print(err)
+        with (
+            open(self.path_to_src_config, 'r', encoding='utf-8') as src,
+            open(path_to_new_DAT, 'w', encoding='utf-8') as file2
+        ):
+            for line in src:
+                if ':TABLE "XSGSG"' in line:
+                    file2.write(self.get_conflicts_for_write())
+                    file2.write(self.skipping_lines(src, ':TABLE "YKLOK"'))
+                elif ':TABLE "YSRM_SA_STG"' in line:
+                    file2.write(ysrm_sa_stage)
+                    file2.write(self.skipping_lines(src, ':TABLE "YSRM_STEP"'))
+                elif ':TABLE "YSRM_UK_STAGE"' in line:
+                    file2.write(ysrm_uk_stage)
+                    file2.write(self.skipping_lines(src, ':TABLE "YSRM_UK_STAGE_TRANS"'))
+                else:
+                    file2.write(line)
+
+        self.push_result_to_instance_data(path_to_new_DAT)
 
 
 if __name__ == '__main__':

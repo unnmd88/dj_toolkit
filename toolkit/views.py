@@ -329,7 +329,6 @@ class PotokTrafficLightsConfiguratorAPI(APIView):
         option_get_functions_from_condition_string = options.get(self.get_functions_from_condition_string)
         option_get_condition_result = options.get(self.get_condition_result)
 
-        print(f'data_body: {data_body}')
         if option_get_functions_from_condition_string:
             get_funcs = services.GetFunctionsPotokTrafficLightsConfigurator(condition)
             get_funcs.get_functions()
@@ -347,8 +346,6 @@ class PotokTrafficLightsConfiguratorAPI(APIView):
             }
         else:
             responce = {'detail': 'Предоставлены некорректные данные для запроса'}
-        print(f'responce: {responce}')
-        print(f'Время выполения запроса составило {time.time() - start_time}')
         return Response(responce)
 
 
@@ -363,8 +360,6 @@ class ConflictsAndStagesAPI(APIView):
 
         start_time = time.time()
         logger.debug(request.FILES)
-
-
 
         try:
             entity_req_data = json.loads(request.data['data'])
@@ -385,17 +380,6 @@ class ConflictsAndStagesAPI(APIView):
             logger.debug(create_config)
         except KeyError:
             return Response({'detail': 'Предоставлены некорректные данные для запроса'})
-
-        # if isinstance(file, InMemoryUploadedFile):
-        #     file_obj = services.DatabaseAPI.save_config(
-        #         file=request.FILES.get('file'),
-        #         controller_type=type_controller,
-        #         source='uploaded',
-        #         description='загружен для формирования конфига с расчётами конфликтов и фаз'
-        #     )
-        # else:
-        #     file_obj = None
-        # print(file_obj)
 
         data = services.ConflictsAndStages(raw_stages_groups=stages, type_controller=type_controller, create_txt=create_txt, scr_original_config=file)
         if data.errors:
