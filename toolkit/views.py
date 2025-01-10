@@ -385,9 +385,6 @@ class ConflictsAndStagesAPI(APIView):
         if data.errors:
             return Response({'detail': data.errors})
         data.calculate()
-        logger.debug(data.instance_data)
-        logger.debug(data.errors)
-
 
         logger.debug(f'Время выполнения запроса: {time.time() - start_time}')
         return Response(data.instance_data)
@@ -395,83 +392,83 @@ class ConflictsAndStagesAPI(APIView):
 """ CONFLICTS(UNSORTING...)  """
 
 
-class ProcessedRequestBase:
-    @staticmethod
-    def reverse_slashes(path):
-        path = path.replace('\\', '/')
-        return path
+# class ProcessedRequestBase:
+#     @staticmethod
+#     def reverse_slashes(path):
+#         path = path.replace('\\', '/')
+#         return path
 
 
-class ProcessedRequestConflicts(ProcessedRequestBase):
-    upload_name_id = 'upload_config_file'
-    name_textarea = 'table_stages'
-    controller_type = 'controller_type'
-
-    @staticmethod
-    def make_group_name(filename: str) -> str:
-        """
-        Возвращает id для модели UploadFiles2:
-        swarco: swarco
-        peek: peek
-        остальные файлы: undefind
-        :param filename: имя файла из коллекции request.FILEES:
-        :return id_for_db -> имя группы(принадлежности)
-        """
-        if filename[-4:] == 'PTC2':
-            id_for_db = 'swarco'
-        elif filename[-3:] == 'DAT':
-            id_for_db = 'peek'
-        else:
-            id_for_db = 'undefind'
-        return id_for_db
-
-    @staticmethod
-    def correct_path(path):
-        return ProcessedRequestBase.reverse_slashes(path).split('media/')[1]
-
-    def __init__(self, request):
-        print(request)
-        print(request.FILES)
-        print(request.POST)
-        self.request = request
-        self.post_req_dict = request.POST.dict()
-        self.files_dict = request.FILES.dict()
-        self.controller_type = \
-            self.post_req_dict.get(self.controller_type).lower() if self.controller_type in self.post_req_dict else None
-        self.val_txt_conflicts = True if 'create_txt' in self.post_req_dict else False
-        self.val_add_conflicts_and_binval_calcConflicts = True if 'binval_swarco' in self.post_req_dict else False
-        self.val_make_config = True if 'make_config' in self.post_req_dict else False
-        self.stages = self.post_req_dict.get(self.name_textarea)
-
-        print('-' * 25)
-
-        if request.FILES:
-            if 'make_config' in self.post_req_dict:
-                self.val_make_config = True
-            if self.upload_name_id in self.files_dict:
-                self.file_from_request = self.files_dict.get(self.upload_name_id)
-                print(f'self.file_from_requestT: {self.file_from_request}')
-                print(f'self.file_from_requestT: {type(self.file_from_request)}')
-                print('--&&---')
-
-                self.filename_from_request = self.file_from_request.name
-                print(f'request.FILES.get(upload_name_id): {request.FILES.get(self.upload_name_id)}')
-                print(f'request.FILES.get(upload_name_id): {type(request.FILES.get(self.upload_name_id))}')
-
-                print(f'request.FILES2: {request.FILES}')
-                print(f'self..file_from_request: {self.file_from_request}')
-                print(f'self..filename_from_request: {self.filename_from_request}')
-            self.group_name = self.make_group_name(filename=self.filename_from_request)
-        else:
-            self.val_make_config = False
-            self.file_from_request = False
-            self.filename_from_request = False
-
-        # if self.val_txt_conflicts:
-        #     self.make_txt_conflicts()
-        #     self.path_to_txt_conflicts = SaveConflictsTXT.objects.last().file.path
-        # else:
-        #     self.path_to_txt_conflicts = None
+# class ProcessedRequestConflicts(ProcessedRequestBase):
+#     upload_name_id = 'upload_config_file'
+#     name_textarea = 'table_stages'
+#     controller_type = 'controller_type'
+#
+#     @staticmethod
+#     def make_group_name(filename: str) -> str:
+#         """
+#         Возвращает id для модели UploadFiles2:
+#         swarco: swarco
+#         peek: peek
+#         остальные файлы: undefind
+#         :param filename: имя файла из коллекции request.FILEES:
+#         :return id_for_db -> имя группы(принадлежности)
+#         """
+#         if filename[-4:] == 'PTC2':
+#             id_for_db = 'swarco'
+#         elif filename[-3:] == 'DAT':
+#             id_for_db = 'peek'
+#         else:
+#             id_for_db = 'undefind'
+#         return id_for_db
+#
+#     @staticmethod
+#     def correct_path(path):
+#         return ProcessedRequestBase.reverse_slashes(path).split('media/')[1]
+#
+#     def __init__(self, request):
+#         print(request)
+#         print(request.FILES)
+#         print(request.POST)
+#         self.request = request
+#         self.post_req_dict = request.POST.dict()
+#         self.files_dict = request.FILES.dict()
+#         self.controller_type = \
+#             self.post_req_dict.get(self.controller_type).lower() if self.controller_type in self.post_req_dict else None
+#         self.val_txt_conflicts = True if 'create_txt' in self.post_req_dict else False
+#         self.val_add_conflicts_and_binval_calcConflicts = True if 'binval_swarco' in self.post_req_dict else False
+#         self.val_make_config = True if 'make_config' in self.post_req_dict else False
+#         self.stages = self.post_req_dict.get(self.name_textarea)
+#
+#         print('-' * 25)
+#
+#         if request.FILES:
+#             if 'make_config' in self.post_req_dict:
+#                 self.val_make_config = True
+#             if self.upload_name_id in self.files_dict:
+#                 self.file_from_request = self.files_dict.get(self.upload_name_id)
+#                 print(f'self.file_from_requestT: {self.file_from_request}')
+#                 print(f'self.file_from_requestT: {type(self.file_from_request)}')
+#                 print('--&&---')
+#
+#                 self.filename_from_request = self.file_from_request.name
+#                 print(f'request.FILES.get(upload_name_id): {request.FILES.get(self.upload_name_id)}')
+#                 print(f'request.FILES.get(upload_name_id): {type(request.FILES.get(self.upload_name_id))}')
+#
+#                 print(f'request.FILES2: {request.FILES}')
+#                 print(f'self..file_from_request: {self.file_from_request}')
+#                 print(f'self..filename_from_request: {self.filename_from_request}')
+#             self.group_name = self.make_group_name(filename=self.filename_from_request)
+#         else:
+#             self.val_make_config = False
+#             self.file_from_request = False
+#             self.filename_from_request = False
+#
+#         # if self.val_txt_conflicts:
+#         #     self.make_txt_conflicts()
+#         #     self.path_to_txt_conflicts = SaveConflictsTXT.objects.last().file.path
+#         # else:
+#         #     self.path_to_txt_conflicts = None
 
 
 """" TEMPLATE VIEWS  """
@@ -513,6 +510,14 @@ class PotokTrafficLightsConfigurator(TemplateView):
     template_name = 'toolkit/potok_tlc.html'
     extra_context = {
         'title': 'Поток Traffic Lights Configurator'
+    }
+
+
+class ConflictsAndStages(TemplateView):
+
+    template_name = 'toolkit/calc_conflicts.html'
+    extra_context = {
+        'title': 'Расчёт конфликтов и фаз'
     }
 
 
@@ -668,8 +673,6 @@ def controller_swarco(request):
     content = render_to_string('toolkit/swarco.html', data, request)
 
     return HttpResponse(content, )
-
-    return render(request, 'toolkit/swarco.html', context=data, content_type='application/force-download')
 
 
 def controller_peek(request):

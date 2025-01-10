@@ -9,7 +9,10 @@ from .views import (
     ControllerManagementHostsConfigurationViewSetAPI,
     SearchByNumberTrafficLightsAPIView,
     ControllerManagementAPI,
-    TrafficLightsUpdate, CompareGroups, CompareGroupsAPI, PotokTrafficLightsConfiguratorAPI, ConflictsAndStagesAPI
+    TrafficLightsUpdate,
+    CompareGroupsAPI,
+    PotokTrafficLightsConfiguratorAPI,
+    ConflictsAndStagesAPI
 )
 
 
@@ -30,7 +33,8 @@ urlpatterns = [
     path("about_controller/<int:post_id>/", views.show_tab, name='about_controller'),
     path("calc_cyc/", views.calc_cyc, name='calc_cyc'),
 
-    path("calc_conflicts/", views.data_for_calc_conflicts, name='calc_conflicts'),
+    # path("calc_conflicts/", views.data_for_calc_conflicts, name='calc_conflicts'),
+    path("calc_conflicts/", views.ConflictsAndStages.as_view(), name='calc_conflicts'),
 
 
     path("manage_controllers/", views.ManageControllers.as_view(), name='manage_controllers'),
