@@ -117,34 +117,6 @@ class BaseConflictsAndStagesCalculations:
     def _get_all_data_curr_calculate(self):
         return json.dumps(self.instance_data, indent=4)
 
-    # def save_json_to_file(self, json_data, file_name='conflicts.json', mode: str = 'w') -> None:
-    #     """
-    #     Формирует json и записывает в файл
-    #     :param json_data: словарь, который будет записан как json
-    #     :param file_name: путь к файлу
-    #     :param mode: режим записи в файл
-    #     :return:
-    #     """
-    #
-    #     self.set_to_list(json_data)
-    #
-    #     with open(file_name, mode, encoding='utf-8') as f:
-    #         json.dump(json_data, f, ensure_ascii=False, indent=4)
-    #         f.write('\n\n')
-    #
-    # def set_to_list(self, target: Dict):
-    #     """
-    #     Рекурсивно превращает множества set в список list значения словаря target.
-    #     :param target: словарь, в котом значения set необходмио заменить на list
-    #     :return:
-    #     """
-    #
-    #     for k, v in target.items():
-    #         if isinstance(v, dict):
-    #             self.set_to_list(v)
-    #         elif isinstance(v, set):
-    #             target[k] = sorted(v)
-
     def processing_data_for_calculation(self, separator: str = ','):
         """
         Формирует данные для расчёта конфликтов. Определяет возможность формирования конфига .PTC2 или .DAT
@@ -207,6 +179,7 @@ class BaseConflictsAndStagesCalculations:
                  из групп, которые являются "Пост. красн."
         """
 
+        print(f'unsorted_all_num_groups: {unsorted_all_num_groups}')
         always_red_groups = set()
         for group in range(1, max(unsorted_all_num_groups) + 1):
             if group not in unsorted_all_num_groups:

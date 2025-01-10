@@ -36,13 +36,6 @@
     </div>
 </fieldset>
 <br>
-{% if render_conflicts_data and create_link_config %}
-<a href="{{ config_file.file.url }}"> Скачать конфиг </a><br>
-{% endif %}
-
-{% if render_conflicts_data and create_link_txt_conflicts %}
-<a href="{{ txt_conflict_file.file.url }}" download> Скачать текстовый файл конфликтов </a><br>
-{% endif %}
 
 <p> Фазы-направления </p>
 <textarea required rows="8" cols="20" minlength="4" maxlength="600" name="table_stages" id="stages_from_area"></textarea>
@@ -51,89 +44,6 @@
 
 <div id="calculated_content"></div>
 
-
-
-
-
-
-
-
-
-{% comment %} Вывод данных после расчета конфликтов {% endcomment %}
-
-{% if render_conflicts_data %}
-{% for line in sorted_stages %}
-<br> Фаза {{ forloop.counter }}: {{ line|join:", " }}
-{% endfor %}
-
-<br> Количество направлений: {{ kolichestvo_napr }}
-
-<p></p>
-
-
-<table border="1" bgcolor="#C0C0C0" cellpadding="8" cellspacing="4">
-    {% for line in matrix %}
-        {% if forloop.first%}
-    <tr>
-            {% for el in line %}
-             <th>{{ el }}</th>
-            {% endfor %}
-    </tr>
-        {% else %}
-            <tr>
-            {% for el in line %}
-                {% if forloop.first %}
-                    <td> <b> {{ el }} </b> </td>
-                {% elif el == values.0 %}
-                <td align="center"> <span style="color:red">{{ el }}</span> </td>
-                {% elif el == values.1 %}
-                <td align="center"> <span style="color:green">{{ el }}</span> </td>
-                {% else %}
-                        <td align="center">{{ el }}</td>
-                {% endif %}
-            {% endfor %}
-                </tr>
-        {% endif %}
-    {% endfor %}
-</table>
-<br>
-
-{% endif %}
-
-{% comment %} Вывод матрицы конфликтов "интергрин" F997 {% endcomment %}
-
-{% if add_conflicts_and_binval_calcConflicts %}
-
-<b>Матрица конфликтов "интергрин" F997:</b>
-<br>
-{% for line in matrix_swarco_F997 %}
-    {% for el in line %}
-    {{ el }}
-    {% endfor %}
-<br>
-{% endfor %}
-
-{% comment %} Вывод матрицы физических конфликтов групп F992 {% endcomment %}
-<b>Физические конфликты - номера конфликтных групп F992:</b>
-<br>
-{% for line in conflict_groups_F992 %}
-    {% for el in line %}
-    {{ el }}
-    {% endfor %}
-<br>
-{% endfor %}
-
-{% comment %} Вывод бинарных значений направлений для фаз F009 {% endcomment %}
-<b>Сигнальные группы в фазах F009:</b>
-<br>
-{% for line in binary_val_swarco_F009 %}
-    {% for el in line %}
-    {{ el }}
-    {% endfor %}
-{% endfor %}
-<br>
-
-{% endif %}
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script src="{% static 'toolkit/js/toolkit_conflicts.js'%}"></script>

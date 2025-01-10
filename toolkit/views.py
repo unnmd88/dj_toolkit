@@ -370,14 +370,6 @@ class ConflictsAndStagesAPI(APIView):
             swarco_vals = entity_req_data['swarco_vals']
             file: InMemoryUploadedFile | None = request.FILES.get('file')
 
-            logger.debug(file)
-            logger.debug(type(file))
-            logger.debug(entity_req_data)
-            logger.debug(stages)
-            logger.debug(type_controller)
-            logger.debug(create_txt)
-            logger.debug(swarco_vals)
-            logger.debug(create_config)
         except KeyError:
             return Response({'detail': 'Предоставлены некорректные данные для запроса'})
 
