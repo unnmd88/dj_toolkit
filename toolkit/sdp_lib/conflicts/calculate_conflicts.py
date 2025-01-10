@@ -461,7 +461,7 @@ class CommonConflictsAndStagesAPI(OutputDataCalculations):
         :return:
         """
 
-        self.path_to_save_txt = self.path_to_save_txt or f"calculated_data {set_curr_datetime('-')}"
+        self.path_to_save_txt = self.path_to_save_txt or f"calculated_data {set_curr_datetime('-')}.txt"
 
         with open(self.path_to_save_txt, 'w') as f:
             logger.debug(self.instance_data[DataFields.sorted_stages_data.value])
