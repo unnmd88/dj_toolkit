@@ -461,7 +461,7 @@ class CommonConflictsAndStagesAPI(OutputDataCalculations):
         :return:
         """
 
-        self.path_to_save_txt = self.path_to_save_txt or f"calculated_data_{''.join(random.choices(string.ascii_letters, k=6))}"
+        self.path_to_save_txt = self.path_to_save_txt or f"calculated_data {set_curr_datetime('-')}"
 
         with open(self.path_to_save_txt, 'w') as f:
             logger.debug(self.instance_data[DataFields.sorted_stages_data.value])
@@ -564,6 +564,7 @@ class CreateConfigurationFileBase(CommonConflictsAndStagesAPI):
             DataFields.path_to_file.value: None if err else str(Path(path_to_config).absolute()),
             DataFields.created.value: True if err is None else False
         }
+
 
 class SwarcoConflictsAndStagesAPI(CreateConfigurationFileBase):
     """
@@ -749,8 +750,6 @@ class PeekConflictsAndStagesAPI(CreateConfigurationFileBase):
 if __name__ == '__main__':
     import logging_config
 
-    logger.debug('DDD')
-    logger.info('IIII')
     # example = {
     #     '1': '1,4,2,3,5,5,5,5,3,4,2',
     #     '2': '',
@@ -765,11 +764,7 @@ if __name__ == '__main__':
     }
     start_time = time.time()
     obj = PeekConflictsAndStagesAPI(example, create_txt=True, path_to_src_config='CO3992.DAT')
-
     obj.build_data()
     print(obj)
-
     print(f'ВРемя выполеения составило: {time.time() - start_time}')
-    # print(obj)
-    # for m in obj.instance_data[DataFields.base_matrix.value]:
-    #     print(m)
+
