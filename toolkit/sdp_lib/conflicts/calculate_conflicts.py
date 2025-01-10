@@ -141,10 +141,10 @@ class BaseConflictsAndStagesCalculations:
                 f'{stage}: {str(err).split(":")[-1].replace(" ", "")}, должен быть числом'
             )
 
-        if not self._check_data_for_calculate_is_valid(max(unsorted_num_groups), len(processed_stages.keys())):
+        unsorted_all_num_groups, always_red_groups = self._get_always_red_and_all_unsorted_groups(unsorted_num_groups)
+        if not self._check_data_for_calculate_is_valid(len(unsorted_all_num_groups), len(processed_stages.keys())):
             return
 
-        unsorted_all_num_groups, always_red_groups = self._get_always_red_and_all_unsorted_groups(unsorted_num_groups)
         self._add_data_to_instance_data_dict_for_calc_conflicts(
             processed_stages, unsorted_all_num_groups, always_red_groups
         )
