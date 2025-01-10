@@ -250,9 +250,9 @@ function writeCalculatedContent (responce, userDataOptionsForCalculate) {
     createBrTagToDivCalculatedContent();
     divCalculatedContent.append(createMatrixF994(responce.numbers_conflicts_groups));
     createBrTagToDivCalculatedContent();
-    divCalculatedContent.append(createStagesBinValsF009(responce.stages_bin_vals_f009));
-    createBrTagToDivCalculatedContent();
+    divCalculatedContent.append(createStagesBinValsF009(responce.stages_bin_vals_f009));    
   }
+  createBrTagToDivCalculatedContent();
 }
 
 // Добавляет ссылки на загрузку файлов(тектовый, конфиг) после расчётов

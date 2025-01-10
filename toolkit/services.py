@@ -24,8 +24,7 @@ import asyncio
 import ipaddress
 from asgiref.sync import sync_to_async
 from django.forms import model_to_dict
-from toolkit.models import TrafficLightsObjects, SaveConfigFiles, TelegrammUsers, TrafficLightConfigurator, \
-    SaveConflictsTXT
+from toolkit.models import TrafficLightsObjects, SaveConfigFiles, TelegrammUsers, TrafficLightConfigurator
 from engineering_tools.settings import MEDIA_ROOT
 
 from .sdp_lib.swarco_controller import ITC_PC_config
@@ -41,8 +40,12 @@ from .constants import (
     AvailableTypesRequest
 )
 from toolkit.sdp_lib.potok_controller import potok_user_api
+from toolkit.sdp_lib.conflicts.calculate_conflicts import (
+    CommonConflictsAndStagesAPI,
+    SwarcoConflictsAndStagesAPI,
+    PeekConflictsAndStagesAPI
+)
 from toolkit.sdp_lib.conflicts import calculate_conflicts
-from toolkit.sdp_lib import utils as sdp_utils
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -1637,6 +1640,9 @@ class DatabaseAPI:
 
 
 class ConflictsAndStages:
+    """
+    Расчёт конфликтов, фаз, а также других свойств для формирования файла конфигурации дорожного контроллера.
+    """
 
     def __init__(
             self,
@@ -1660,9 +1666,9 @@ class ConflictsAndStages:
         """
 
         matches_aclass = {
-            AvailableControllers.SWARCO.value.lower(): calculate_conflicts.SwarcoConflictsAndStagesAPI,
-            AvailableControllers.PEEK.value.lower(): calculate_conflicts.PeekConflictsAndStagesAPI,
-            'common': calculate_conflicts.CommonConflictsAndStagesAPI,
+            AvailableControllers.SWARCO.value.lower(): SwarcoConflictsAndStagesAPI,
+            AvailableControllers.PEEK.value.lower(): PeekConflictsAndStagesAPI,
+            'common': CommonConflictsAndStagesAPI,
         }
         return matches_aclass.get(matching_data)
 
@@ -1726,7 +1732,7 @@ class ConflictsAndStages:
                 file=path,
                 controller_type=self.instance_data[calculate_conflicts.DataFields.type_controller.value],
                 source='created',
-                description='создан с расчитанными конфликтами и фазами'
+                description='создан с рассчитанными конфликтами и фазами'
             )
             self.instance_data[calculate_conflicts.DataFields.config_file.value]['url_to_file'] = f_config.file.url
 
@@ -1744,20 +1750,26 @@ class ConflictsAndStages:
         path_to_original_config = None
         if isinstance(self.uploaded_file_obj, SaveConfigFiles):
             path_to_original_config = str(self.uploaded_file_obj.file.path)
-        if issubclass(calculate_conflicts.CommonConflictsAndStagesAPI, a_class):
+
+        if a_class is CommonConflictsAndStagesAPI:
             obj = a_class(
                 self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self._get_path_to_save_txt_file()
             )
-        elif issubclass(calculate_conflicts.SwarcoConflictsAndStagesAPI, a_class):
+        elif a_class in {SwarcoConflictsAndStagesAPI, PeekConflictsAndStagesAPI}:
             obj = a_class(
                 self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self._get_path_to_save_txt_file(),
                 path_to_src_config=path_to_original_config
             )
-        elif issubclass(calculate_conflicts.PeekConflictsAndStagesAPI, a_class):
-            obj = a_class(
-                self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self._get_path_to_save_txt_file(),
-                path_to_src_config=path_to_original_config
-            )
+        # elif issubclass(calculate_conflicts.SwarcoConflictsAndStagesAPI, a_class):
+        #     obj = a_class(
+        #         self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self._get_path_to_save_txt_file(),
+        #         path_to_src_config=path_to_original_config
+        #     )
+        # elif issubclass(calculate_conflicts.PeekConflictsAndStagesAPI, a_class):
+        #     obj = a_class(
+        #         self.stages_groups, create_txt=self.create_txt, path_to_save_txt=self._get_path_to_save_txt_file(),
+        #         path_to_src_config=path_to_original_config
+        #     )
         else:
             self.errors.append('Данные для расчёта не валидны')
             return
