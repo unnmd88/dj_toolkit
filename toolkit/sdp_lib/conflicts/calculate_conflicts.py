@@ -1,5 +1,6 @@
 import abc
 import json
+import math
 import os.path
 import pathlib
 import time
@@ -9,7 +10,6 @@ from typing import Dict, Set, Tuple, List, Iterator, TextIO
 import logging
 
 from toolkit.sdp_lib.utils import set_curr_datetime
-
 
 logger = logging.getLogger(__name__)
 
@@ -179,22 +179,16 @@ class BaseConflictsAndStagesCalculations:
                  из групп, которые являются "Пост. красн."
         """
 
-        print(f'unsorted_all_num_groups: {unsorted_all_num_groups}')
         always_red_groups = set()
         sorted_groups = sorted(unsorted_all_num_groups)
-        max_num_group = max(sorted_groups)
-        print(f'sorted_groups: {sorted_groups}')
-        print(f'max_num_group: {max_num_group}')
 
-        print(f'unsorted_all_num_groups: {unsorted_all_num_groups}')
-        always_red_groups = set()
-        for group in range(1, max(unsorted_all_num_groups) + 1):
-            if group not in unsorted_all_num_groups:
-                always_red_groups.add(group)
-                unsorted_all_num_groups.add(group)
+        for i, group in enumerate(sorted_groups):
+            curr_group, prev_group = math.trunc(group), math.trunc(sorted_groups[i - 1])
+            if i > 0 and (curr_group - prev_group) in range(2, 20):
+                missed_groups = {(prev_group + i) for i in range(1, (curr_group - prev_group))}
+                unsorted_all_num_groups |= missed_groups
+                always_red_groups |= missed_groups
         return unsorted_all_num_groups, always_red_groups
-
-
 
     def _add_data_to_instance_data_dict_for_calc_conflicts(
             self, processed_stages: Dict, unsorted_all_num_groups: Set, all_red_groups: Set
@@ -425,6 +419,7 @@ class OutputDataCalculations(BaseConflictsAndStagesCalculations):
     #     self.instance_data[DataFields.stages_bin_vals.value] = stages_bin_vals
     #     self.instance_data[DataFields.stages_bin_vals_f009.value] = self._get_bin_vals_stages_for_swarco_f009()
     #     self.instance_data[DataFields.sum_conflicts.value] = sum_conflicts
+
 
 class CommonConflictsAndStagesAPI(OutputDataCalculations):
     """
@@ -779,4 +774,3 @@ if __name__ == '__main__':
     obj.build_data()
     print(obj)
     print(f'ВРемя выполеения составило: {time.time() - start_time}')
-
