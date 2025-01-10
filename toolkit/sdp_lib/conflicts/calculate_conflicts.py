@@ -181,11 +181,20 @@ class BaseConflictsAndStagesCalculations:
 
         print(f'unsorted_all_num_groups: {unsorted_all_num_groups}')
         always_red_groups = set()
+        sorted_groups = sorted(unsorted_all_num_groups)
+        max_num_group = max(sorted_groups)
+        print(f'sorted_groups: {sorted_groups}')
+        print(f'max_num_group: {max_num_group}')
+
+        print(f'unsorted_all_num_groups: {unsorted_all_num_groups}')
+        always_red_groups = set()
         for group in range(1, max(unsorted_all_num_groups) + 1):
             if group not in unsorted_all_num_groups:
                 always_red_groups.add(group)
                 unsorted_all_num_groups.add(group)
         return unsorted_all_num_groups, always_red_groups
+
+
 
     def _add_data_to_instance_data_dict_for_calc_conflicts(
             self, processed_stages: Dict, unsorted_all_num_groups: Set, all_red_groups: Set
@@ -311,10 +320,11 @@ class OutputDataCalculations(BaseConflictsAndStagesCalculations):
                 DataFields.no_conflict_O.value if gr not in enemy_groups else DataFields.conflict_K.value
                 for gr in all_numbers_groups
             ]
-            row[current_group] = DataFields.cross_group_star_matrix.value
+            row[len(self.instance_data[DataFields.output_matrix.value])] = DataFields.cross_group_star_matrix.value
         else:
             row = [DataFields.cross_group_star_matrix.value]
             row += [f'|0{g}|' if len(str(g)) == 1 else f'|{g}|' for g in all_numbers_groups]
+        print(f'row: {row}')
         return row
 
     def _create_row_f997(self, num_groups, current_group: int, enemy_groups: Set[int]) -> List[str]:
@@ -365,26 +375,56 @@ class OutputDataCalculations(BaseConflictsAndStagesCalculations):
         all_numbers_groups = sorted(self.instance_data[DataFields.all_num_groups.value])
         create_bin_vals_stages = self.instance_data[DataFields.allow_make_config.value]
 
-        output_matrix = [self._create_row_output_matrix(all_numbers_groups, first_row=True)]
+        self.instance_data[DataFields.output_matrix.value] = [
+            self._create_row_output_matrix(all_numbers_groups, first_row=True)
+        ]
         f997, numbers_conflicts_groups, stages_bin_vals = [], [], []
         sum_conflicts = 0
 
         for num_group, property_group in groups_property.items():
             enemy_groups = property_group[DataFields.enemy_groups.value]
-            output_matrix.append(self._create_row_output_matrix(all_numbers_groups, num_group, enemy_groups))
-            f997.append(self._create_row_f997(num_groups, num_group, enemy_groups))
-            numbers_conflicts_groups.append(f"{';'.join(map(str, sorted(enemy_groups)))};")
+            self.instance_data[DataFields.output_matrix.value].append(
+                self._create_row_output_matrix(all_numbers_groups, num_group, enemy_groups)
+            )
+            if self.instance_data[DataFields.allow_make_config.value]:
+                f997.append(self._create_row_f997(num_groups, num_group, enemy_groups))
+                numbers_conflicts_groups.append(f"{';'.join(map(str, sorted(enemy_groups)))};")
             sum_conflicts += len(enemy_groups)
             if create_bin_vals_stages:
                 stages_bin_vals.append(self._get_bin_val_stages(stages=property_group[DataFields.stages.value]))
 
-        self.instance_data[DataFields.output_matrix.value] = output_matrix
         self.instance_data[DataFields.matrix_F997.value] = f997
         self.instance_data[DataFields.numbers_conflicts_groups.value] = numbers_conflicts_groups
         self.instance_data[DataFields.stages_bin_vals.value] = stages_bin_vals
         self.instance_data[DataFields.stages_bin_vals_f009.value] = self._get_bin_vals_stages_for_swarco_f009()
         self.instance_data[DataFields.sum_conflicts.value] = sum_conflicts
 
+    # def create_data_for_output(self):
+    #
+    #     num_groups = self.instance_data[DataFields.number_of_groups.value]
+    #     groups_property = self.instance_data[DataFields.groups_property.value]
+    #     all_numbers_groups = sorted(self.instance_data[DataFields.all_num_groups.value])
+    #     create_bin_vals_stages = self.instance_data[DataFields.allow_make_config.value]
+    #
+    #     output_matrix = [self._create_row_output_matrix(all_numbers_groups, first_row=True)]
+    #     f997, numbers_conflicts_groups, stages_bin_vals = [], [], []
+    #     sum_conflicts = 0
+    #
+    #     for num_group, property_group in groups_property.items():
+    #         enemy_groups = property_group[DataFields.enemy_groups.value]
+    #         output_matrix.append(self._create_row_output_matrix(all_numbers_groups, num_group, enemy_groups))
+    #         f997.append(self._create_row_f997(num_groups, num_group, enemy_groups))
+    #         numbers_conflicts_groups.append(f"{';'.join(map(str, sorted(enemy_groups)))};")
+    #         sum_conflicts += len(enemy_groups)
+    #         if create_bin_vals_stages:
+    #             stages_bin_vals.append(self._get_bin_val_stages(stages=property_group[DataFields.stages.value]))
+    #
+    #     self.instance_data[DataFields.output_matrix.value] = output_matrix
+    #     self.instance_data[DataFields.matrix_F997.value] = f997
+    #     self.instance_data[DataFields.numbers_conflicts_groups.value] = numbers_conflicts_groups
+    #     self.instance_data[DataFields.stages_bin_vals.value] = stages_bin_vals
+    #     self.instance_data[DataFields.stages_bin_vals_f009.value] = self._get_bin_vals_stages_for_swarco_f009()
+    #     self.instance_data[DataFields.sum_conflicts.value] = sum_conflicts
 
 class CommonConflictsAndStagesAPI(OutputDataCalculations):
     """
