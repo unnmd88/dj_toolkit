@@ -1,6 +1,9 @@
 'use strict';
+
+//home linux
+ const TOKEN = '52b115bf712aa113b2cd16c69e0e1e774158feb3'
 // home
-const TOKEN = '7174fa6f9d0f954a92d2a5852a7fc3bcaace7578';
+//const TOKEN = '7174fa6f9d0f954a92d2a5852a7fc3bcaace7578';
 
 const textAreaStagesGroups = document.querySelector('#stages_from_area');
 const chkbxCreateTxt = document.querySelector('#create_txt');
