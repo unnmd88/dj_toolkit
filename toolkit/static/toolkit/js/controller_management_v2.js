@@ -287,7 +287,7 @@ $("#get_data_from_db").click( function() {
 // });
 
 // Функция получает все конфигурации из БД
- async function get_name_configs(cur_config=undefined) {
+async function get_name_configs(cur_config=undefined) {
     // let csrfToken = $("input[name=csrfmiddlewaretoken]").val();
     try {
         const response = await axios.get(

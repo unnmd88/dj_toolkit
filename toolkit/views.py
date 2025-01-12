@@ -103,11 +103,16 @@ class TrafficLightsUpdate(APIView):
 
         all_obj = []
         for row_cells in sh.iter_rows():
-            # num_co, addr, ip_addr, decsr, type_controller = row_cells
-            num_co, type_controller, addr, description, ip_addr = row_cells
 
-            num_co, addr, ip_addr, description, type_controller = num_co.value, addr.value, ip_addr.value, \
-                description.value, type_controller.value
+            num_co = row_cells[1].value
+            type_controller = row_cells[2].value
+            addr = row_cells[3].value
+            description = row_cells[7].value
+            ip_addr = row_cells[8].value
+
+            # num_co, addr, ip_addr, description, type_controller = (
+            #     num_co.value, addr.value, ip_addr.value, description.value, type_controller.value
+            # )
 
             matches_controllers_to_group = {
                 'Swarco': 1,
@@ -122,10 +127,12 @@ class TrafficLightsUpdate(APIView):
             }
             group = matches_controllers_to_group.get(type_controller, 0)
 
-            all_obj.append((
-                TrafficLightsObjects(number=num_co, address=addr, description=description,
-                                     ip_adress=ip_addr, type_controller=type_controller, group=group)
-            ))
+            all_obj.append(
+                TrafficLightsObjects(
+                    number=num_co, address=addr, description=description,
+                    ip_adress=ip_addr, type_controller=type_controller, group=group
+                )
+            )
         TrafficLightsObjects.objects.all().delete()
         TrafficLightsObjects.objects.bulk_create(all_obj)
         logger.debug('Время обновления: %s' % (time.time() - start_time))
@@ -142,7 +149,10 @@ class ControllerManagementAPI(APIView):
     def post(self, request):
 
         start_time = time.time()
-        data_body = request.source_data
+        print(f'request: {request.data}')
+        print(f'request:')
+
+        data_body = request.data
         logger.debug(data_body)
         data_hosts_body, type_req, req_from_telegramm, chat_id, search_in_db = (
             data_body.get(RequestOptions.hosts.value),
