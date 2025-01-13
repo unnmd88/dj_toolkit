@@ -12,7 +12,6 @@ const fileInput = document.querySelector('#config_file');
 const btnSendRequest = document.querySelector('#send_conflicts_data');
 const divCalculatedContent = document.querySelector('#calculated_content');
 
-
 //work
 // const TOKEN = 'a090474ab50a6ec440eef021295d5f0e750afa00';
 // const TOKEN = 'fb682e5942fa8ce5c26ab8cd3e8eaba41c4cd961'; shared_desktop
@@ -116,6 +115,8 @@ async function sendRequestToCalculate(event) {
     
 }
 
+textAreaStagesGroups.addEventListener('input', deleteWhiteSpaces);
+// textAreaStagesGroups.addEventListener('change', deleteWhiteSpaces);
 
 // Проверка валидности введенных/заполненных данных
 // $("#send_conflicts_data").click(function () {
@@ -182,6 +183,63 @@ async function sendRequestToCalculate(event) {
 
 
 // Проверка всего поля text_area на валидные символы
+
+function replaceChars(content, pattern, char) {
+  return content.replace(pattern, char);
+}
+
+function deleteWhiteSpaces() {
+  
+  // for (let c of textAreaStagesGroups.value) {
+  //   console.log("c: " + c);
+  // }
+  // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, / +/, '');
+  // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, /[0-9]{2,}/g, '');
+  // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, /,{2,}/, ',');
+  // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, /^,+/, '');
+  // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, /[^0-9,\n]+/, '');
+  deleteBadChars();
+
+}
+
+function deleteBadChars() { 
+  // - удалить символы, не являющиеся числом или являющиеся 0 или число > 48(48 групп максимум)
+  // - удалить все пробелы
+  // - удалить все повторяющиеся ","
+  let newString = '';
+  // strToArr = textAreaStagesGroups.value.split('\n')
+  const stages = textAreaStagesGroups.value.split('\n');
+
+  if (stages.length < 2) {
+    newString = textAreaStagesGroups.value;
+    return;
+  }
+  console.log('stages: ');
+  console.log(stages);
+  stages.forEach((line, i,  arr) => {
+    newString += parseGroups(line);
+    if (arr.length > 1 && (i !== (arr.length - 1))) {
+      newString += '\n';
+    }
+  });
+  // console.log('textAreaStagesGroups.value = newString;');
+  textAreaStagesGroups.value = newString;
+}
+
+function parseGroups(line) {
+  let groupsInStage = line.split(',');
+  if (groupsInStage.length === 1) {
+    return line;
+  }
+  const groups = [];
+  groups.forEach((el) => {
+    if (Number.isInteger(+el) && (+el > 0) && (+el < 49)) {
+      groups.push(el);
+    }
+  });
+  return groups.join(',');
+
+}
 
 
 /*----------------------------------------------|
