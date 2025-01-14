@@ -59,7 +59,7 @@ class Utils:
     def set_to_list(cls, target: Dict):
         """
         Рекурсивно превращает множества set в список list значения словаря target.
-        :param target: словарь, в котом значения set необходмио заменить на list
+        :param target: Словарь, в котором значения set необходимо заменить на list
         :return:
         """
 
