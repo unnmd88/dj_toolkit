@@ -17,9 +17,12 @@ const chkbxMatrixAndBinValsSwarco = document.querySelector('#binval_swarco');
 const fileInput = document.querySelector('#config_file');
 const btnSendRequest = document.querySelector('#send_conflicts_data');
 const divCalculatedContent = document.querySelector('#calculated_content');
+const divPrettyOutputStages =  document.querySelector('#pretty_output_stages');
 
-
-
+const maxGroups = 48;
+const separatorGroups = ',';
+const separatorStages = '\n';
+const allowedChars = [/[0-9]/, separatorGroups, separatorStages];
 
 /*----------------------------------------------|
 |              Обработчики событий              |
@@ -119,7 +122,7 @@ async function sendRequestToCalculate(event) {
     
 }
 
-textAreaStagesGroups.addEventListener('input', deleteWhiteSpaces);
+textAreaStagesGroups.addEventListener('input', parseUserData);
 
 
 // Проверка всего поля text_area на валидные символы
@@ -128,8 +131,63 @@ function replaceChars(content, pattern, char) {
   return content.replace(pattern, char);
 }
 
-function deleteWhiteSpaces() {
-  
+function parseUserData() {
+
+  let processedContent = [];
+  let isFirst, isLast;
+  // let userData = textAreaStagesGroups.value;
+  // console.log(textAreaStagesGroups.value);
+  // console.log(textAreaStagesGroups.value.split(separatorGroups));
+  // console.log(textAreaStagesGroups.value.split(separatorStages));
+  // textAreaStagesGroups.value = '1,23,4\n6,7\n\n8,9';
+  // return;
+
+  console.log(textAreaStagesGroups.value);
+
+  let stages = {};
+  const splitedStages = textAreaStagesGroups.value.split(separatorStages);
+  const numStages = splitedStages.length;
+  splitedStages.forEach((line_groups, i, array) => {
+
+    console.log(array);
+    if (!line_groups) {
+      console.log('!line_groups')
+      stages[i + 1] = '';
+      console.log(stages);
+      return;
+    }
+
+
+    console.log(`processedContent: ${processedContent}`);
+
+    let tmpStage = [];
+    line_groups.split(separatorGroups).forEach((group, ind, arr) => {
+      console.log(`checkValidNumGroup(group): ${checkValidNumGroup(group)}`)
+      if (checkValidNumGroup(group)) {
+        tmpStage.push(group);
+      }
+      // tmpStage.push(checkValidNumGroup(group) ? group : '');
+    })
+    stages[i + 1] = tmpStage.join(separatorGroups);
+    if (numStages > 1 && i !== numStages - 1) {
+      stages[i + 1] += separatorStages;
+    }
+    console.log('stages');
+    console.log(stages);
+
+
+  });
+  // textAreaStagesGroups.value = processedContent.join('');
+
+
+  // let re = new RegExp(String.raw`\s${separatorGroups}\s`, 'g');
+  // textAreaStagesGroups.value = replaceChars(processedContent.join(separatorGroups), /,{2,}/, separatorGroups);
+  // console.log(processedContent.join(separatorGroups));
+  // console.log(textAreaStagesGroups.value);
+
+
+
+
   // for (let c of textAreaStagesGroups.value) {
   //   console.log("c: " + c);
   // }
@@ -138,8 +196,44 @@ function deleteWhiteSpaces() {
   // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, /,{2,}/, ',');
   // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, /^,+/, '');
   // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, /[^0-9,\n]+/, '');
-  deleteBadChars();
+  // deleteBadChars();
+}
 
+// Проверяет, является ли num числом в диапазоне от 1 до maxGroups
+function checkValidNumGroup (group) {
+  // let isNumber = +num;
+  // return !!(isNumber && Number.isInteger(isNumber) && isNumber <= maxGroups);
+
+  let isValidNumber = false;
+  if (group.length < 4) {
+    isValidNumber = isInteger(group) || isFloat(group);
+    if (isValidNumber && isValidNumber <= maxGroups) {
+      return isValidNumber;
+    }
+    // isValidNumber = isFloat(num);
+    // if (isValidNumber && isValidNumber <= maxGroups) {
+    //   return isValidNumber;
+  }
+  return false;
+}
+
+function isInteger(data) {
+  let isInteger = Number(data);
+  console.log('isInteger');
+  if (isInteger && isInteger % 1 === 0) {
+    return isInteger;
+  }
+  return false;
+}
+
+function isFloat(data) {
+  console.log('isFloat');
+  let isFloat = Number(data);
+  console.log(`isFloat && isFloat % 1 !== 0: ${isFloat && isFloat % 1 !== 0}`)
+  if (isFloat && isFloat % 1 !== 0) {
+    return isFloat;
+  }
+  return false;
 }
 
 function deleteBadChars() { 
@@ -166,20 +260,7 @@ function deleteBadChars() {
   textAreaStagesGroups.value = newString;
 }
 
-function parseGroups(line) {
-  let groupsInStage = line.split(',');
-  if (groupsInStage.length === 1) {
-    return line;
-  }
-  const groups = [];
-  groups.forEach((el) => {
-    if (Number.isInteger(+el) && (+el > 0) && (+el < 49)) {
-      groups.push(el);
-    }
-  });
-  return groups.join(',');
 
-}
 
 
 /*----------------------------------------------|
