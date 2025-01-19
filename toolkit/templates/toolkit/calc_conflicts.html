@@ -37,11 +37,27 @@
 </fieldset>
 <br>
 
-<p> Фазы-направления </p>
-<textarea required rows="8" cols="20" minlength="4" maxlength="600" name="table_stages" id="stages_from_area"></textarea>
+<table id="user_data">
+    <tr>
+        <th>Введите фазы-направления</th>
+        <th>Результат ввода</th>
+        <th>Ошибки ввода:</th>
+    </tr>
+
+    <tr>
+        <td id="textarea_user_input">
+            <textarea required rows="8" cols="20" minlength="4" maxlength="600" name="table_stages" id="stages_from_area"></textarea>
+        </td>
+        <td id="pretty_output_stages"></td>
+        <td id="textarea_errors">
+            <textarea id="errors" equired rows="8" cols="20" minlength="4" maxlength="600" readonly> </textarea>
+        </td>
+    </tr>
+</table>
+
 <p></p>
 
-<div id="pretty_output_stages"> </div>
+<!--<div id="pretty_output_stages"> </div>-->
 
 <button id="send_conflicts_data"> Отправить </button>
 

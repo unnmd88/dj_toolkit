@@ -12,17 +12,21 @@ const TOKEN = '5f2c92774d1c1e0795335dd86fadc39b661c65f1';
 // const TOKEN = 'fb682e5942fa8ce5c26ab8cd3e8eaba41c4cd961'; shared_desktop
 
 const textAreaStagesGroups = document.querySelector('#stages_from_area');
+const textAreaErrors = document.querySelector('#errors');
+const tdPrettyOutputStages =  document.querySelector('#pretty_output_stages');
+// const divPrettyOutputStages =  document.querySelector('#pretty_output_stages');
 const chkbxCreateTxt = document.querySelector('#create_txt');
 const chkbxMatrixAndBinValsSwarco = document.querySelector('#binval_swarco');
 const fileInput = document.querySelector('#config_file');
 const btnSendRequest = document.querySelector('#send_conflicts_data');
 const divCalculatedContent = document.querySelector('#calculated_content');
-const divPrettyOutputStages =  document.querySelector('#pretty_output_stages');
+
 
 const maxGroups = 48;
 const separatorGroups = ',';
 const separatorStages = '\n';
 const allowedChars = [/[0-9]/, separatorGroups, separatorStages];
+
 
 /*----------------------------------------------|
 |              Обработчики событий              |
@@ -133,64 +137,47 @@ function replaceChars(content, pattern, char) {
 
 function parseUserData() {
 
-  let processedContent = [];
-  let isFirst, isLast;
-  // let userData = textAreaStagesGroups.value;
-  // console.log(textAreaStagesGroups.value);
-  // console.log(textAreaStagesGroups.value.split(separatorGroups));
-  // console.log(textAreaStagesGroups.value.split(separatorStages));
-  // textAreaStagesGroups.value = '1,23,4\n6,7\n\n8,9';
-  // return;
+  const eMustMoreOneStage = 'Должно быть более 1 фазы';
+  const mustBeNum = 'Группа должна быть целым числом или числом, представленным в виде десятичного числа. ' +
+      'Пример: 1, 2, 10, 14, 8.1, 8.2';
+  const mustBeLt48 = 'Максимальный номер группы не должен превышать 48';
+  const mustBeOneComma = 'Должна быть одна запятая';
 
   console.log(textAreaStagesGroups.value);
 
-  let stages = {};
+  let errors = new Set();
   const splitedStages = textAreaStagesGroups.value.split(separatorStages);
   const numStages = splitedStages.length;
-  splitedStages.forEach((line_groups, i, array) => {
+  if (numStages < 2) {
+    errors.add(eMustMoreOneStage);
+  }
 
-    console.log(array);
-    if (!line_groups) {
-      console.log('!line_groups')
-      stages[i + 1] = '';
-      console.log(stages);
-      return;
+  let numCurrentStage, numGroupIsValid;
+  splitedStages.forEach((lineGroups, ind, array) => {
+    numCurrentStage = ind + 1;
+    if (/,{2,}/.test(lineGroups)) {
+      errors.add(`Строка ${numCurrentStage}(Фаза ${numCurrentStage}): ${mustBeOneComma}`);
+    return;
     }
-
-
-    console.log(`processedContent: ${processedContent}`);
-
-    let tmpStage = [];
-    line_groups.split(separatorGroups).forEach((group, ind, arr) => {
-      console.log(`checkValidNumGroup(group): ${checkValidNumGroup(group)}`)
-      if (checkValidNumGroup(group)) {
-        tmpStage.push(group);
+    lineGroups.split(separatorGroups).forEach((el, i, arr) => {
+      if (!el) {
+        return;
       }
-      // tmpStage.push(checkValidNumGroup(group) ? group : '');
+
+      numGroupIsValid = checkValidNumGroup(el);
+      if (!numGroupIsValid) {
+        errors.add(`Строка ${numCurrentStage}(Фаза ${numCurrentStage}): ${mustBeNum}`);
+      }
+      else if (numGroupIsValid && numGroupIsValid > maxGroups) {
+        errors.add(`Строка ${numCurrentStage}(Фаза ${numCurrentStage}): ${mustBeLt48}`);
+      }
     })
-    stages[i + 1] = tmpStage.join(separatorGroups);
-    if (numStages > 1 && i !== numStages - 1) {
-      stages[i + 1] += separatorStages;
-    }
-    console.log('stages');
-    console.log(stages);
-
-
+  writeErrMsg(errors, splitedStages);
   });
-  // textAreaStagesGroups.value = processedContent.join('');
+
 
 
   // let re = new RegExp(String.raw`\s${separatorGroups}\s`, 'g');
-  // textAreaStagesGroups.value = replaceChars(processedContent.join(separatorGroups), /,{2,}/, separatorGroups);
-  // console.log(processedContent.join(separatorGroups));
-  // console.log(textAreaStagesGroups.value);
-
-
-
-
-  // for (let c of textAreaStagesGroups.value) {
-  //   console.log("c: " + c);
-  // }
   // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, / +/, '');
   // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, /[0-9]{2,}/g, '');
   // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, /,{2,}/, ',');
@@ -199,12 +186,33 @@ function parseUserData() {
   // deleteBadChars();
 }
 
+// Записывает в textArea #errors текст ошибок ввода фазы-направления
+function writeErrMsg(errors, splitedStages) {
+  let numCurrentStage = 1;
+  textAreaErrors.value = '';
+  tdPrettyOutputStages.innerHTML = '';
+  errors.forEach((msg) => {
+    const finalMessage = `${numCurrentStage}: ${msg}`;
+    textAreaErrors.value += numCurrentStage > 1 ? `\n${finalMessage}` : finalMessage;
+    numCurrentStage++
+  });
+  if (!errors.size) {
+    numCurrentStage = 1;
+    console.log('splitedStages: ' + splitedStages )
+    splitedStages.forEach((lineGroups) => {
+      let line = `Фаза ${numCurrentStage}: ${lineGroups}`;
+      tdPrettyOutputStages.innerHTML += numCurrentStage > 1 ? `<br>${line}` : line;
+      numCurrentStage++;
+    });
+  }
+}
+
 // Проверяет, является ли num числом в диапазоне от 1 до maxGroups
 function checkValidNumGroup (group) {
   // let isNumber = +num;
   // return !!(isNumber && Number.isInteger(isNumber) && isNumber <= maxGroups);
 
-  let isValidNumber = false;
+  let isValidNumber;
   if (group.length < 4) {
     isValidNumber = isInteger(group) || isFloat(group);
     if (isValidNumber && isValidNumber <= maxGroups) {
@@ -219,7 +227,6 @@ function checkValidNumGroup (group) {
 
 function isInteger(data) {
   let isInteger = Number(data);
-  console.log('isInteger');
   if (isInteger && isInteger % 1 === 0) {
     return isInteger;
   }
@@ -227,9 +234,7 @@ function isInteger(data) {
 }
 
 function isFloat(data) {
-  console.log('isFloat');
   let isFloat = Number(data);
-  console.log(`isFloat && isFloat % 1 !== 0: ${isFloat && isFloat % 1 !== 0}`)
   if (isFloat && isFloat % 1 !== 0) {
     return isFloat;
   }
