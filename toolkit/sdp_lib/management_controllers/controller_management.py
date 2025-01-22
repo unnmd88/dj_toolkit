@@ -2487,7 +2487,7 @@ class PeekWebContent(PeekWeb):
         logger.debug(varBinds)
         if self.req_data.get('type') == 'get':
             return {res.get_name(): res.result() for res in varBinds}
-        return [varBinds[0], {res.get_name(): res.result() for res in varBinds[1]}]
+        return [varBinds[0], {res.get_name(): res.xp1_result() for res in varBinds[1]}]
 
     def inputs_to_list_for_json(self, inputs_content: str) -> list:
         p_inp: dict = self.parse_inps_and_user_param_content(inputs_content)
