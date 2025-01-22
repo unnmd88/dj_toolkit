@@ -13,7 +13,6 @@ from toolkit.sdp_lib.utils import set_curr_datetime
 
 logger = logging.getLogger(__name__)
 
-
 class DataFields(Enum):
     sorted_stages_data = 'sorted_stages_data'
     number_of_groups = 'number_of_groups'
@@ -60,7 +59,7 @@ class Utils:
     def set_to_list(cls, target: Dict):
         """
         Рекурсивно превращает множества set в список list значения словаря target.
-        :param target: словарь, в котом значения set необходмио заменить на list
+        :param target: Словарь, в котором значения set необходимо заменить на list
         :return:
         """
 
@@ -87,7 +86,7 @@ class Utils:
             f.write('\n\n')
 
     @classmethod
-    def stages_to_dict(self, stages_groups: str) -> Dict:
+    def stages_to_dict(cls, stages_groups: str) -> Dict:
         return {str(i): groups for i, groups in enumerate(stages_groups.split('\n'), 1)}
 
 

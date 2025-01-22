@@ -45,12 +45,15 @@ const CONTROLLERS = ['Swarco', 'Поток (S)', 'Поток (P)', 'Peek']
 const SELECT_PROTOCOL = {'Swarco': 0, 'Поток (S)': 1, 'Поток (P)': 2, 'Peek': 3};
 const TYPE_COMMAND = [''];
 const SEARCH_OPTIONS = ['По номеру СО', 'Названию СО'];
-//home linux
- const TOKEN = '52b115bf712aa113b2cd16c69e0e1e774158feb3'
+//home linux mint
+//  const TOKEN = '52b115bf712aa113b2cd16c69e0e1e774158feb3'
+// home linux deb
 //home
 // const TOKEN = '7174fa6f9d0f954a92d2a5852a7fc3bcaace7578';
 //work
-//const TOKEN = 'a090474ab50a6ec440eef021295d5f0e750afa00';
+// const TOKEN = '5f2c92774d1c1e0795335dd86fadc39b661c65f1';
+
+const TOKEN = 'a090474ab50a6ec440eef021295d5f0e750afa00';
 // const TOKEN = 'fb682e5942fa8ce5c26ab8cd3e8eaba41c4cd961'; shared_desktop
 const GET_DATA = 'get_data';
 const SET_DATA = 'set_data';
@@ -287,7 +290,7 @@ $("#get_data_from_db").click( function() {
 // });
 
 // Функция получает все конфигурации из БД
- async function get_name_configs(cur_config=undefined) {
+async function get_name_configs(cur_config=undefined) {
     // let csrfToken = $("input[name=csrfmiddlewaretoken]").val();
     try {
         const response = await axios.get(

@@ -1,11 +1,20 @@
 'use strict';
 
-//home linux
- const TOKEN = '52b115bf712aa113b2cd16c69e0e1e774158feb3'
-// home
+//home linux mint
+//  const TOKEN = '52b115bf712aa113b2cd16c69e0e1e774158feb3'
+// home linux deb
+const TOKEN = '5f2c92774d1c1e0795335dd86fadc39b661c65f1';
+// home win
 //const TOKEN = '7174fa6f9d0f954a92d2a5852a7fc3bcaace7578';
 
+//work
+// const TOKEN = 'a090474ab50a6ec440eef021295d5f0e750afa00';
+// const TOKEN = 'fb682e5942fa8ce5c26ab8cd3e8eaba41c4cd961'; shared_desktop
+
 const textAreaStagesGroups = document.querySelector('#stages_from_area');
+const textAreaErrors = document.querySelector('#errors');
+const tdPrettyOutputStages =  document.querySelector('#pretty_output_stages');
+// const divPrettyOutputStages =  document.querySelector('#pretty_output_stages');
 const chkbxCreateTxt = document.querySelector('#create_txt');
 const chkbxMatrixAndBinValsSwarco = document.querySelector('#binval_swarco');
 const fileInput = document.querySelector('#config_file');
@@ -13,9 +22,10 @@ const btnSendRequest = document.querySelector('#send_conflicts_data');
 const divCalculatedContent = document.querySelector('#calculated_content');
 
 
-//work
-// const TOKEN = 'a090474ab50a6ec440eef021295d5f0e750afa00';
-// const TOKEN = 'fb682e5942fa8ce5c26ab8cd3e8eaba41c4cd961'; shared_desktop
+const maxGroups = 48;
+const separatorGroups = ',';
+const separatorStages = '\n';
+const allowedChars = [/[0-9]/, separatorGroups, separatorStages];
 
 
 /*----------------------------------------------|
@@ -116,72 +126,146 @@ async function sendRequestToCalculate(event) {
     
 }
 
-
-// Проверка валидности введенных/заполненных данных
-// $("#send_conflicts_data").click(function () {
-//   const text_area = {
-//     text: $('#stages_from_area').val(),
-//     lines: $('#stages_from_area').val().split('\n'),
-//     num_lines: $('#stages_from_area').val().split('\n').length,
-//   };
-
-//   sendRequestToCalculate();
-//   console.log(`text_area: <${text_area}>`)
-//   console.log(`text_area.text: <${text_area.text}>`)
-//   console.log(`text_area.lines: <${text_area.lines}>`)
-//   console.log(`text_area.num_lines: <${text_area.num_lines}>`)
-
-//   return;
-
-//   if (text_area.num_lines < 2) {
-//     alert('Количество фаз не может быть менее 2');
-//     return false;
-//   }
-
-//   // Проверка на корректность символов
-//   if (!check_text_area(text_area.lines)){
-//     return false;
-//   }
- 
-//   // Проверка на количество фаз
-//   if (($('#swarco').is(':checked') && text_area.num_lines > 8)) {
-//     alert(`Количество фаз для Swarco не должно превышать 8. Вы ввели: ${text_area.num_lines}`);
-//     return false;
-//   }
-//   else if (($('#peek').is(':checked') && text_area.num_lines > 32)) {
-//     alert(`Количество фаз для Peek не должно превышать 32. Вы ввели: ${text_area.num_lines}`);
-//     return false;
-//   }
-
-//   else if (text_area.num_lines > 128) {
-//     alert(`Количество фаз для неопределённого типа ДК не должно превышать 128. Вы ввели: ${text_area.num_lines}`);
-//     return false;
-//   }
-
-//   // Проверка валидности данных при условии что выбран чекбокс "Создать файл конфигурации"
-//   if ($('#make_config').is(':checked')) {
-//     // Проверка на наличие файла
-//     if ($('#config_file')[0].files.length < 1) {
-//       alert('Вы не выбрали файл конфигурации');
-//       return false;
-//     }
-//     // Проверка на корректное расширение файла для каждого типа ДК
-//     let file_name = $('#config_file')[0].files[0].name;
-//     if ($('#swarco').is(':checked') && file_name.slice(-5).toUpperCase() != '.PTC2'){
-//       alert('Вы выбрали неверный формат файла конфигурации для Swarco. Выберите файл с раширением .PTC2');
-//       return false;
-//     }
-//     else if ($('#peek').is(':checked') && file_name.slice(-4).toUpperCase() != '.DAT'){
-//       alert('Вы выбрали неверный формат файла конфигурации для Peek. Выберите файл с раширением .DAT');
-//       return false;
-//     }
-//   }
-  
-// });
-
+textAreaStagesGroups.addEventListener('input', parseUserData);
 
 
 // Проверка всего поля text_area на валидные символы
+
+function replaceChars(content, pattern, char) {
+  return content.replace(pattern, char);
+}
+
+function parseUserData() {
+
+  const eMustMoreOneStage = 'Должно быть более 1 фазы';
+  const mustBeNum = 'Группа должна быть целым числом или числом, представленным в виде десятичного числа. ' +
+      'Пример: 1, 2, 10, 14, 8.1, 8.2';
+  const mustBeLt48 = 'Максимальный номер группы не должен превышать 48';
+  const mustBeOneComma = 'Должна быть одна запятая';
+
+  console.log(textAreaStagesGroups.value);
+
+  let errors = new Set();
+  const splitedStages = textAreaStagesGroups.value.split(separatorStages);
+  const numStages = splitedStages.length;
+  if (numStages < 2) {
+    errors.add(eMustMoreOneStage);
+  }
+
+  let numCurrentStage, numGroupIsValid;
+  splitedStages.forEach((lineGroups, ind, array) => {
+    numCurrentStage = ind + 1;
+    if (/,{2,}/.test(lineGroups)) {
+      errors.add(`Строка ${numCurrentStage}(Фаза ${numCurrentStage}): ${mustBeOneComma}`);
+    return;
+    }
+    lineGroups.split(separatorGroups).forEach((el, i, arr) => {
+      if (!el) {
+        return;
+      }
+
+      numGroupIsValid = checkValidNumGroup(el);
+      if (!numGroupIsValid) {
+        errors.add(`Строка ${numCurrentStage}(Фаза ${numCurrentStage}): ${mustBeNum}`);
+      }
+      else if (numGroupIsValid && numGroupIsValid > maxGroups) {
+        errors.add(`Строка ${numCurrentStage}(Фаза ${numCurrentStage}): ${mustBeLt48}`);
+      }
+    })
+  writeErrMsg(errors, splitedStages);
+  });
+
+
+
+  // let re = new RegExp(String.raw`\s${separatorGroups}\s`, 'g');
+  // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, / +/, '');
+  // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, /[0-9]{2,}/g, '');
+  // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, /,{2,}/, ',');
+  // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, /^,+/, '');
+  // textAreaStagesGroups.value = replaceChars(textAreaStagesGroups.value, /[^0-9,\n]+/, '');
+  // deleteBadChars();
+}
+
+// Записывает в textArea #errors текст ошибок ввода фазы-направления
+function writeErrMsg(errors, splitedStages) {
+  let numCurrentStage = 1;
+  textAreaErrors.value = '';
+  tdPrettyOutputStages.innerHTML = '';
+  errors.forEach((msg) => {
+    const finalMessage = `${numCurrentStage}: ${msg}`;
+    textAreaErrors.value += numCurrentStage > 1 ? `\n${finalMessage}` : finalMessage;
+    numCurrentStage++
+  });
+  if (!errors.size) {
+    numCurrentStage = 1;
+    console.log('splitedStages: ' + splitedStages )
+    splitedStages.forEach((lineGroups) => {
+      let line = `Фаза ${numCurrentStage}: ${lineGroups}`;
+      tdPrettyOutputStages.innerHTML += numCurrentStage > 1 ? `<br>${line}` : line;
+      numCurrentStage++;
+    });
+  }
+}
+
+// Проверяет, является ли num числом в диапазоне от 1 до maxGroups
+function checkValidNumGroup (group) {
+  // let isNumber = +num;
+  // return !!(isNumber && Number.isInteger(isNumber) && isNumber <= maxGroups);
+
+  let isValidNumber;
+  if (group.length < 4) {
+    isValidNumber = isInteger(group) || isFloat(group);
+    if (isValidNumber && isValidNumber <= maxGroups) {
+      return isValidNumber;
+    }
+    // isValidNumber = isFloat(num);
+    // if (isValidNumber && isValidNumber <= maxGroups) {
+    //   return isValidNumber;
+  }
+  return false;
+}
+
+function isInteger(data) {
+  let isInteger = Number(data);
+  if (isInteger && isInteger % 1 === 0) {
+    return isInteger;
+  }
+  return false;
+}
+
+function isFloat(data) {
+  let isFloat = Number(data);
+  if (isFloat && isFloat % 1 !== 0) {
+    return isFloat;
+  }
+  return false;
+}
+
+function deleteBadChars() { 
+  // - удалить символы, не являющиеся числом - или являющиеся 0 или число > 48(48 групп максимум)
+  // - удалить все пробелы
+  // - удалить все повторяющиеся ","
+  let newString = '';
+  // strToArr = textAreaStagesGroups.value.split('\n')
+  const stages = textAreaStagesGroups.value.split('\n');
+
+  if (stages.length < 2) {
+    newString = textAreaStagesGroups.value;
+    return;
+  }
+  console.log('stages: ');
+  console.log(stages);
+  stages.forEach((line, i,  arr) => {
+    newString += parseGroups(line);
+    if (arr.length > 1 && (i !== (arr.length - 1))) {
+      newString += '\n';
+    }
+  });
+  // console.log('textAreaStagesGroups.value = newString;');
+  textAreaStagesGroups.value = newString;
+}
+
+
 
 
 /*----------------------------------------------|
@@ -199,7 +283,7 @@ function clearElement(element) {
 
 function check_text_area (stages) {
   for (let i = 0; i < stages.length; i++) {
-    if (!check_string(stages[i], i + 1)) {
+    if (!checkString(stages[i], i + 1)) {
       return false;
     }
   }
@@ -207,7 +291,7 @@ function check_text_area (stages) {
 
 }
 // Проверка строки на валидные символы
-function check_string (stage_string, num_string, sep1=':', sep2=',') {
+function checkString (stage_string, num_string, sep1=':', sep2=',') {
   if (stage_string.includes(sep1)) {
     stage_string = stage_string.replace(' ', '').split(sep1)[1];
   }
@@ -242,7 +326,7 @@ function writeCalculatedContent (responce, userDataOptionsForCalculate) {
   divCalculatedContent.append(createTag('h3', 'Данные расчётов:'));
   divCalculatedContent.append(createTag('br'));
 
-  const hasLink = addUrlsforDownload(responce);
+  const hasLink = addUrlsForDownload(responce);
   if (hasLink) {
     createBrTagToDivCalculatedContent(2);
   }
@@ -253,13 +337,13 @@ function writeCalculatedContent (responce, userDataOptionsForCalculate) {
     createBrTagToDivCalculatedContent();
     divCalculatedContent.append(createMatrixF994(responce.numbers_conflicts_groups));
     createBrTagToDivCalculatedContent();
-    divCalculatedContent.append(createStagesBinValsF009(responce.stages_bin_vals_f009));    
+    divCalculatedContent.append(createStagesBinValsF009(responce.stages_bin_vals_f009));
   }
   createBrTagToDivCalculatedContent();
 }
 
 // Добавляет ссылки на загрузку файлов(тектовый, конфиг) после расчётов
-function addUrlsforDownload (responce) {
+function addUrlsForDownload (responce) {
   const url_txt = responce?.txt_file?.url_to_file;
   const url_config = responce?.config_file?.url_to_file;
   const urls = {

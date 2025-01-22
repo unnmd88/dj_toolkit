@@ -8,8 +8,6 @@
 
 }
 
-
-
 body {
   margin: 10px;;
 
@@ -166,6 +164,21 @@ order: 0;
 }
 
 /*Конфликты*/
+#pretty_output_stages {
+  text-align: -moz-left;
+  vertical-align: top;
+}
+
+#textarea_errors {
+  width: 100%;
+  resize: vertical;
+}
+
+#textarea_user_input {
+  width: 100%;
+  resize: vertical;
+}
+
 #output_matrix td, th{
   padding: 8px;
   border: 1px solid;

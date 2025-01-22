@@ -18,7 +18,6 @@ from collections.abc import Callable
 from dotenv import load_dotenv
 from pathlib import Path
 from enum import Enum
-import _asyncio
 import asyncssh
 import asyncio
 import paramiko
@@ -187,7 +186,7 @@ class BaseCommon:
         'VA': 'Адаптивный',
         'MAN': 'Ручное управление',
         'UTC': 'Удалённое управление',
-        'CLF': 'Беспентровая синхронизация',
+        'CLF': 'Бесцентровая синхронизация',
         'ЛАМПЫ ВЫКЛ': 'Сигналы выключены(ОС)',
         'ЖЕЛТОЕ МИГАНИЕ': 'Жёлтое мигание',
         'КРУГОМ КРАСНЫЙ': 'Кругом Красный',
@@ -568,7 +567,7 @@ class BaseCommon:
             curr_states |= data_varBinds
         # self.save_json_to_file(self.req_data, 'controller_management_responce.json')
 
-    def has_error_in_taskgroup(self, result: list[_asyncio.Task]) -> None | str:
+    def has_error_in_taskgroup(self, result: list[asyncio.Task]) -> None | str:
         """
         Метод проверяет есть ли ошибки после запроса
         :param result: результат завершенных задач Taskgroup()
@@ -2315,7 +2314,7 @@ class PeekWebContent(PeekWeb):
                 raise TypeError(EntityJsonResponce.TYPE_CONTROLLER_ERROR_MSG.value)
             return await responce.text()
 
-    async def get_content_from_web_multiple(self, routes: list, timeout=2) -> tuple[str | None, list[_asyncio.Task]]:
+    async def get_content_from_web_multiple(self, routes: list, timeout=2) -> tuple[str | None, list[asyncio.Task]]:
         """
         Метод формирует запрос на веб страницу для получения контента по заданным маршрутам
         :param routes: список маршрутов страниц, по которым необходимо получить контент страницы
@@ -2471,7 +2470,7 @@ class PeekWebContent(PeekWeb):
 
         return parsed_data
 
-    def varBinds_to_dict(self, varBinds: list[_asyncio.Task]) -> dict | list:
+    def varBinds_to_dict(self, varBinds: list[asyncio.Task]) -> dict | list:
         """
         Создает словарь на основе списка вида:
         {имя коррутины(связано с типом веб запроса в методе get_content_from_web_multiple): результат}
@@ -2488,7 +2487,7 @@ class PeekWebContent(PeekWeb):
         logger.debug(varBinds)
         if self.req_data.get('type') == 'get':
             return {res.get_name(): res.result() for res in varBinds}
-        return [varBinds[0], {res.get_name(): res.result() for res in varBinds[1]}]
+        return [varBinds[0], {res.get_name(): res.xp1_result() for res in varBinds[1]}]
 
     def inputs_to_list_for_json(self, inputs_content: str) -> list:
         p_inp: dict = self.parse_inps_and_user_param_content(inputs_content)
@@ -2865,7 +2864,7 @@ class PeekSetUserParametersWeb(PeekWebContent):
 
 class GetDifferentStatesFromWeb(PeekWebContent):
 
-    async def get_request(self, **kwargs) -> tuple[str | None, list[_asyncio.Task], PeekWebContent]:
+    async def get_request(self, **kwargs) -> tuple[str | None, list[asyncio.Task], PeekWebContent]:
         """
         Метод получает веб контент страницы по маршрутам из routes
         :param kwargs:
