@@ -4,6 +4,10 @@ from enum import StrEnum
 
 
 class CmdSg(StrEnum):
+    """
+    В классе содержатся отображения значений для строки CmdSG  конфигуратора EC-X Configurator
+    """
+
     GREEN = '3'
     RED = '1'
     DISABLED = '0'
@@ -11,6 +15,10 @@ class CmdSg(StrEnum):
 
 @dataclass
 class Intersection:
+    """
+    Класс данных для обработки Process конфигуратора EC-X Configurator
+    """
+
     source_xp_data: dict[str, tuple[str]]
     identifier: str = '-- Intersection --'
     num_stages: int = 0
@@ -23,6 +31,10 @@ class Intersection:
         return self.get_pretty_output()
 
     def get_pretty_output(self):
+        """
+        Формирует строку с удобным выводом
+        :return: строка с выводом информации для всех Process(xp)
+        """
 
         pretty_output = f''
         self.num_stages = 1
@@ -36,16 +48,16 @@ class Intersection:
             pretty_output += curr_xp
         return f'{self.identifier}\nNumber of stages: {self.num_stages - 1}\n{pretty_output}'
 
-    def make_pretty_cmd_sg(self, cmd_sg: list[str]) -> str:
+    def make_pretty_cmd_sg(self, all_cmd_sg: list[str]) -> str:
         """
         Формирует строки CmdSG из "Process" EC-X Configurator для удобного вывода/записи в файл.
-        :param curr_stage:
-        :param cmd_sg: Список строк CmdSG.
-        :return: Удобочитаемая строка для вывода/записи в файл.
+        :param all_cmd_sg: Список строк CmdSG процесса.
+        :return: Удобочитаемая строка для вывода/записи в файл информации о фазах процесса,
         """
-        if cmd_sg is not None:
+
+        if all_cmd_sg is not None:
             _data = ''
-            for cmd_sg_stage in cmd_sg:
+            for cmd_sg_stage in all_cmd_sg:
                 _data += f'Stage{" " * (2 if self.num_stages < 10 else 1)}{self.num_stages}: {cmd_sg_stage}\n'
                 self.num_stages += 1
             return _data
@@ -66,8 +78,9 @@ class Intersection:
     def _repair_line_stage(self, stages_in_process: list[str], cmd_sg_all_stages_in_process: list[str]) -> list[str]:
         """
         Заменяет значение группы в строке line_stage на 0, если группа не участвует в процессе.
-        :param line_stage: строка CmdSG из "Process" EC-X Configurator
-        :return: скорректированная строка CmdSG, которую можно скопировать в "Process" EC-X Configurator
+        :param stages_in_process: Список фаз текущего процесса.
+        :param cmd_sg_all_stages_in_process: Список строк CmdSG из "Process" EC-X Configurator.
+        :return: Список скорректированных строк CmdSG из "Process" EC-X Configurator.
         """
 
         repaired_cmd_sg_all_stages = []
