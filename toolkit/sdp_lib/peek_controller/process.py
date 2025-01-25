@@ -1,7 +1,6 @@
 import json
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import List
 
 
 class CmdSg(StrEnum):
@@ -64,7 +63,7 @@ class Intersection:
                 ",".join(stage_in_curr_xp), self._repair_line_stage(stage_in_curr_xp, cmd_sg_in_curr_xp)
             )
 
-    def _repair_line_stage(self, stages_in_process: List[str], cmd_sg_all_stages_in_process: List[str]) -> List[str]:
+    def _repair_line_stage(self, stages_in_process: list[str], cmd_sg_all_stages_in_process: list[str]) -> list[str]:
         """
         Заменяет значение группы в строке line_stage на 0, если группа не участвует в процессе.
         :param line_stage: строка CmdSG из "Process" EC-X Configurator
@@ -81,7 +80,7 @@ class Intersection:
         return repaired_cmd_sg_all_stages
 
     def write(
-            self, data_for_write: List[str] | str | None = None,
+            self, data_for_write: list[str] | str | None = None,
             filename: str = 'repaired_CmdSG.txt',
             mode: str = 'w'
     ) -> None:
