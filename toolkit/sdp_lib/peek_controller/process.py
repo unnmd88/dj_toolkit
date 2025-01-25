@@ -97,6 +97,14 @@ class Intersection:
             filename: str = 'repaired_CmdSG.txt',
             mode: str = 'w'
     ) -> None:
+        """
+        Записывает данные в файл.
+        :param data_for_write: Данные, которые будут записаны в файл
+        :param filename: Имя файла
+        :param mode: Режим записи
+        :return: None
+        """
+
         data_for_write = data_for_write or self.get_pretty_output()
         with open(filename, mode) as f:
             if isinstance(data_for_write, str):
@@ -173,7 +181,3 @@ if __name__ == '__main__':
     data.write()
     data.write(json.dumps(data.repaired_xp_data, indent=4), filename='data.json')
 
-    #
-    # calculated_intersections = calculate(all_intersections)
-    # res = UnionIntersections(calculated_intersections)
-    # print(res)
