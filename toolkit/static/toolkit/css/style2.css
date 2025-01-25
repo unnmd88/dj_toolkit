@@ -163,26 +163,36 @@ order: 0;
   height: 25px;
 }
 
-/*Конфликты*/
+/* Конфликты */
 #pretty_output_stages {
-  text-align: -moz-left;
+  text-align: left;
   vertical-align: top;
 }
 
-#textarea_errors {
-  width: 100%;
-  resize: vertical;
+#textarea_user_input {
+  width: 100px;
+  /*width: 100%;*/
+  /*height: 100%;*/
 }
 
-#textarea_user_input {
+#stages_from_area {
+  /*resize: none;*/
+  /*width: 800px;*/
+  /*height: 400px;*/
   width: 100%;
-  resize: vertical;
+  height: 100%;
+  /*resize: vertical;*/
+}
+
+#textarea_errors {
+  /*width: 100%;*/
+  /*height: 100%;*/
 }
 
 #output_matrix td, th{
   padding: 8px;
   border: 1px solid;
-  text-align: center; 
+  text-align: center;
   vertical-align: middle;
 }
 
@@ -190,7 +200,6 @@ order: 0;
   border: solid;
   background-color: #C0C0C0;
   table-layout: fixed;
-
 }
 
 #output_matrix caption {

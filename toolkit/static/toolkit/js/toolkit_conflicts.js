@@ -14,6 +14,7 @@ const TOKEN = '5f2c92774d1c1e0795335dd86fadc39b661c65f1';
 const textAreaStagesGroups = document.querySelector('#stages_from_area');
 const textAreaErrors = document.querySelector('#errors');
 const tdPrettyOutputStages =  document.querySelector('#pretty_output_stages');
+const tdErrors = document.querySelector('#td_errors');
 // const divPrettyOutputStages =  document.querySelector('#pretty_output_stages');
 const chkbxCreateTxt = document.querySelector('#create_txt');
 const chkbxMatrixAndBinValsSwarco = document.querySelector('#binval_swarco');
@@ -27,6 +28,7 @@ const separatorGroups = ',';
 const separatorStages = '\n';
 const allowedChars = [/[0-9]/, separatorGroups, separatorStages];
 
+btnSendConflictsData(false, 'Введите фазы-направления');
 
 /*----------------------------------------------|
 |              Обработчики событий              |
@@ -49,7 +51,7 @@ $('input[type=radio][name=controller_type]').change(function() {
       $('#binval_swarco').attr('disabled', true);
       $('#make_config').attr('disabled', false);
       $('#binval_swarco').prop('checked', false);
-  }; 
+  }
 });
 
 // Ловим событие изменения чекбокса Создать файл конфигурации
@@ -59,7 +61,7 @@ $('#make_config').change( function() {
   }
   else {
       $('#config_file').attr('disabled', true);
-    };
+    }
     
 });
 
@@ -191,9 +193,12 @@ function writeErrMsg(errors, splitedStages) {
   let numCurrentStage = 1;
   textAreaErrors.value = '';
   tdPrettyOutputStages.innerHTML = '';
+  tdErrors.innerHTML = '';
+  let allowedSendRequestCalculate = false;
   errors.forEach((msg) => {
     const finalMessage = `${numCurrentStage}: ${msg}`;
-    textAreaErrors.value += numCurrentStage > 1 ? `\n${finalMessage}` : finalMessage;
+    // textAreaErrors.value += numCurrentStage > 1 ? `\n${finalMessage}` : finalMessage;
+    tdErrors.innerHTML += numCurrentStage > 1 ? `<br>${finalMessage}` : finalMessage;
     numCurrentStage++
   });
   if (!errors.size) {
@@ -204,7 +209,22 @@ function writeErrMsg(errors, splitedStages) {
       tdPrettyOutputStages.innerHTML += numCurrentStage > 1 ? `<br>${line}` : line;
       numCurrentStage++;
     });
+    allowedSendRequestCalculate = true;
   }
+  btnSendConflictsData(allowedSendRequestCalculate);
+}
+
+// Устанавливает атрибут disable для кнопки в зависимости от наличия ошибок и формирует title кнопки
+function btnSendConflictsData(allowed, titleContent=undefined) {
+  titleContent = titleContent ? titleContent : '';
+  if (!!titleContent) {
+    btnSendRequest.title = titleContent;
+  }
+  else {
+    btnSendRequest.title = allowed ? 'Нажмите для отправки запроса' : 'Устраните ошибки для отправки запроса';
+  }
+
+  btnSendRequest.disabled = !allowed;
 }
 
 // Проверяет, является ли num числом в диапазоне от 1 до maxGroups
