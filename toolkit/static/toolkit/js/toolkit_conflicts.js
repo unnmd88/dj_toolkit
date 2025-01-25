@@ -12,10 +12,9 @@ const TOKEN = '5f2c92774d1c1e0795335dd86fadc39b661c65f1';
 // const TOKEN = 'fb682e5942fa8ce5c26ab8cd3e8eaba41c4cd961'; shared_desktop
 
 const textAreaStagesGroups = document.querySelector('#stages_from_area');
-const textAreaErrors = document.querySelector('#errors');
+
 const tdPrettyOutputStages =  document.querySelector('#pretty_output_stages');
 const tdErrors = document.querySelector('#td_errors');
-// const divPrettyOutputStages =  document.querySelector('#pretty_output_stages');
 const chkbxCreateTxt = document.querySelector('#create_txt');
 const chkbxMatrixAndBinValsSwarco = document.querySelector('#binval_swarco');
 const fileInput = document.querySelector('#config_file');
@@ -191,13 +190,13 @@ function parseUserData() {
 // Записывает в textArea #errors текст ошибок ввода фазы-направления
 function writeErrMsg(errors, splitedStages) {
   let numCurrentStage = 1;
-  textAreaErrors.value = '';
+
   tdPrettyOutputStages.innerHTML = '';
   tdErrors.innerHTML = '';
   let allowedSendRequestCalculate = false;
   errors.forEach((msg) => {
     const finalMessage = `${numCurrentStage}: ${msg}`;
-    // textAreaErrors.value += numCurrentStage > 1 ? `\n${finalMessage}` : finalMessage;
+
     tdErrors.innerHTML += numCurrentStage > 1 ? `<br>${finalMessage}` : finalMessage;
     numCurrentStage++
   });
