@@ -1,3 +1,6 @@
+"""
+Модуль для расчёта валидной строки CmdSG конфигуратора EC-X Configurator.
+"""
 import json
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -70,7 +73,7 @@ class Intersection:
         """
 
         for xp, xp_data in self.source_xp_data.items():
-            stage_in_curr_xp, cmd_sg_in_curr_xp = list(map(str, sorted(xp_data[0]))), xp_data[1]
+            stage_in_curr_xp, cmd_sg_in_curr_xp = list(map(str, sorted(map(int, xp_data[0].split(','))))), xp_data[1]
             self.repaired_xp_data[xp] = (
                 ",".join(stage_in_curr_xp), self._repair_line_stage(stage_in_curr_xp, cmd_sg_in_curr_xp)
             )
@@ -117,6 +120,7 @@ class Intersection:
 
 
 if __name__ == '__main__':
+    from toolkit.sdp_lib.utils_common import write_data_to_file
 
     groups_in_xp1 = '1,4,20,22,23,29,30,32,34,35,42,44,45,46,49,50,51,52,53,54,55,56,57,58,59,60'
     xp1_cmd_sg = [
@@ -171,10 +175,9 @@ if __name__ == '__main__':
         '4': (groups_in_xp4, xp4_cmd_sg),
     }
 
-    data = Intersection(all_intersections, 'СО 413 Тверская застава')
-    data.repair_cmd_sg_all_stages()
-    # print(json.dumps(data.repaired_xp_data, indent=4))
-    # print(data)
-    data.write()
-    data.write(json.dumps(data.repaired_xp_data, indent=4), filename='data.json')
+    intersection = Intersection(all_intersections, 'СО 413 Тверская застава')
+    intersection.repair_cmd_sg_all_stages()
+    print(intersection)
+    write_data_to_file(data_for_write=intersection.get_pretty_output(), filename='repaired_CmdSG.txt')
+    write_data_to_file(json.dumps(intersection.repaired_xp_data, indent=4), filename='data.json')
 
