@@ -178,6 +178,7 @@ order: 0;
   height: 100%;
 }
 #td_errors {
+  vertical-align: top;
   text-align: left;
   color: red;
 }

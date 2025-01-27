@@ -18,7 +18,7 @@ from rest_framework.views import APIView
 from rest_framework import generics, viewsets
 from engineering_tools.settings import MEDIA_ROOT, MEDIA_URL, BASE_DIR
 from toolkit.models import SaveConfigFiles, SaveConflictsTXT, ControllerManagement, TrafficLightsObjects
-from toolkit.sdp_lib import conflicts_old
+from toolkit.sdp_lib import conflicts_old, utils_common
 from toolkit.serializers import ControllerHostsSerializer, BaseTrafficLightsSerializer
 from . import services
 from .constants import RequestOptions, AvailableTypesRequest
@@ -296,28 +296,13 @@ class CompareGroupsAPI(APIView):
     def post(self, request):
 
         start_time = time.time()
-        data_body = request.source_data
+        data_body = request.data
         options = data_body.get('options', [])
         logger.debug(data_body)
         manager = services.PassportProcessing(
             data_body.get('content_table_groups'), data_body.get('content_table_stages')
         )
         responce = manager.get_result(options)
-        # if option == RequestOptions.compare_groups.value:
-        #     table_groups, has_errors, err_in_user_data = manager.compare_groups_in_stages(
-        #         data_body.get('content_table_groups'), data_body.get('content_table_stages')
-        #     )
-        #     responce = services.ResponceMaker.create_responce_compare_groups_in_stages(
-        #         table_groups.group_table, has_errors, err_in_user_data
-        #     )
-        # elif option == RequestOptions.calc_groups_in_stages.value:
-        #     table_groups, has_errors, err_in_user_data = manager.create_groups_in_stages_content(
-        #         data_body.get('content_table_stages')
-        #     )
-        #     responce = services.ResponceMaker.create_groups_in_stages_content(
-        #         table_groups.group_table, has_errors, err_in_user_data
-        #     )
-
         logger.debug(f'Время выполнения запроса: {time.time() - start_time}')
         return Response(responce)
 
@@ -331,7 +316,11 @@ class PotokTrafficLightsConfiguratorAPI(APIView):
 
     def post(self, request):
         start_time = time.time()
-        data_body = request.source_data
+        print(request)
+        data_body = request.data
+        utils_common.write_data_to_file(
+            data_for_write=json.dumps(data_body, indent=4), filename='cond_string.json'
+        )
         condition = data_body.get(self.condition)
         options = data_body.get('options')
         if options is None:

@@ -1646,8 +1646,9 @@ class ConflictsAndStages:
 
     def __init__(
             self,
-            raw_stages_groups: str | Dict, type_controller:
-            str, create_txt=False,
+            raw_stages_groups: str | Dict,
+            type_controller: str,
+            create_txt=False,
             scr_original_config: InMemoryUploadedFile = None
     ):
         self.errors = []

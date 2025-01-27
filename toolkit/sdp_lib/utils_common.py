@@ -19,3 +19,22 @@ def reverse_slashes(path: str) -> str:
     """
 
     return path.replace('\\', '/')
+
+
+def write_data_to_file(data_for_write: list[str] | str, filename: str, mode: str = 'w') -> None:
+    """
+    Записывает данные в файл.
+    :param data_for_write: Данные, которые будут записаны в файл
+    :param filename: Имя файла
+    :param mode: Режим записи
+    :return: None
+    """
+
+    with open(filename, mode) as f:
+        if isinstance(data_for_write, str):
+            f.write(data_for_write)
+        elif isinstance(data_for_write, list):
+            for line in data_for_write:
+                f.write(f'{line}\n')
+        else:
+            raise TypeError('Данные для записи в файл должны быть строкой или списком')
