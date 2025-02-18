@@ -55,6 +55,7 @@ LOGGING = {
         },
     },
 }
+
 logging.config.dictConfig(LOGGING)
 
 
@@ -72,7 +73,7 @@ DEBUG = True if os.getenv('DEBUG') in ('1', 'True') else False
 # ALLOWED_HOSTS = ['*']
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '192.168.45.90', '192.168.45.66', 'http://127.0.0.1:8081',
-                 '192.168.45.248', '192.168.45.228']
+                 '192.168.45.248', '192.168.45.228', '192.168.45.93', '0.0.0.0']
 
 CSRF_TRUSTED_ORIGINS = [
     'http://192.168.45.66', 'http://192.168.45.90', 'http://192.168.45.66:8081',

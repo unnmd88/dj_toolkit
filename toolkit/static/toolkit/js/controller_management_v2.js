@@ -48,6 +48,7 @@ const SEARCH_OPTIONS = ['По номеру СО', 'Названию СО'];
 //home linux mint
 //  const TOKEN = '52b115bf712aa113b2cd16c69e0e1e774158feb3'
 // home linux deb
+const TOKEN = '5f2c92774d1c1e0795335dd86fadc39b661c65f1';
 //home
 // const TOKEN = '7174fa6f9d0f954a92d2a5852a7fc3bcaace7578';
 //work
