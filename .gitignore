@@ -5,7 +5,6 @@
 __pycache__/
 local_settings.py
 db.sqlite3
-db.sqlite3
 /media/
 media/
 tmp
@@ -17,13 +16,12 @@ log
 archive
 uploads
 db.txt
-migrations
+
 my_Workspace.code-workspace
 telegramm_bot.py
 test_classes.py
 quick_test.py
-migrations
-migrations/
+
 
 
 # Backup files # 
@@ -48,7 +46,6 @@ git_commands.txt
 *.7z
 
 # Byte-compiled / optimized / DLL files
-__pycache__/
 *.py[cod]
 *$py.class
 
