@@ -95,9 +95,10 @@ class SearchByNumberTrafficLightsAPIView(generics.RetrieveAPIView):
 
 class TrafficLightsUpdate(APIView):
     """
-    Обновляет модель светофорных объектов
+    Обновляет модель светофорных объектов.
+    SQL, который сбрасывает счетчик авто-инкремента pk:
+    ALTER SEQUENCE toolkit_trafficlightsobjects_id_seq RESTART WITH 1;
     """
-
     # permission_classes = (IsAdminUser,)
 
     FILENAME = 'List'
