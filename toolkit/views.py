@@ -5,6 +5,8 @@ import time
 from datetime import datetime as dt
 
 import asyncio
+from typing import Generator
+
 import openpyxl
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
@@ -12,16 +14,20 @@ from django.http import HttpResponse, HttpResponseNotFound
 from django.shortcuts import render, get_object_or_404
 from django.template.loader import render_to_string
 from django.views.generic import TemplateView
+from openpyxl.cell import Cell
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import generics, viewsets
+
+import toolkit
 from engineering_tools.settings import MEDIA_ROOT, MEDIA_URL, BASE_DIR
 from toolkit.models import SaveConfigFiles, SaveConflictsTXT, ControllerManagement, TrafficLightsObjects
 from toolkit.sdp_lib import conflicts_old, utils_common
 from toolkit.serializers import ControllerHostsSerializer, BaseTrafficLightsSerializer
 from . import services
 from .constants import RequestOptions, AvailableTypesRequest
+from django.core.exceptions import ObjectDoesNotExist
 
 
 logger = logging.getLogger(__name__)
@@ -92,44 +98,191 @@ class TrafficLightsUpdate(APIView):
     Обновляет модель светофорных объектов
     """
 
-    permission_classes = (IsAdminUser,)
+    # permission_classes = (IsAdminUser,)
+
+    FILENAME = 'List'
+    ALLOWED_FILE_EXT = {'xls', 'xlsx'}
+
+    ID               = 0
+    NUMBER           = 1
+    TYPE_CONTROLLER  = 2
+    ADDRESS          = 3
+    LONGITUDE        = 4
+    LATITUDE         = 5
+    REGION           = 6
+    DESCRIPTION      = 7
+    IP_ADDRESS       = 8
+
+    bad_response = {
+        'result': 'Некорректное имя файла и/или расширение, данные не обновлены',
+        'ok': False
+    }
+    good_response ={
+        'result': 'Данные не обновлены',
+        'ok': True
+    }
+
+
+
+    matches_controllers_to_group = {
+        'Swarco': 1,
+        'Peek': 2,
+        'Поток (P)': 3,
+        'Поток (S)': 4,
+        'Сигнал (STCIP)': 5,
+        'Сигнал (SXTP)': 6,
+        'ДКС': 7,
+        'ДКС (Старт)': 8,
+        'ДКСТ': 9,
+    }
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._request = None
+        self.wb = None
+        self.sheet = None
+
+    # def post(self, request):
+    #     start_time = time.time()
+    #     logger.debug(request.FILES)
+    #     logger.debug(request.FILES['file'].name)
+    #     # file_in_memory = request.FILES['file'].read()
+    #     self.wb = openpyxl.load_workbook(filename=BytesIO(request.FILES['file'].read()))
+    #     self.sheet = self.wb.active
+    #
+    #     TrafficLightsObjects.objects.all().delete()
+    #     TrafficLightsObjects.objects.bulk_create(self.get_objects())
+    #     logger.debug(f'Время обновления: {(time.time() - start_time)}')
+    #     return Response({'result': 'данные обновлены'})
+    #
+    #
+    #     # for i, row_cells in enumerate(it):
+    #     #
+    #     #     # obj, created = TrafficLightsObjects.objects.update_or_create(
+    #     #     #     number=row_cells[self.NUMBER].value,
+    #     #     #     defaults={
+    #     #     #         'number': row_cells[self.NUMBER].value,
+    #     #     #         'address': row_cells[self.ADDRESS].value,
+    #     #     #         'description': row_cells[self.DESCRIPTION].value,
+    #     #     #         'ip_adress': row_cells[self.IP_ADDRESS].value,
+    #     #     #         'type_controller': row_cells[self.TYPE_CONTROLLER].value,
+    #     #     #         'group': self.matches_controllers_to_group.get(row_cells[self.TYPE_CONTROLLER].value, 0)
+    #     #     #     },
+    #     #     # )
+    #     #     all_obj.append(
+    #     #         TrafficLightsObjects(
+    #     #             id=row_cells[self.ID].value,
+    #     #             number=row_cells[self.NUMBER].value,
+    #     #             address=row_cells[self.ADDRESS].value,
+    #     #             description=row_cells[self.DESCRIPTION].value,
+    #     #             ip_adress=row_cells[self.IP_ADDRESS].value,
+    #     #             type_controller=row_cells[self.TYPE_CONTROLLER].value,
+    #     #             group=self.matches_controllers_to_group.get(row_cells[self.TYPE_CONTROLLER].value, 0)
+    #     #         )
+    #     #     )
+    #     #
+    #     #
+    #     # TrafficLightsObjects.objects.all().delete()
+    #     # cnt = TrafficLightsObjects.objects.bulk_create(all_obj)
+    #     #
+    #     #
+    #     # logger.debug(f'Время обновления: {(time.time() - start_time)}')
+    #     # logger.debug(f'cnt: {cnt}')
+    #     # return Response({'result': 'данные обновлены'})
+    #
+    #     #     all_obj.append(
+    #     #         TrafficLightsObjects(
+    #     #             id=row_cells[self.ID].value,
+    #     #             number=row_cells[self.NUMBER].value,
+    #     #             address=row_cells[self.ADDRESS].value,
+    #     #             description=row_cells[self.DESCRIPTION].value,
+    #     #             ip_adress=row_cells[self.IP_ADDRESS].value,
+    #     #             type_controller=row_cells[self.TYPE_CONTROLLER].value,
+    #     #             group=self.matches_controllers_to_group.get(row_cells[self.TYPE_CONTROLLER].value, 0)
+    #     #         )
+    #     #     )
+    #     #
+    #     # r = TrafficLightsObjects.objects.bulk_update(all_obj, ['number', 'address', 'description', 'ip_adress',
+    #     #                                                    'type_controller', 'group'],
+    #     #                                              )
+    #     # logger.debug(f'r: {r}')
+    #     # logger.debug('Время обновления: %s' % (time.time() - start_time))
+    #     # return Response({'result': 'данные обновлены'})
+    #
+    #     #
+    #     #     num_co, addr, ip_addr, description, type_controller = num_co.value, addr.value, ip_addr.value, \
+    #     #         description.value, type_controller.value
+    #     #
+    #     #     num_co, addr, ip_addr, description, type_controller = row_cells[self.NUMBER], addr.value, ip_addr.value, \
+    #     #         description.value, type_controller.value
+    #     #
+    #     #     matches_controllers_to_group = {
+    #     #         'Swarco': 1,
+    #     #         'Peek': 2,
+    #     #         'Поток (P)': 3,
+    #     #         'Поток (S)': 4,
+    #     #         'Сигнал (STCIP)': 5,
+    #     #         'Сигнал (SXTP)': 6,
+    #     #         'ДКС': 7,
+    #     #         'ДКС (Старт)': 8,
+    #     #         'ДКСТ': 9,
+    #     #     }
+    #     #     group = matches_controllers_to_group.get(type_controller, 0)
+    #     #
+    #     #     all_obj.append((
+    #     #         TrafficLightsObjects(number=num_co, adress=addr, description=description,
+    #     #                              ip_adress=ip_addr, type_controller=type_controller, group=group)
+    #     #     ))
+    #     # # TrafficLightsObjects.objects.all().delete()
+    #     # # TrafficLightsObjects.objects.bulk_create(all_obj)
+    #     # TrafficLightsObjects.objects.update_or_create(all_obj)
+    #     # logger.debug('Время обновления: %s' % (time.time() - start_time))
+    #     # return Response({'result': 'данные обновлены'})
 
     def post(self, request):
         start_time = time.time()
         logger.debug(request.FILES)
-        file_in_memory = request.FILES['file'].read()
-        wb = openpyxl.load_workbook(filename=BytesIO(file_in_memory))
-        sh = wb.active
+        logger.debug(request.FILES['file'].name)
+        if not self.check_filename(request.FILES['file'].name):
+            return Response(self.bad_response)
 
-        all_obj = []
-        for row_cells in sh.iter_rows():
-            # num_co, addr, ip_addr, decsr, type_controller = row_cells
-            num_co, type_controller, addr, description, ip_addr = row_cells
+        self.wb = openpyxl.load_workbook(filename=BytesIO(request.FILES['file'].read()))
+        self.sheet = self.wb.active
 
-            num_co, addr, ip_addr, description, type_controller = num_co.value, addr.value, ip_addr.value, \
-                description.value, type_controller.value
-
-            matches_controllers_to_group = {
-                'Swarco': 1,
-                'Peek': 2,
-                'Поток (P)': 3,
-                'Поток (S)': 4,
-                'Сигнал (STCIP)': 5,
-                'Сигнал (SXTP)': 6,
-                'ДКС': 7,
-                'ДКС (Старт)': 8,
-                'ДКСТ': 9,
-            }
-            group = matches_controllers_to_group.get(type_controller, 0)
-
-            all_obj.append((
-                TrafficLightsObjects(number=num_co, adress=addr, description=description,
-                                     ip_adress=ip_addr, type_controller=type_controller, group=group)
-            ))
         TrafficLightsObjects.objects.all().delete()
-        TrafficLightsObjects.objects.bulk_create(all_obj)
-        logger.debug('Время обновления: %s' % (time.time() - start_time))
-        return Response({'result': 'данные обновлены'})
+        TrafficLightsObjects.objects.bulk_create(self.get_objects())
+        logger.debug(f'Время обновления: {(time.time() - start_time)}')
+        return Response(self.good_response)
+
+    def get_objects(self) -> Generator:
+        it = self.sheet.iter_rows()
+        next(it) # Пропустить первую row, которая является шапкой excel таблицы
+        return (
+            TrafficLightsObjects(
+                id=row_cells[self.ID].value,
+                number=row_cells[self.NUMBER].value,
+                address=row_cells[self.ADDRESS].value,
+                description=row_cells[self.DESCRIPTION].value,
+                ip_adress=row_cells[self.IP_ADDRESS].value,
+                type_controller=row_cells[self.TYPE_CONTROLLER].value,
+                group=self.matches_controllers_to_group.get(row_cells[self.TYPE_CONTROLLER].value, 0)
+            )
+            for row_cells in it
+        )
+
+    def check_filename(self, full_filename: str) -> bool:
+        splitter = '.'
+        _full_filename = full_filename.split(splitter)
+        if len(_full_filename) < 2:
+            return False
+        name, _extension = splitter.join(_full_filename[:-1]), _full_filename[-1]
+        if _extension not in self.ALLOWED_FILE_EXT or name != self.FILENAME:
+            return False
+        return True
+
+
+
+
 
 
 class ControllerManagementAPI(APIView):
