@@ -1,5 +1,10 @@
-from django.db import models
+import typing
+
+from django.db import models, IntegrityError
 from django.utils import timezone
+
+from toolkit.sdp_lib.management_controllers.controller_management import AvailableControllers
+
 
 # Create your models here.
 
@@ -80,4 +85,197 @@ class TrafficLightConfigurator(models.Model):
     )
     errors = models.CharField(max_length=255, verbose_name='Ошибки')
     time_create = models.DateTimeField(auto_now_add=True, verbose_name='Время создания')
+
+
+class DefaultControllerManagementOptions(typing.NamedTuple):
+    type_controller: str
+    group: int
+    commands: str
+    max_stage: int
+    options: str | None = None
+    sources: str | None = None
+
+
+# swarco_default_controller_management_options = DefaultControllerManagementOptions(
+#     type_controller = AvailableControllers.SWARCO.value,
+#     group = 1,
+#     commands = 'set_stage',
+#     max_stage = 8,
+#     options = None,
+#     sources = 'man'
+# )
+#
+# potokS_default_controller_management_options = DefaultControllerManagementOptions(
+#     type_controller = AvailableControllers.POTOK_S.value,
+#     group = 2,
+#     commands = 'set_stage',
+#     max_stage = 128,
+#     options = None,
+#     sources = None
+# )
+#
+# potokP_default_controller_management_options = DefaultControllerManagementOptions(
+#     type_controller = AvailableControllers.POTOK_P.value,
+#     group = 3,
+#     commands = 'set_stage',
+#     max_stage = 128,
+#     options = None,
+#     sources = None
+# )
+#
+# peek_default_controller_management_options = DefaultControllerManagementOptions(
+#     type_controller = AvailableControllers.POTOK_P.value,
+#     group = 2,
+#     commands = 'set_stage',
+#     max_stage = 128,
+#     options = None,
+#     sources = None
+# )
+
+class ControllerManagementOptions(models.Model):
+
+    type_controller = models.CharField(max_length=20, unique=True)
+    group = models.IntegerField(default=0, unique=True)
+    commands = models.CharField(max_length=40)
+    min_val = models.IntegerField(default=0)
+    max_val = models.IntegerField()
+    options = models.CharField(max_length=255, null=True)
+    sources = models.CharField(max_length=255, null=True)
+    time_create = models.DateTimeField(auto_now_add=True)
+    time_update = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return (
+            f'type_controller: {self.type_controller}\n'
+            f'group: {self.group}\n'
+            f'commands: {self.commands}\n'
+            f'max_stage: {self.max_stage}\n'
+            f'options: {self.options}\n'
+            f'sources: {self.sources}'
+        )
+
+    @property
+    def swarco_default(self) -> DefaultControllerManagementOptions:
+        return DefaultControllerManagementOptions(
+            type_controller = AvailableControllers.SWARCO.value,
+            group = 1,
+            commands = 'set_stage',
+            max_stage = 8,
+            options = None,
+            sources = 'man'
+        )
+
+    @property
+    def peek_default(self) -> DefaultControllerManagementOptions:
+        return DefaultControllerManagementOptions(
+            type_controller = AvailableControllers.PEEK.value,
+            group = 2,
+            commands = 'set_stage',
+            max_stage = 32,
+            options = None,
+            sources = 'central'
+        )
+
+    @property
+    def potok_p_default(self) -> DefaultControllerManagementOptions:
+        return DefaultControllerManagementOptions(
+            type_controller = AvailableControllers.POTOK_S.value,
+            group = 3,
+            commands = 'set_stage',
+            max_stage = 128,
+            options = None,
+            sources = None
+        )
+
+    @property
+    def potok_s_default(self) -> DefaultControllerManagementOptions:
+        return DefaultControllerManagementOptions(
+            type_controller = AvailableControllers.POTOK_S.value,
+            group = 2,
+            commands = 'set_stage',
+            max_stage = 128,
+            options = None,
+            sources = None
+        )
+
+    @property
+    def matches_default(self) -> dict[str, DefaultControllerManagementOptions]:
+        return {
+            AvailableControllers.SWARCO.value: self.swarco_default,
+            AvailableControllers.POTOK_P.value: self.potok_p_default,
+            AvailableControllers.POTOK_S.value: self.potok_s_default,
+            AvailableControllers.PEEK.value: self.peek_default
+        }
+
+    def get_default_props(self, type_controller) -> DefaultControllerManagementOptions:
+        return self.matches_default.get(type_controller)
+
+
+def create_defaults_controller_management_options(create_objects=False):
+
+    swarco_default_controller_management_options = DefaultControllerManagementOptions(
+        type_controller = AvailableControllers.SWARCO.value,
+        group = 1,
+        commands = 'set_stage',
+        max_stage = 8,
+        options = None,
+        sources = 'man'
+    )
+
+    peek_default_controller_management_options = DefaultControllerManagementOptions(
+        type_controller = AvailableControllers.PEEK.value,
+        group = 2,
+        commands = 'set_stage',
+        max_stage = 32,
+        options = None,
+        sources = None
+    )
+
+    potokP_default_controller_management_options = DefaultControllerManagementOptions(
+        type_controller = AvailableControllers.POTOK_P.value,
+        group = 3,
+        commands = 'set_stage',
+        max_stage = 128,
+        options = None,
+        sources = None
+    )
+
+    potokS_default_controller_management_options = DefaultControllerManagementOptions(
+        type_controller = AvailableControllers.POTOK_S.value,
+        group = 4,
+        commands = 'set_stage',
+        max_stage = 128,
+        options = None,
+        sources = None
+    )
+    objs = (
+        swarco_default_controller_management_options,
+        potokP_default_controller_management_options,
+        potokS_default_controller_management_options,
+        peek_default_controller_management_options
+    )
+
+    if create_objects:
+        saved = []
+        for opt in objs:
+            try:
+                saved.append(ControllerManagementOptions.objects.create(**opt._asdict()))
+            except IntegrityError:
+                pass
+        return saved
+
+    return (
+        swarco_default_controller_management_options,
+        potokP_default_controller_management_options,
+        potokS_default_controller_management_options,
+        peek_default_controller_management_options
+    )
+
+
+if __name__ == '__main__':
+    o = create_defaults_controller_management_options()
+    print(o)
+    for f in o:
+        print(f._asdict())
+
 
