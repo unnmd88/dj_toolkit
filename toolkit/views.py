@@ -119,7 +119,7 @@ class TrafficLightsUpdate(APIView):
         'ok': False
     }
     good_response ={
-        'result': 'Данные не обновлены',
+        'result': 'Данные обновлены',
         'ok': True
     }
     matches_controllers_to_group = {
